@@ -234,6 +234,36 @@
   .duel-astro.r{right:3vw;animation:jabR 1.3s ease-in-out infinite}
   @keyframes jabL{50%{transform:translateX(26px) rotate(10deg)}}
   @keyframes jabR{0%,100%{transform:scaleX(-1)}50%{transform:scaleX(-1) translateX(26px) rotate(10deg)}}
+  /* SOCO: avança pra frente desferindo o golpe */
+  .duel-astro.l.punch{animation:dpunchL .5s cubic-bezier(.3,1.7,.5,1)}
+  .duel-astro.r.punch{animation:dpunchR .5s cubic-bezier(.3,1.7,.5,1)}
+  @keyframes dpunchL{0%{transform:translateX(0)}35%{transform:translateX(40px) translateY(-30px) rotate(14deg) scale(1.12)}100%{transform:translateX(0)}}
+  @keyframes dpunchR{0%{transform:scaleX(-1)}35%{transform:scaleX(-1) translateX(40px) translateY(-30px) rotate(14deg) scale(1.12)}100%{transform:scaleX(-1)}}
+  /* APANHOU: treme e recua */
+  .duel-astro.l.hit{animation:dhitL .45s ease-out}
+  .duel-astro.r.hit{animation:dhitR .45s ease-out}
+  @keyframes dhitL{0%{transform:translateX(0)}25%{transform:translateX(-14px) rotate(-8deg)}50%{transform:translateX(8px) rotate(4deg)}100%{transform:translateX(0)}}
+  @keyframes dhitR{0%{transform:scaleX(-1)}25%{transform:scaleX(-1) translateX(-14px) rotate(-8deg)}50%{transform:scaleX(-1) translateX(8px)}100%{transform:scaleX(-1)}}
+  /* NOCAUTE: cai pra trás */
+  .duel-astro.l.ko{animation:dkoL 1s ease-in forwards}
+  .duel-astro.r.ko{animation:dkoR 1s ease-in forwards}
+  @keyframes dkoL{to{transform:translateY(30%) rotate(-78deg);opacity:.5}}
+  @keyframes dkoR{to{transform:scaleX(-1) translateY(30%) rotate(-78deg);opacity:.5}}
+  /* impacto/estrelas no lado que apanhou */
+  .duel-impact{position:absolute;bottom:18vh;z-index:9;font-size:clamp(34px,5vw,70px);opacity:0;pointer-events:none}
+  .duel-impact.l{left:5vw}.duel-impact.r{right:5vw}
+  .duel-impact.go{animation:dimpact .5s ease-out}
+  @keyframes dimpact{0%{opacity:0;transform:scale(.3)}40%{opacity:1;transform:scale(1.3) rotate(12deg)}100%{opacity:0;transform:scale(1)}}
+  /* bump no placar quando sobe */
+  .frec.bump{animation:frecbump .25s ease-out}
+  @keyframes frecbump{0%{transform:scale(1)}45%{transform:scale(1.35)}100%{transform:scale(1)}}
+  /* overlay de resultado do duelo */
+  #duelResult{position:absolute;inset:0;z-index:12;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(4,4,12,.82);backdrop-filter:blur(4px)}
+  #duelResult.on{display:flex;animation:fadeUp .3s both}
+  #duelResult .belt{font-size:clamp(50px,9vw,130px);margin-bottom:6px;animation:bob 2s ease-in-out infinite}
+  #duelResult .big{font-family:var(--star);font-weight:900;font-size:clamp(40px,9vw,140px);color:#ffcf4d;text-shadow:0 0 40px #ffcf4d,0 0 90px #ff5b1f;animation:slamHard .55s cubic-bezier(.2,2.2,.3,1) both}
+  #duelResult .big.tie{color:#ffb020}
+  #duelResult .who{font-family:var(--star);font-weight:900;font-size:clamp(22px,4vw,60px);color:#fff;margin-top:8px}
   .panel{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:90;display:flex;gap:8px;flex-wrap:wrap;background:#001030ee;border:1px solid #1a5fc455;border-radius:14px;padding:10px;backdrop-filter:blur(8px);max-width:94vw;justify-content:center}
   .panel b{flex-basis:100%;text-align:center;font-family:var(--star);font-size:9px;letter-spacing:.2em;color:var(--dim);margin-bottom:2px}
   .panel button{font-family:var(--body);font-weight:700;font-size:13px;border:none;border-radius:9px;padding:9px 13px;cursor:pointer;color:#001030}
@@ -316,7 +346,10 @@
   <div class="vsbadge">VS</div>
   <div class="duel-astro l" id="duelAstroL"></div>
   <div class="duel-astro r" id="duelAstroR"></div>
-  <div class="duelfoot">QUE COMECE A LUTA</div>
+  <div class="duel-impact l" id="dimpL">💥</div>
+  <div class="duel-impact r" id="dimpR">💥</div>
+  <div class="duelfoot" id="duelfoot">QUE COMECE A LUTA</div>
+  <div id="duelResult"></div>
 </div>
 
 <div class="panel">
@@ -327,6 +360,12 @@
   <button class="b-duel" onclick="launchChallenge('recusa')" style="background:#0a3a8a">✋ Desafio → RECUSA</button>
   <button class="b-duel" onclick="launchChallenge('expira')" style="background:#062456">💀 Desafio → COVARDIA</button>
   <button class="b-mute" id="muteBtn" onclick="toggleMute()">🔊 Som ligado</button>
+  <span style="flex-basis:100%;text-align:center;font-family:var(--star);font-size:9px;letter-spacing:.2em;color:#6f8bb0">DUELO AO VIVO (após aceitar)</span>
+  <button class="b-vis" onclick="duelPoint('L','visita')">◀ Laranja visita</button>
+  <button class="b-vis" onclick="duelPoint('R','visita')">Rubro visita ▶</button>
+  <button class="b-doc" onclick="duelPoint('L','documentacao')">◀ Laranja DOC</button>
+  <button class="b-doc" onclick="duelPoint('R','documentacao')">Rubro DOC ▶</button>
+  <button class="b-duel" onclick="closeDuel()" style="background:#444">✕ Fechar duelo</button>
 </div>
 
 <script>
@@ -350,9 +389,32 @@ function beep(freqs,type="triangle",dur=.3,gap=.09,vol=.25){if(muted)return;ensu
     const t0=actx.currentTime+i*gap;g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(vol,t0+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+dur);o.start(t0);o.stop(t0+dur);});}
 // SINO REAL (mp3 enviado). Retorna a duração aproximada p/ encadear a voz depois.
 let bellAudio=null;
-function bell(){if(muted)return;try{const a=new Audio(BELL_SND);a.volume=1;a.play().catch(err=>console.log("bell bloqueado:",err));}catch(e){console.log(e);}}
-function explosionReal(){if(muted)return;try{const a=new Audio(EXPLO_SND);a.volume=1;a.play().catch(()=>{});}catch(e){}}
-function docSound(){if(muted)return;try{const a=new Audio(DOC_SND);a.volume=1;a.play().catch(()=>{});}catch(e){}}
+// Sistema de áudio robusto: decodifica os MP3 (base64) em buffers via Web Audio.
+// Mais tolerante a data-URIs que o elemento <Audio>, que dava "no supported source".
+const sndBuffers={}; // {bell, explo, doc}
+function b64ToArrayBuffer(dataUri){
+  const b64=dataUri.split(",")[1];
+  const bin=atob(b64);const len=bin.length;const bytes=new Uint8Array(len);
+  for(let i=0;i<len;i++)bytes[i]=bin.charCodeAt(i);
+  return bytes.buffer;
+}
+function loadSnd(key,dataUri){
+  ensureAudio();if(!actx)return;
+  try{
+    actx.decodeAudioData(b64ToArrayBuffer(dataUri),buf=>{sndBuffers[key]=buf;},err=>console.log("decode falhou",key,err));
+  }catch(e){console.log("loadSnd erro",key,e);}
+}
+function playBuf(key,vol){
+  if(muted)return;ensureAudio();if(!actx)return;
+  const buf=sndBuffers[key];
+  if(buf){const s=actx.createBufferSource();s.buffer=buf;const g=actx.createGain();g.gain.value=vol||1;s.connect(g);g.connect(actx.destination);s.start();return;}
+  // fallback: tenta <Audio> (caso o buffer ainda não tenha carregado)
+  const map={bell:BELL_SND,explo:EXPLO_SND,doc:DOC_SND};
+  try{const a=new Audio(map[key]);a.volume=vol||1;a.play().catch(()=>{});}catch(e){}
+}
+function bell(){playBuf("bell",1);}
+function explosionReal(){playBuf("explo",1);}
+function docSound(){playBuf("doc",1);}
 function gong(){bell();} // gongo de início de luta = mesmo sino
 function whoosh(){if(muted)return;ensureAudio();if(!actx)return;const o=actx.createOscillator(),g=actx.createGain();o.type="sawtooth";o.connect(g);g.connect(actx.destination);
   const t0=actx.currentTime;o.frequency.setValueAtTime(120,t0);o.frequency.exponentialRampToValueAtTime(900,t0+.4);g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(.2,t0+.05);g.gain.exponentialRampToValueAtTime(.0001,t0+.5);o.start(t0);o.stop(t0+.5);}
@@ -480,20 +542,75 @@ function staredown(A,B){
   // depois abre o VS
   setTimeout(()=>{s.classList.remove("on");openDuel(A,B);},5000);
 }
-function openDuel(A,B){document.getElementById("duelTitle").textContent=`${A.name} × ${B.name}`;
-  document.getElementById("dRedAv").textContent=A.name.split(" ").pop()[0];document.getElementById("dRedName").textContent=A.name;document.getElementById("dRedSub").textContent=A.sub;document.getElementById("dRedRec").innerHTML=score(A)+"<small>PONTOS</small>";
-  document.getElementById("dBlueAv").textContent=B.name.split(" ").pop()[0];document.getElementById("dBlueName").textContent=B.name;document.getElementById("dBlueSub").textContent=B.sub;document.getElementById("dBlueRec").innerHTML=score(B)+"<small>PONTOS</small>";
-  document.getElementById("duelAstroL").innerHTML=FIGHTER_O;document.getElementById("duelAstroR").innerHTML=FIGHTER_R;const duel=document.getElementById("duel");duel.classList.add("on");const f=document.createElement("div");f.className="duelflash";duel.appendChild(f);setTimeout(()=>f.remove(),500);
+let duelState=null; // {a,b,sa,sb,va,vb,meta,mode,ended}
+function openDuel(A,B){
+  document.getElementById("duelTitle").textContent=`${A.name} × ${B.name}`;
+  document.getElementById("dRedAv").textContent=A.name.split(" ").pop()[0];document.getElementById("dRedName").textContent=A.name;document.getElementById("dRedSub").textContent=A.sub;
+  document.getElementById("dBlueAv").textContent=B.name.split(" ").pop()[0];document.getElementById("dBlueName").textContent=B.name;document.getElementById("dBlueSub").textContent=B.sub;
+  // duelo começa do ZERO (placar do duelo é independente do geral)
+  duelState={a:A.name,b:B.name,va:0,vb:0,meta:10,ended:false};
+  document.getElementById("dRedRec").innerHTML='0<small>PONTOS</small>';
+  document.getElementById("dBlueRec").innerHTML='0<small>PONTOS</small>';
+  document.getElementById("duelfoot").textContent="PRIMEIRO A "+duelState.meta+" VENCE";
+  document.getElementById("duelResult").classList.remove("on");
+  document.getElementById("duelAstroL").innerHTML=FIGHTER_O;document.getElementById("duelAstroR").innerHTML=FIGHTER_R;
+  const duel=document.getElementById("duel");duel.classList.add("on");
+  const f=document.createElement("div");f.className="duelflash";duel.appendChild(f);setTimeout(()=>f.remove(),500);
   const ring=document.createElement("div");ring.className="gongring";duel.appendChild(ring);setTimeout(()=>ring.remove(),1700);
-  makeEmbers("emb2",46);whoosh();setTimeout(()=>beep([392,523,659,784,988],"square",.42,.12,.2),500);setTimeout(()=>{duel.classList.remove("on");},5800);}
+  makeEmbers("emb2",46);whoosh();setTimeout(()=>beep([392,523,659,784,988],"square",.42,.12,.2),500);
+  // a tela NÃO fecha mais sozinha — fica como duelo ao vivo
+}
+// ponto no duelo: side 'L'(=A/laranja) ou 'R'(=B/rubro); tipo 'visita'|'documentacao'
+function duelPoint(side,tipo){
+  if(!duelState||duelState.ended)return;
+  const strong=tipo==="documentacao";const inc=strong?3:1;
+  if(side==="L")duelState.va+=inc;else duelState.vb+=inc;
+  // animação: atacante soca, oponente apanha
+  const att=document.getElementById(side==="L"?"duelAstroL":"duelAstroR");
+  const defSide=side==="L"?"R":"L";
+  const def=document.getElementById(defSide==="L"?"duelAstroL":"duelAstroR");
+  const imp=document.getElementById(defSide==="L"?"dimpL":"dimpR");
+  att.classList.add("punch");
+  setTimeout(()=>{def.classList.add("hit");imp.classList.add("go");punchSnd(strong);},170);
+  setTimeout(()=>{att.classList.remove("punch");def.classList.remove("hit");imp.classList.remove("go");},650);
+  // placar
+  const rec=document.getElementById(side==="L"?"dRedRec":"dBlueRec");
+  rec.innerHTML=(side==="L"?duelState.va:duelState.vb)+'<small>PONTOS</small>';
+  rec.classList.add("bump");setTimeout(()=>rec.classList.remove("bump"),250);
+  // meta?
+  if(duelState.va>=duelState.meta||duelState.vb>=duelState.meta) duelKO();
+}
+function punchSnd(strong){if(muted)return;ensureAudio();if(!actx)return;const t0=actx.currentTime;
+  const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.setValueAtTime(strong?180:140,t0);o.frequency.exponentialRampToValueAtTime(40,t0+.18);
+  o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(strong?.6:.4,t0+.01);g.gain.exponentialRampToValueAtTime(.0001,t0+.22);o.start(t0);o.stop(t0+.24);
+  const b=actx.createBuffer(1,actx.sampleRate*.1,actx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+  const ns=actx.createBufferSource();ns.buffer=b;const ng=actx.createGain();ns.connect(ng);ng.connect(actx.destination);ng.gain.value=strong?.5:.3;ns.start(t0);}
+function duelKO(){
+  if(!duelState||duelState.ended)return;duelState.ended=true;
+  const tie=duelState.va===duelState.vb;
+  const winL=duelState.va>duelState.vb;
+  const r=document.getElementById("duelResult");
+  if(tie){
+    document.getElementById("duelAstroL").classList.add("ko");document.getElementById("duelAstroR").classList.add("ko");punchSnd(true);
+    setTimeout(()=>{bell();r.innerHTML='<div class="belt">🤝</div><div class="big tie">EMPATE</div><div class="who">Os dois caíram — sem vencedor</div>';r.classList.add("on");},900);
+  }else{
+    const winBox=document.getElementById(winL?"duelAstroL":"duelAstroR");
+    const loseBox=document.getElementById(winL?"duelAstroR":"duelAstroL");
+    const winName=winL?duelState.a:duelState.b;
+    winBox.classList.add("punch");
+    setTimeout(()=>{loseBox.classList.remove("hit");loseBox.classList.add("ko");punchSnd(true);},170);
+    setTimeout(()=>{bell();r.innerHTML='<div class="belt">🏆</div><div class="big">NOCAUTE!</div><div class="who">'+winName+' venceu</div>';r.classList.add("on");},900);
+  }
+}
+function closeDuel(){const d=document.getElementById("duel");d.classList.remove("on");duelState=null;
+  ["duelAstroL","duelAstroR"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove("ko","punch","hit");});}
 let secs=14*60+58;
 setInterval(()=>{if(secs>0)secs--;const m=String(Math.floor(secs/60)).padStart(2,"0"),s=String(secs%60).padStart(2,"0");document.getElementById("clock").textContent=m+":"+s;document.getElementById("timer").classList.toggle("warn",secs<60);},1000);
 function unlock(){
   ensureAudio();if(actx&&actx.state==="suspended")actx.resume();
   if(window.speechSynthesis){speechSynthesis.getVoices();try{const w=new SpeechSynthesisUtterance(" ");w.volume=0;speechSynthesis.speak(w);}catch(e){}}
-  try{bellAudio=new Audio(BELL_SND);bellAudio.volume=1;bellAudio.play().then(()=>{bellAudio.pause();bellAudio.currentTime=0;}).catch(()=>{});}catch(e){}
-  try{const ex=new Audio(EXPLO_SND);ex.volume=1;ex.play().then(()=>{ex.pause();ex.currentTime=0;}).catch(()=>{});}catch(e){}
-  try{const dc=new Audio(DOC_SND);dc.volume=1;dc.play().then(()=>{dc.pause();dc.currentTime=0;}).catch(()=>{});}catch(e){}
+  // decodifica os três sons em buffers (Web Audio) — robusto e sem "no supported source"
+  loadSnd("bell",BELL_SND);loadSnd("explo",EXPLO_SND);loadSnd("doc",DOC_SND);
   document.getElementById("hint").style.display="none";
 }
 window.addEventListener("pointerdown",unlock,{once:true});
