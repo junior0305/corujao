@@ -1,0 +1,73 @@
+version: "3.7"
+services:
+  ape77-corujao:
+    image: php:8.2-apache
+    working_dir: /var/www/html
+    # instala a extensão do MySQL, baixa o projeto do GitHub e sobe o Apache
+    command: >
+      bash -c "docker-php-ext-install pdo pdo_mysql >/dev/null 2>&1;
+               apt-get update >/dev/null 2>&1 && apt-get install -y git >/dev/null 2>&1;
+               cd /var/www/html &&
+               rm -rf ./* &&
+               git clone https://junior0305:SEU_NOVO_TOKEN_AQUI@github.com/junior0305/corujao.git repo &&
+               if [ -d repo/arena/public ]; then
+                 cp -r repo/arena/public/* . &&
+                 mkdir -p api &&
+                 cp -r repo/arena/api/* api/;
+               elif [ -d repo/arena-cury ]; then
+                 cp -r repo/arena-cury/* .;
+               else
+                 cp -r repo/* .;
+               fi &&
+               rm -rf repo &&
+               chown -R www-data:www-data /var/www/html &&
+               exec apache2-foreground"
+    networks:
+      - network_public
+    environment:
+      - TZ=America/Sao_Paulo
+      - DB_HOST=corujao-db
+      - DB_NAME=corujao
+      - DB_USER=usuario_corujao
+      - DB_PASS=Juti2401#!#!
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.corujao-router.rule=Host(`corujao.comandra.com.br`)"
+        - "traefik.http.routers.corujao-router.entrypoints=websecure"
+        - "traefik.http.routers.corujao-router.tls=true"
+        - "traefik.http.routers.corujao-router.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.corujao-service.loadbalancer.server.port=80"
+
+  corujao-db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - network_public
+    environment:
+      - TZ=America/Sao_Paulo
+      - MYSQL_ROOT_PASSWORD=Mfcd62!!Mfcd62!!
+      - MYSQL_DATABASE=corujao
+      - MYSQL_USER=usuario_corujao
+      - MYSQL_PASSWORD=Juti2401#!#!
+    volumes:
+      - db_data:/var/lib/mysql
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  network_public:
+    name: network_public
+    external: true
+
+volumes:
+  db_data:

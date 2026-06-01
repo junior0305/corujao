@@ -1,0 +1,61 @@
+// ============================================================
+// arena-api.js — ponte entre as telas (navegador) e a API PHP
+// Todas as telas incluem este arquivo e usam ArenaAPI.xxx()
+// ============================================================
+const ArenaAPI = (() => {
+  // a API fica em /api relativo ao site
+  const base = (location.origin + location.pathname).replace(/\/[^\/]*$/, '') + '/api';
+
+  async function get(arquivo, params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const r = await fetch(`${base}/${arquivo}${qs ? '?' + qs : ''}`);
+    return r.json();
+  }
+  async function post(arquivo, params, corpo = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const r = await fetch(`${base}/${arquivo}${qs ? '?' + qs : ''}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo)
+    });
+    return r.json();
+  }
+
+  return {
+    // equipes
+    listarEquipes: () => get('equipes.php', { acao: 'listar' }),
+    criarEquipe: (e) => post('equipes.php', { acao: 'criar' }, e),
+    addCorretor: (equipe_id, nome) => post('equipes.php', { acao: 'add_corretor' }, { equipe_id, nome }),
+    removerEquipe: (equipe_id) => post('equipes.php', { acao: 'remover' }, { equipe_id }),
+    resetEquipe: (equipe_id) => post('equipes.php', { acao: 'reset' }, { equipe_id }),
+    setOnline: (equipe_id, online) => post('equipes.php', { acao: 'online' }, { equipe_id, online }),
+    importarCSV: (csv) => post('importar_csv.php', {}, { csv }),
+
+    // pontos
+    marcarPonto: (p) => post('pontos.php', { acao: 'marcar' }, p),
+    pendentes: () => get('pontos.php', { acao: 'pendentes' }),
+    aprovar: (ponto_id) => post('pontos.php', { acao: 'aprovar' }, { ponto_id }),
+    rejeitar: (ponto_id, motivo) => post('pontos.php', { acao: 'rejeitar' }, { ponto_id, motivo }),
+
+    // placar e config
+    placar: () => get('placar.php'),
+    lerConfig: () => get('config.php', { acao: 'ler' }),
+    salvarConfig: (c) => post('config.php', { acao: 'salvar' }, c),
+    rodada: (status) => post('config.php', { acao: 'rodada' }, { status }),
+
+    // reservas
+    listarReservas: () => get('reservas.php', { acao: 'listar' }),
+    criarReserva: (r) => post('reservas.php', { acao: 'criar' }, r),
+    removerReserva: (id) => post('reservas.php', { acao: 'remover' }, { id }),
+
+    // duelos
+    criarDuelo: (d) => post('duelos.php', { acao: 'criar' }, d),
+    responderDuelo: (duelo_id, aceita) => post('duelos.php', { acao: 'responder' }, { duelo_id, aceita }),
+    entrarDuelo: (duelo_id, equipe_id) => post('duelos.php', { acao: 'entrar' }, { duelo_id, equipe_id }),
+    duelosAtivos: () => get('duelos.php', { acao: 'ativos' }),
+    encerrarDuelo: (duelo_id, vencedor_equipe_id) => post('duelos.php', { acao: 'encerrar' }, { duelo_id, vencedor_equipe_id }),
+
+    // eventos (a TV puxa para animar)
+    eventosNovos: (desde) => get('eventos.php', { acao: 'novos', desde: desde || 0 }),
+  };
+})();
