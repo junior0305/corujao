@@ -4,67 +4,74 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Arena Cury — Tablet</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Teko:wght@600;700&display=swap" rel="stylesheet"/>
 <style>
-  :root{--bg:#00060f;--bg2:#001030;--cury:#1a5fc4;--cyan:#00daff;--gold:#ffcf4d;
-    --ink:#eaf4ff;--dim:#6f8bb0;--ok:#1fd18a;--card:#0a1f44;
-    --star:"Orbitron",sans-serif;--body:"Rajdhani",sans-serif;}
+  :root{--bg:#00060f;--bg2:#001030;--cury:#1a5fc4;--cyan:#00daff;--gold:#ffcf4d;--fire:#ff5b1f;
+    --ink:#eaf4ff;--dim:#6f8bb0;--ok:#1fd18a;--no:#ff5b6e;--card:#0a1f44;
+    --star:"Orbitron",sans-serif;--body:"Rajdhani",sans-serif;--num:"Teko",sans-serif;}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
-  body{background:radial-gradient(ellipse 90% 60% at 50% -10%,#0a3a8a44 0%,transparent 60%),var(--bg);
-    color:var(--ink);font-family:var(--body);min-height:100vh}
-  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
-    background-image:radial-gradient(1px 1px at 30px 40px,#fff,transparent),radial-gradient(1px 1px at 160px 90px,#9cf,transparent),radial-gradient(2px 2px at 300px 50px,#bdf,transparent);background-size:360px 240px}
-  .wrap{position:relative;z-index:2;max-width:780px;margin:0 auto;padding:clamp(16px,3vw,32px) clamp(14px,3vw,28px) 80px}
-
-  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
+  body{background:radial-gradient(ellipse 90% 60% at 50% -10%,#0a3a8a44 0%,transparent 60%),var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh}
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;background-image:radial-gradient(1px 1px at 30px 40px,#fff,transparent),radial-gradient(1px 1px at 160px 90px,#9cf,transparent),radial-gradient(2px 2px at 300px 50px,#bdf,transparent);background-size:360px 240px}
+  .wrap{position:relative;z-index:2;max-width:820px;margin:0 auto;padding:clamp(16px,3vw,28px) clamp(14px,3vw,24px) 90px}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
   .logo{display:flex;align-items:center;gap:10px}
   .logo .mk{font-family:var(--star);font-weight:900;font-size:clamp(18px,3vw,26px);color:#fff;background:linear-gradient(135deg,var(--cury),#003070);padding:3px 12px;border-radius:9px;box-shadow:0 0 18px #1a5fc455}
   .logo .ar{font-family:var(--star);font-weight:900;font-size:clamp(15px,2.4vw,22px);letter-spacing:.12em;color:var(--cyan)}
   .eyebrow{font-family:var(--star);font-size:10px;letter-spacing:.35em;color:var(--cyan);font-weight:600}
-
-  h2{font-family:var(--star);font-weight:900;font-size:clamp(20px,3.4vw,30px);margin-bottom:4px}
-  .lead{color:var(--dim);font-size:15px;margin-bottom:22px}
-
-  /* steps cascata */
-  .step{margin-bottom:22px;opacity:1;transition:opacity .3s}
-  .step.off{opacity:.35;pointer-events:none}
+  h2{font-family:var(--star);font-weight:900;font-size:clamp(20px,3.4vw,28px);margin-bottom:4px}
+  .lead{color:var(--dim);font-size:14px;margin-bottom:18px}
+  .step{margin-bottom:20px}.step.off{opacity:.35;pointer-events:none}
   .step .lbl{font-family:var(--star);font-size:12px;letter-spacing:.2em;color:var(--cyan);margin-bottom:10px}
   .opts{display:flex;flex-wrap:wrap;gap:10px}
   .opt{font-family:var(--body);font-weight:700;font-size:16px;color:var(--ink);background:var(--card);border:1px solid #1a5fc455;border-radius:12px;padding:13px 18px;cursor:pointer;transition:all .2s}
-  .opt:active{transform:scale(.96)}
   .opt.sel{background:var(--cyan);color:#001030;border-color:var(--cyan);box-shadow:0 0 18px #00daff66}
-  .opt.add{background:transparent;border:1px dashed #1a5fc488;color:var(--cyan)}
-
-  .activate{width:100%;font-family:var(--star);font-weight:900;font-size:18px;letter-spacing:.05em;text-transform:uppercase;
-    color:#001030;background:linear-gradient(135deg,var(--cyan),var(--cury));border:none;border-radius:14px;padding:18px;cursor:pointer;
-    box-shadow:0 0 30px #00daff44;transition:transform .15s;margin-top:8px}
+  .activate{width:100%;font-family:var(--star);font-weight:900;font-size:18px;letter-spacing:.05em;text-transform:uppercase;color:#001030;background:linear-gradient(135deg,var(--cyan),var(--cury));border:none;border-radius:14px;padding:18px;cursor:pointer;box-shadow:0 0 30px #00daff44;margin-top:8px}
   .activate:disabled{background:#1a3050;color:#5a7a90;box-shadow:none;cursor:not-allowed}
-  .activate:active:not(:disabled){transform:scale(.98)}
-
-  /* tela operacional */
-  .teamhead{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(100deg,#1a5fc433,#001030aa);border:1px solid #00daff44;border-radius:16px;padding:14px 18px;margin-bottom:18px}
-  .teamhead .t{font-family:var(--star);font-weight:900;font-size:clamp(18px,3vw,26px)}
+  .teamhead{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(100deg,#1a5fc433,#001030aa);border:1px solid #00daff44;border-radius:16px;padding:14px 18px;margin-bottom:14px}
+  .teamhead .t{font-family:var(--star);font-weight:900;font-size:clamp(17px,3vw,24px)}
   .teamhead .s{color:var(--dim);font-size:13px;margin-top:2px}
-  .teamhead .online{display:flex;align-items:center;gap:7px;font-family:var(--star);font-size:11px;letter-spacing:.1em;color:var(--ok)}
+  .teamhead .online{display:flex;align-items:center;gap:7px;font-family:var(--star);font-size:11px;letter-spacing:.1em;color:var(--ok);margin-top:6px}
   .teamhead .online .d{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);animation:pulse 1.4s infinite}
   @keyframes pulse{50%{opacity:.4}}
   .btn-sm{font-family:var(--star);font-size:11px;letter-spacing:.05em;color:var(--dim);background:transparent;border:1px solid #1a5fc455;border-radius:9px;padding:8px 11px;cursor:pointer}
-
-  /* botão DESAFIAR (destaque, mas não tela inteira) */
-  .challenge-btn{width:100%;font-family:var(--star);font-weight:900;font-size:clamp(20px,4vw,30px);letter-spacing:.06em;text-transform:uppercase;
-    color:#fff;background:linear-gradient(135deg,#ff5b1f,#e01030);border:none;border-radius:16px;padding:18px;cursor:pointer;margin-bottom:16px;
-    box-shadow:0 0 30px #ff5b1f44;position:relative;overflow:hidden;transition:transform .15s}
+  .tabs{display:flex;gap:8px;margin-bottom:18px}
+  .tab{flex:1;font-family:var(--star);font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--dim);background:var(--card);border:1px solid #1a5fc444;border-radius:12px;padding:13px 8px;cursor:pointer;transition:all .2s;position:relative}
+  .tab.on{color:#001030;background:var(--cyan);border-color:var(--cyan)}
+  .tab .badge{position:absolute;top:-6px;right:-6px;background:var(--no);color:#fff;font-family:var(--body);font-size:11px;font-weight:700;border-radius:99px;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+  .tab.locked{opacity:.5}
+  .pane{display:none}.pane.on{display:block;animation:fade .25s both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .quick{display:flex;gap:10px;margin-bottom:14px}
+  .quick input{flex:1;background:#001030;border:1px solid #1a5fc455;border-radius:11px;padding:13px 15px;color:var(--ink);font-family:var(--body);font-size:16px}
+  .quick button{font-family:var(--star);font-weight:700;font-size:14px;color:#001030;background:var(--ok);border:none;border-radius:11px;padding:0 18px;cursor:pointer}
+  .search{width:100%;background:#001030;border:1px solid #1a5fc455;border-radius:12px;padding:14px 16px;color:var(--ink);font-family:var(--body);font-size:16px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .bro{background:var(--card);border:1px solid #1a5fc455;border-radius:16px;padding:15px;cursor:pointer;text-align:left;color:var(--ink);transition:transform .15s}
+  .bro:active{transform:scale(.97)}
+  .bro .nm{font-weight:700;font-size:18px;margin-bottom:8px}
+  .bro .sc{font-family:var(--star);font-weight:900;font-size:22px;color:var(--cyan)}
+  .bro .dt{font-size:11px;color:var(--dim);margin-top:2px}
+  .challenge-btn{width:100%;font-family:var(--star);font-weight:900;font-size:clamp(22px,4vw,30px);letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,var(--fire),#e01030);border:none;border-radius:16px;padding:24px;cursor:pointer;box-shadow:0 0 30px #ff5b1f44;position:relative;overflow:hidden;transition:transform .15s}
   .challenge-btn:active{transform:scale(.98)}
-  .challenge-btn span{display:block;font-family:var(--body);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:none;opacity:.85;margin-top:4px}
+  .challenge-btn span{display:block;font-family:var(--body);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:none;opacity:.85;margin-top:6px}
   .challenge-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 38%,#fff3 50%,transparent 62%);background-size:280% 100%;animation:csweep 3.5s linear infinite}
-  /* botão travado: em batalha */
-  .challenge-btn.locked{background:linear-gradient(135deg,#2a1518,#1a0e12);color:#ff8a6e;box-shadow:none;cursor:not-allowed;border:1px solid #ff5b1f44}
-  .challenge-btn.locked::after{display:none}
-  .challenge-btn.locked span{color:#a06a5a;opacity:1}
   @keyframes csweep{to{background-position:-280% 0}}
-
-  /* overlay do fluxo de desafio */
+  .challenge-btn.locked{background:linear-gradient(135deg,#2a1518,#1a0e12);color:#ff8a6e;box-shadow:none;cursor:not-allowed}
+  .challenge-btn.locked::after{display:none}.challenge-btn.locked span{color:#a06a5a;opacity:1}
+  .arena-empty{text-align:center;color:var(--dim);padding:50px 20px;font-size:16px}
+  .sectitle{font-family:var(--star);font-size:12px;letter-spacing:.15em;color:var(--cyan);margin:18px 0 10px}
+  .sectitle.warn{color:var(--no)}
+  .pcard{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid #1a5fc455;border-radius:14px;padding:12px 14px;margin-bottom:10px;flex-wrap:wrap}
+  .pcard .foto{width:70px;height:70px;border-radius:10px;object-fit:cover;cursor:zoom-in;flex-shrink:0;border:1px solid #1a5fc455}
+  .pcard .info{flex:1;min-width:140px}
+  .pcard .nm{font-family:var(--star);font-weight:700;font-size:15px}
+  .pcard .meta{color:var(--dim);font-size:12px;margin-top:3px}
+  .pcard .ty{font-size:12px;font-weight:700;margin-top:2px}.pcard .ty.visita{color:var(--cyan)}.pcard .ty.doc{color:var(--gold)}
+  .pcard button{font-family:var(--star);font-weight:700;font-size:12px;border:none;border-radius:10px;padding:11px 14px;cursor:pointer}
+  .contest{background:transparent;border:1px solid var(--no)!important;color:var(--no)}
+  .contested-tag{font-size:11px;color:var(--gold);font-weight:700}
+  .anular{background:var(--ok);color:#012}.remover{background:var(--no);color:#fff}
   .cmodal{position:fixed;inset:0;z-index:30;display:none;background:rgba(0,4,12,.92);overflow-y:auto;padding:20px}
   .cmodal.on{display:block}
   .csheet{max-width:620px;margin:20px auto;background:#08152e;border:1px solid #1a5fc466;border-radius:22px;padding:24px;animation:up .3s cubic-bezier(.2,1.3,.4,1) both}
@@ -73,285 +80,224 @@
   .csheet h3{font-family:var(--star);font-weight:900;font-size:22px;margin-bottom:4px}
   .csheet .cl{color:var(--dim);font-size:14px;margin-bottom:18px}
   .levels{display:flex;gap:12px}
-  .lvl{flex:1;border:1px solid #1a5fc455;border-radius:16px;padding:22px 16px;cursor:pointer;text-align:center;background:#0a1f44;transition:transform .15s}
-  .lvl:active{transform:scale(.97)}
+  .lvl{flex:1;border:1px solid #1a5fc455;border-radius:16px;padding:22px 16px;cursor:pointer;text-align:center;background:#0a1f44}
   .lvl .ic{font-size:34px}.lvl .nm{font-family:var(--star);font-weight:700;font-size:16px;margin-top:8px}.lvl .ds{color:var(--dim);font-size:12px;margin-top:4px}
   .clist{display:flex;flex-direction:column;gap:10px}
-  .crow{display:flex;align-items:center;gap:14px;background:#0a1f44;border:1px solid #1a5fc455;border-radius:14px;padding:14px 16px;cursor:pointer;transition:transform .15s}
-  .crow:active{transform:scale(.98)}
-  .crow .av{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--cury),#003070);display:flex;align-items:center;justify-content:center;font-family:var(--star);font-weight:900;font-size:19px;flex-shrink:0}
-  .crow .info{flex:1;min-width:0}.crow .nm{font-family:var(--star);font-weight:700;font-size:17px}.crow .s{color:var(--dim);font-size:12px}
-  .crow .on{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ok)}.crow .on .d{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .crow{display:flex;align-items:center;gap:14px;background:#0a1f44;border:1px solid #1a5fc455;border-radius:14px;padding:14px 16px;cursor:pointer}
+  .crow .av{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--cury),#003070);display:flex;align-items:center;justify-content:center;font-family:var(--star);font-weight:900;font-size:19px}
+  .crow .info{flex:1}.crow .nm{font-family:var(--star);font-weight:700;font-size:17px}.crow .s{color:var(--dim);font-size:12px}
+  .crow .on{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ok)}.crow .on .d{width:8px;height:8px;border-radius:50%;background:var(--ok)}
   .ruletabs{display:flex;gap:12px;margin-bottom:16px}
-  .rt{flex:1;border:1px solid #1a5fc455;border-radius:14px;padding:16px;text-align:center;cursor:pointer;font-family:var(--star);font-weight:700;font-size:15px;color:var(--ink);background:#0a1f44;transition:all .2s}
-  .rt.sel{background:var(--cyan);color:#001030;border-color:var(--cyan)}
-  .rt small{display:block;font-family:var(--body);font-weight:600;font-size:12px;opacity:.8;margin-top:3px}
+  .rt{flex:1;border:1px solid #1a5fc455;border-radius:14px;padding:16px;text-align:center;cursor:pointer;font-family:var(--star);font-weight:700;font-size:15px;color:var(--ink);background:#0a1f44}
+  .rt.sel{background:var(--cyan);color:#001030;border-color:var(--cyan)}.rt small{display:block;font-family:var(--body);font-weight:600;font-size:12px;opacity:.8;margin-top:3px}
   .vals{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
-  .val{font-family:var(--num),var(--star);font-weight:700;font-size:24px;color:var(--ink);background:#0a1f44;border:1px solid #1a5fc455;border-radius:12px;padding:12px 22px;cursor:pointer;min-width:70px;text-align:center;transition:all .2s}
+  .val{font-family:var(--num);font-weight:700;font-size:24px;color:var(--ink);background:#0a1f44;border:1px solid #1a5fc455;border-radius:12px;padding:12px 22px;cursor:pointer;min-width:70px;text-align:center}
   .val.sel{background:var(--gold);color:#001030;border-color:var(--gold)}.val small{display:block;font-family:var(--body);font-weight:600;font-size:11px;opacity:.7}
-  .fire{width:100%;font-family:var(--star);font-weight:900;font-size:19px;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#ff5b1f,#e01030);border:none;border-radius:14px;padding:18px;cursor:pointer;box-shadow:0 0 26px #ff5b1f44}
+  .fire{width:100%;font-family:var(--star);font-weight:900;font-size:19px;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,var(--fire),#e01030);border:none;border-radius:14px;padding:18px;cursor:pointer;box-shadow:0 0 26px #ff5b1f44}
   .fire:disabled{background:#3a2030;color:#7a5a60;box-shadow:none;cursor:not-allowed}
   .waiting{text-align:center;padding:30px 10px}
-  .waiting .vs{font-family:var(--star);font-weight:900;font-size:clamp(20px,4vw,30px);margin:12px 0}
-  .waiting .vs .o1{color:var(--cyan)}.waiting .vs .o2{color:#ff5b1f}
-  .spinner{width:64px;height:64px;border:5px solid #1a3050;border-top-color:#ff5b1f;border-radius:50%;margin:18px auto;animation:spin 1s linear infinite}
+  .waiting .vs{font-family:var(--star);font-weight:900;font-size:clamp(20px,4vw,30px);margin:12px 0}.waiting .vs .o1{color:var(--cyan)}.waiting .vs .o2{color:var(--fire)}
+  .spinner{width:64px;height:64px;border:5px solid #1a3050;border-top-color:var(--fire);border-radius:50%;margin:18px auto;animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .countdown{font-family:var(--star);font-weight:900;font-size:56px;color:#ff5b1f}
-  .waiting .st{color:var(--dim);letter-spacing:.08em;margin-top:6px}
-
-  .quick{display:flex;gap:10px;margin-bottom:16px}
-  .quick input{flex:1;background:#001030;border:1px solid #1a5fc455;border-radius:11px;padding:13px 15px;color:var(--ink);font-family:var(--body);font-size:16px}
-  .quick button{font-family:var(--star);font-weight:700;font-size:14px;color:#001030;background:var(--ok);border:none;border-radius:11px;padding:0 18px;cursor:pointer}
-
-  .search{width:100%;background:#001030;border:1px solid #1a5fc455;border-radius:12px;padding:14px 16px;color:var(--ink);font-family:var(--body);font-size:16px;margin-bottom:14px}
-
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-  .bro{background:var(--card);border:1px solid #1a5fc455;border-radius:16px;padding:15px;cursor:pointer;text-align:left;color:var(--ink);position:relative;transition:transform .15s}
-  .bro:active{transform:scale(.97)}
-  .bro .nm{font-weight:700;font-size:18px;margin-bottom:8px}
-  .bro .sc{font-family:var(--star);font-weight:900;font-size:22px;color:var(--cyan)}
-  .bro .dt{font-size:11px;color:var(--dim);margin-top:2px}
-  .bro .pend{position:absolute;top:10px;right:10px;background:var(--gold);color:#001030;font-size:10px;font-weight:700;border-radius:99px;padding:2px 7px}
-
-  /* modal marcar ponto */
+  .countdown{font-family:var(--num);font-weight:700;font-size:56px;color:var(--fire)}.waiting .st{color:var(--dim);margin-top:6px}
   .modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(0,4,12,.85);padding:16px}
   .modal.on{display:flex}
   .sheet{background:#08152e;border:1px solid #1a5fc466;border-radius:22px;padding:24px;width:100%;max-width:440px;animation:up .3s cubic-bezier(.2,1.3,.4,1) both}
-  @keyframes up{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
   .sheet .who{font-family:var(--star);font-weight:900;font-size:24px;margin-bottom:4px}
   .sheet .lab{font-size:12px;letter-spacing:.2em;color:var(--cyan);margin-bottom:16px}
   .types{display:flex;gap:12px;margin-bottom:18px}
-  .ty{flex:1;border:1px solid;border-radius:14px;padding:16px;cursor:pointer;text-align:center;font-family:var(--star);font-weight:700;font-size:15px;transition:all .2s}
-  .ty.visita{border-color:#00daff66;color:var(--cyan)}.ty.visita.sel{background:var(--cyan);color:#001030}
-  .ty.doc{border-color:#ffcf4d66;color:var(--gold)}.ty.doc.sel{background:var(--gold);color:#001030}
-  .ty small{display:block;font-family:var(--body);font-weight:600;font-size:12px;opacity:.8;margin-top:3px}
-  .photo{width:100%;border:1px dashed #00daff66;border-radius:14px;padding:22px;text-align:center;color:var(--cyan);font-family:var(--body);font-size:16px;cursor:pointer;background:transparent;margin-bottom:18px}
+  .ty2{flex:1;border:1px solid;border-radius:14px;padding:16px;cursor:pointer;text-align:center;font-family:var(--star);font-weight:700;font-size:15px}
+  .ty2.visita{border-color:#00daff66;color:var(--cyan)}.ty2.visita.sel{background:var(--cyan);color:#001030}
+  .ty2.doc{border-color:#ffcf4d66;color:var(--gold)}.ty2.doc.sel{background:var(--gold);color:#001030}
+  .ty2 small{display:block;font-family:var(--body);font-weight:600;font-size:12px;opacity:.8;margin-top:3px}
+  .photo{width:100%;border:1px dashed #00daff66;border-radius:14px;padding:22px;text-align:center;color:var(--cyan);font-size:16px;cursor:pointer;background:transparent;margin-bottom:8px}
   .photo img{width:100%;border-radius:10px;max-height:200px;object-fit:cover}
+  .reqphoto{color:var(--gold);font-size:12px;text-align:center;margin-bottom:16px}
   .acts{display:flex;gap:10px}
   .acts button{flex:1;font-family:var(--star);font-weight:700;font-size:14px;border:none;border-radius:12px;padding:15px;cursor:pointer}
   .cancel{background:transparent;border:1px solid #1a5fc455!important;color:var(--dim)}
-  .send{background:linear-gradient(135deg,var(--cyan),var(--cury));color:#001030}
-  .send:disabled{background:#1a3050;color:#5a7a90;cursor:not-allowed}
-  .note{text-align:center;color:var(--dim);font-size:12px;margin-top:12px}
-
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:50;background:#08152e;border:1px solid var(--ok);border-radius:12px;padding:14px 22px;font-weight:700;color:var(--ok);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none}
-  .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}
+  .send{background:linear-gradient(135deg,var(--cyan),var(--cury));color:#001030}.send:disabled{background:#1a3050;color:#5a7a90;cursor:not-allowed}
+  .zoom{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(0,2,8,.93);padding:20px;cursor:zoom-out}
+  .zoom.on{display:flex}.zoom img{max-width:100%;max-height:100%;border-radius:12px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;background:#08152e;border:1px solid var(--ok);border-radius:12px;padding:14px 22px;font-weight:700;color:var(--ok);opacity:0;transition:all .3s;pointer-events:none;text-align:center;max-width:90vw}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}.toast.bad{border-color:var(--no);color:var(--no)}
 </style>
 </head>
 <body>
 <div class="stars"></div>
 <div class="wrap">
-  <div class="top">
-    <div class="logo"><span class="mk">CURY</span><span class="ar">ARENA</span></div>
-    <div class="eyebrow">TABLET DA EQUIPE</div>
-  </div>
+  <div class="top"><div class="logo"><span class="mk">CURY</span><span class="ar">ARENA</span></div><div class="eyebrow">TABLET DA EQUIPE</div></div>
   <div id="view"></div>
 </div>
-
 <div class="modal" id="modal"></div>
 <div class="cmodal" id="cmodal"></div>
+<div class="zoom" id="zoom"><img id="zoomImg" src=""/></div>
 <div class="toast" id="toast"></div>
-<button onclick="toggleBattle()" style="position:fixed;bottom:14px;right:14px;z-index:60;background:#26406a;color:#cfe2ff;border:none;border-radius:10px;padding:10px 14px;font-family:'Rajdhani';font-weight:700;cursor:pointer">🥊 simular em batalha</button>
+<button onclick="toggleBattleSim()" style="position:fixed;bottom:12px;right:12px;z-index:70;background:#26406a;color:#cfe2ff;border:none;border-radius:10px;padding:9px 13px;font-family:'Rajdhani';font-weight:700;cursor:pointer;font-size:12px">🥊 simular duelo</button>
 
+<script src="arena-api.js"></script>
 <script>
-// ===== BASE DE EXEMPLO (viria da Recepção/CSV) =====
+let API_ON=false; // vira true se o banco responder
 let BASE=[
   {dir:"Diretoria Alfa",sup:"Sup. Centauro",ger:"Ger. Órion",corretores:["Lucas","Marina","Pedro","Bia"]},
   {dir:"Diretoria Alfa",sup:"Sup. Centauro",ger:"Ger. Pulsar",corretores:["Rafa","Duda","Tiago"]},
-  {dir:"Diretoria Alfa",sup:"Sup. Andrômeda",ger:"Ger. Vega",corretores:["Carol","João","Lia","Nando","Sofia"]},
-  {dir:"Diretoria Beta",sup:"Sup. Lyra",ger:"Ger. Cometa",corretores:["Bruno","Aline"]},
-  {dir:"Diretoria Beta",sup:"Sup. Lyra",ger:"Ger. Nebulosa",corretores:["Gabe","Rita","Theo"]},
+  {dir:"Diretoria Alfa",sup:"Sup. Andrômeda",ger:"Ger. Vega",corretores:["Carol","João","Lia","Nando"]},
 ];
-// estado: pontos por corretor (chave: ger|nome), pendências
-let scores={}, pend={};
-let sel={dir:null,sup:null,ger:null}; // logon
-let active=false;
-let inBattle=false; // true quando a equipe está num duelo (virá do banco/TV depois)
-
+let scores={}, sel={dir:null,sup:null,ger:null}, active=false, tab="equipe";
+let inBattle=false, faltas={};
+let pontosAdversarios=[], contestacoesRecebidas=[];
+function ph(t,c){return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='"+c+"'/><text x='100' y='100' font-family='sans-serif' font-size='16' fill='#fff' text-anchor='middle'>"+t+"</text></svg>")));}
 const uniq=a=>[...new Set(a)];
-function dirs(){return uniq(BASE.map(b=>b.dir));}
-function sups(){return uniq(BASE.filter(b=>b.dir===sel.dir).map(b=>b.sup));}
-function gers(){return uniq(BASE.filter(b=>b.dir===sel.dir&&b.sup===sel.sup).map(b=>b.ger));}
-function team(){return BASE.find(b=>b.dir===sel.dir&&b.sup===sel.sup&&b.ger===sel.ger);}
-function keyOf(n){return sel.ger+"|"+n;}
+const dirs=()=>uniq(BASE.map(b=>b.dir));
+const sups=()=>uniq(BASE.filter(b=>b.dir===sel.dir).map(b=>b.sup));
+const gers=()=>uniq(BASE.filter(b=>b.dir===sel.dir&&b.sup===sel.sup).map(b=>b.ger));
+const team=()=>BASE.find(b=>b.dir===sel.dir&&b.sup===sel.sup&&b.ger===sel.ger);
+const keyOf=n=>sel.ger+"|"+n;
+const agora=()=>new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
 
 function render(){
   const v=document.getElementById("view");
-  if(!active){ v.innerHTML=logonHTML(); bindLogon(); }
-  else { v.innerHTML=opHTML(); bindOp(); }
+  if(!active){v.innerHTML=logonHTML();bindLogon();return;}
+  v.innerHTML=shellHTML();bindShell();
+  const p=document.getElementById("pane");
+  if(tab==="equipe"){p.innerHTML=equipeHTML();bindEquipe();}
+  if(tab==="arena"){p.innerHTML=arenaHTML();bindArena();}
 }
-
-// ---------- LOGON (cascata) ----------
 function logonHTML(){
-  const stepOpts=(arr,cur,key)=>arr.map(o=>`<button class="opt${cur===o?' sel':''}" data-k="${key}" data-v="${o}">${o}</button>`).join("");
-  return `
-  <div class="eyebrow">ATIVAR EQUIPE NA ESTAÇÃO</div>
-  <h2>Faça o logon da sua equipe</h2>
-  <p class="lead">Selecione sua posição na hierarquia. Isso ativa sua equipe na arena.</p>
-  <div class="step">
-    <div class="lbl">1 · DIRETORIA</div>
-    <div class="opts">${stepOpts(dirs(),sel.dir,"dir")}</div>
-  </div>
-  <div class="step ${sel.dir?'':'off'}">
-    <div class="lbl">2 · SUPERINTENDENTE</div>
-    <div class="opts">${sel.dir?stepOpts(sups(),sel.sup,"sup"):''}</div>
-  </div>
-  <div class="step ${sel.sup?'':'off'}">
-    <div class="lbl">3 · VOCÊ (GERENTE)</div>
-    <div class="opts">${sel.sup?stepOpts(gers(),sel.ger,"ger"):''}</div>
-  </div>
+  const o=(arr,cur,k)=>arr.map(x=>`<button class="opt${cur===x?' sel':''}" data-k="${k}" data-v="${x}">${x}</button>`).join("");
+  return `<div class="eyebrow">ATIVAR EQUIPE NA ESTAÇÃO</div><h2>Faça o logon da sua equipe</h2>
+  <p class="lead">Selecione sua posição. Isso ativa sua equipe na arena.</p>
+  <div class="step"><div class="lbl">1 · DIRETORIA</div><div class="opts">${o(dirs(),sel.dir,"dir")}</div></div>
+  <div class="step ${sel.dir?'':'off'}"><div class="lbl">2 · SUPERINTENDENTE</div><div class="opts">${sel.dir?o(sups(),sel.sup,"sup"):''}</div></div>
+  <div class="step ${sel.sup?'':'off'}"><div class="lbl">3 · VOCÊ (GERENTE)</div><div class="opts">${sel.sup?o(gers(),sel.ger,"ger"):''}</div></div>
   <button class="activate" id="actBtn" ${sel.ger?'':'disabled'}>⚡ Ativar equipe na arena</button>`;
 }
 function bindLogon(){
-  document.querySelectorAll(".opt[data-k]").forEach(b=>b.onclick=()=>{
-    const k=b.dataset.k,val=b.dataset.v;
-    if(k==="dir"){sel.dir=val;sel.sup=null;sel.ger=null;}
-    if(k==="sup"){sel.sup=val;sel.ger=null;}
-    if(k==="ger"){sel.ger=val;}
-    render();
-  });
-  const a=document.getElementById("actBtn");
-  if(a)a.onclick=()=>{active=true;render();toast(team().ger+" ativada na arena! 🚀");};
+  document.querySelectorAll(".opt[data-k]").forEach(b=>b.onclick=()=>{const k=b.dataset.k,val=b.dataset.v;
+    if(k==="dir"){sel.dir=val;sel.sup=null;sel.ger=null;}if(k==="sup"){sel.sup=val;sel.ger=null;}if(k==="ger")sel.ger=val;render();});
+  const a=document.getElementById("actBtn");if(a)a.onclick=async()=>{
+    active=true;
+    const t=team();
+    if(API_ON&&t.id){ try{ await ArenaAPI.setOnline(t.id,true); }catch(e){} }
+    render();toast(t.ger+" ativada na arena! 🚀");
+  };
 }
-
-// ---------- OPERACIONAL ----------
+function shellHTML(){
+  const t=team();const nC=contestacoesRecebidas.length;
+  return `<div class="teamhead"><div><div class="t">${t.ger}</div><div class="s">${t.dir} · ${t.sup}</div>
+    <div class="online"><span class="d"></span> ONLINE NA ARENA</div></div><button class="btn-sm" id="logout">trocar equipe</button></div>
+  <div class="tabs">
+    <button class="tab ${tab==='equipe'?'on':''}" data-tab="equipe">👥 Equipe</button>
+    <button class="tab ${tab==='arena'?'on':''} ${inBattle?'':'locked'}" data-tab="arena">🛡 Arena${nC?`<span class="badge">${nC}</span>`:''}</button>
+  </div><div class="pane on" id="pane"></div>`;
+}
+function bindShell(){
+  document.getElementById("logout").onclick=()=>{active=false;sel={dir:null,sup:null,ger:null};tab="equipe";render();};
+  document.querySelectorAll(".tab[data-tab]").forEach(b=>b.onclick=()=>{
+    if(b.dataset.tab==="arena"&&!inBattle){toast("A aba Arena abre quando você está em um duelo");return;}
+    tab=b.dataset.tab;render();});
+}
 let filter="";
-function opHTML(){
-  const t=team();
-  const list=t.corretores.filter(n=>n.toLowerCase().includes(filter.toLowerCase()));
-  return `
-  <div class="teamhead">
-    <div>
-      <div class="t">${t.ger}</div>
-      <div class="s">${t.dir} · ${t.sup}</div>
-      <div class="online" style="margin-top:6px"><span class="d"></span> ONLINE NA ARENA</div>
-    </div>
-    <button class="btn-sm" id="logout">trocar equipe</button>
-  </div>
-  <button class="challenge-btn${inBattle?' locked':''}" id="challengeBtn">${inBattle?'🥊 VOCÊ JÁ ESTÁ NA ARENA — FOCO NA LUTA! <span>termine a batalha atual para desafiar de novo</span>':'⚔ DESAFIAR <span>chame alguém para a arena</span>'}</button>
-  <div class="quick">
-    <input id="qn" placeholder="Cadastro rápido — apelido do corretor"/>
-    <button id="qadd">+ Add</button>
-  </div>
+function equipeHTML(){
+  const t=team();const list=t.corretores.filter(n=>n.toLowerCase().includes(filter.toLowerCase()));
+  const challengeBtn = inBattle
+    ? `<button class="challenge-btn locked" style="margin-bottom:16px">🥊 VOCÊ JÁ ESTÁ NA ARENA — FOCO NA LUTA! <span>termine a batalha atual para desafiar de novo</span></button>`
+    : `<button class="challenge-btn" id="challengeBtn" style="margin-bottom:16px">⚔ DESAFIAR <span>chame alguém para a arena</span></button>`;
+  return `${challengeBtn}
+  <div class="quick"><input id="qn" placeholder="Cadastro rápido — apelido"/><button id="qadd">+ Add</button></div>
   <input class="search" id="search" placeholder="🔍 Buscar corretor…" value="${filter}"/>
-  <div class="grid">
-    ${list.map(n=>{
-      const k=keyOf(n);const sc=scores[k]||{v:0,d:0};const p=(pend[k]||0);
-      return `<button class="bro" data-n="${n}">
-        ${p?`<span class="pend">${p} pend.</span>`:''}
-        <div class="nm">${n}</div>
-        <div class="sc">${sc.v*1+sc.d*3}</div>
-        <div class="dt">${sc.v} vis · ${sc.d} doc</div>
-      </button>`;
-    }).join("")}
-  </div>`;
+  <div class="grid">${list.map(n=>{const sc=scores[keyOf(n)]||{v:0,d:0};
+    return `<button class="bro" data-n="${n}"><div class="nm">${n}</div><div class="sc">${sc.v*1+sc.d*3}</div><div class="dt">${sc.v} vis · ${sc.d} doc</div></button>`;}).join("")}</div>`;
 }
-function bindOp(){
-  document.getElementById("logout").onclick=()=>{active=false;sel={dir:null,sup:null,ger:null};filter="";render();};
-  document.getElementById("search").oninput=e=>{filter=e.target.value;const s=e.target;render();const ns=document.getElementById("search");ns.focus();ns.value=filter;ns.setSelectionRange(filter.length,filter.length);};
-  document.getElementById("qadd").onclick=()=>{
-    const inp=document.getElementById("qn");const nm=inp.value.trim();if(!nm)return;
-    team().corretores.push(nm);toast(nm+" cadastrado!");render();
-  };
-  document.querySelectorAll(".bro").forEach(b=>b.onclick=()=>openModal(b.dataset.n));
-  document.getElementById("challengeBtn").onclick=()=>{
-    if(inBattle){toast("🥊 Você já está na arena — foco na luta!");return;}
-    openChallenge();
-  };
+function bindEquipe(){
+  const cb=document.getElementById("challengeBtn");if(cb)cb.onclick=openChallenge;
+  document.getElementById("qadd").onclick=()=>{const i=document.getElementById("qn");const nm=i.value.trim();if(!nm)return;team().corretores.push(nm);toast(nm+" cadastrado!");render();};
+  document.getElementById("search").oninput=e=>{filter=e.target.value;render();const s=document.getElementById("search");if(s){s.focus();s.value=filter;s.setSelectionRange(filter.length,filter.length);}};
+  document.querySelectorAll(".bro").forEach(b=>b.onclick=()=>openMarcar(b.dataset.n));
 }
-
-// ---------- MODAL marcar ponto ----------
 let mTipo=null,mFoto=null,mNome=null;
-function openModal(n){
-  mNome=n;mTipo=null;mFoto=null;
-  const m=document.getElementById("modal");
-  m.innerHTML=`<div class="sheet">
-    <div class="lab">MARCAR PONTO</div>
-    <div class="who">${n}</div>
-    <div class="types">
-      <div class="ty visita" id="tyV">🎯 Visita<small>+1 ponto</small></div>
-      <div class="ty doc" id="tyD">🏆 Documentação<small>+3 pontos</small></div>
-    </div>
+function openMarcar(n){
+  mNome=n;mTipo=null;mFoto=null;const m=document.getElementById("modal");
+  m.innerHTML=`<div class="sheet"><div class="lab">MARCAR PONTO</div><div class="who">${n}</div>
+    <div class="types"><div class="ty2 visita" id="tyV">🎯 Visita<small>+1</small></div><div class="ty2 doc" id="tyD">🏆 Documentação<small>+3</small></div></div>
     <input type="file" accept="image/*" capture="environment" id="file" style="display:none"/>
-    <button class="photo" id="photoBtn">📷 Tirar foto / anexar comprovante</button>
-    <div class="acts">
-      <button class="cancel" id="mCancel">Cancelar</button>
-      <button class="send" id="mSend" disabled>Enviar p/ aprovação</button>
-    </div>
-    <div class="note">Vira ponto na TV só após aprovação de um superior.</div>
-  </div>`;
+    <button class="photo" id="photoBtn">📷 Tirar foto do comprovante</button>
+    <div class="reqphoto">⚠ Foto obrigatória — o ponto vale na hora e os adversários poderão conferir</div>
+    <div class="acts"><button class="cancel" id="mCancel">Cancelar</button><button class="send" id="mSend" disabled>Registrar ponto</button></div></div>`;
   m.classList.add("on");
-  document.getElementById("tyV").onclick=()=>{mTipo="visita";upd();};
-  document.getElementById("tyD").onclick=()=>{mTipo="doc";upd();};
+  document.getElementById("tyV").onclick=()=>{mTipo="visita";updM();};
+  document.getElementById("tyD").onclick=()=>{mTipo="doc";updM();};
   document.getElementById("photoBtn").onclick=()=>document.getElementById("file").click();
-  document.getElementById("file").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{mFoto=r.result;upd();};r.readAsDataURL(f);};
-  document.getElementById("mCancel").onclick=closeModal;
-  document.getElementById("mSend").onclick=sendPoint;
+  document.getElementById("file").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{mFoto=r.result;updM();};r.readAsDataURL(f);};
+  document.getElementById("mCancel").onclick=()=>m.classList.remove("on");
+  document.getElementById("mSend").onclick=registrarPonto;
 }
-function upd(){
+function updM(){
   document.getElementById("tyV").classList.toggle("sel",mTipo==="visita");
   document.getElementById("tyD").classList.toggle("sel",mTipo==="doc");
-  if(mFoto){document.getElementById("photoBtn").innerHTML=`<img src="${mFoto}"/>`;}
+  if(mFoto)document.getElementById("photoBtn").innerHTML=`<img src="${mFoto}"/>`;
   document.getElementById("mSend").disabled=!(mTipo&&mFoto);
 }
-function sendPoint(){
-  const k=keyOf(mNome);
-  pend[k]=(pend[k]||0)+1;
-  closeModal();
-  toast(mNome+": "+(mTipo==="doc"?"documentação":"visita")+" enviada p/ aprovação ✓");
-  render();
+async function registrarPonto(){
+  const k=keyOf(mNome);const s=scores[k]||{v:0,d:0};if(mTipo==="visita")s.v++;else s.d++;scores[k]=s;
+  document.getElementById("modal").classList.remove("on");
+  // grava no banco (se conectado)
+  if(API_ON){
+    const t=team();
+    const corr=(t.corretoresIds&&t.corretoresIds[mNome])||null;
+    try{ await ArenaAPI.marcarPonto({equipe_id:t.id, corretor_id:corr, tipo:(mTipo==="doc"?"documentacao":"visita"), foto:mFoto}); }
+    catch(e){ toast("Salvo localmente (sem conexão com o banco)",true); }
+  }
+  toast(`Ponto de ${mNome} registrado! Vale na hora ⚡`);render();
 }
-function closeModal(){document.getElementById("modal").classList.remove("on");}
-
-function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),2400);}
-
-// ===== FLUXO DE DESAFIO =====
-const ONLINE=[
-  {ger:"Ger. Pulsar",sup:"Sup. Centauro",corretores:["Rafa","Duda","Tiago"]},
-  {ger:"Ger. Vega",sup:"Sup. Andrômeda",corretores:["Carol","João","Lia","Nando"]},
-  {ger:"Ger. Cometa",sup:"Sup. Lyra",corretores:["Bruno","Aline"]},
-];
+function arenaHTML(){
+  if(!inBattle) return `<div class="arena-empty">🛡<br><br>Você não está em nenhum duelo agora.<br>Esta aba abre quando um desafio começa.</div>`;
+  let h="";
+  if(contestacoesRecebidas.length){
+    h+=`<div class="sectitle warn">⚠ CONTESTAÇÕES CONTRA VOCÊ — converse e decida</div>`;
+    h+=contestacoesRecebidas.map(c=>`<div class="pcard"><img class="foto" src="${c.foto}" data-zoom="${c.foto}"/>
+      <div class="info"><div class="nm">${c.tipo==='doc'?'Documentação':'Visita'} contestada</div><div class="meta">por ${c.equipe} · ${c.hora}</div></div>
+      <div style="display:flex;gap:8px"><button class="anular" data-anular="${c.id}">✓ Anular</button><button class="remover" data-remover="${c.id}">✕ Remover ponto</button></div></div>`).join("");
+  }
+  h+=`<div class="sectitle">PONTOS DOS ADVERSÁRIOS — confira os comprovantes</div>`;
+  if(!pontosAdversarios.length) h+=`<p class="lead">Nenhum ponto dos adversários ainda.</p>`;
+  else h+=pontosAdversarios.map(p=>`<div class="pcard"><img class="foto" src="${p.foto}" data-zoom="${p.foto}"/>
+    <div class="info"><div class="nm">${p.equipe}</div><div class="ty ${p.tipo}">${p.tipo==='doc'?'🏆 Documentação':'🎯 Visita'}</div><div class="meta">${p.hora}</div></div>
+    ${p.contestado?`<span class="contested-tag">contestado ✓</span>`:`<button class="contest" data-contest="${p.id}">⚑ Contestar</button>`}</div>`).join("");
+  return h;
+}
+function bindArena(){
+  document.querySelectorAll("[data-zoom]").forEach(i=>i.onclick=()=>{document.getElementById("zoomImg").src=i.dataset.zoom;document.getElementById("zoom").classList.add("on");});
+  document.querySelectorAll("[data-contest]").forEach(b=>b.onclick=()=>{const p=pontosAdversarios.find(x=>x.id==b.dataset.contest);p.contestado=true;toast(`Você contestou um ponto de ${p.equipe}. Eles serão avisados.`);render();});
+  document.querySelectorAll("[data-anular]").forEach(b=>b.onclick=()=>{contestacoesRecebidas=contestacoesRecebidas.filter(c=>c.id!=b.dataset.anular);toast("Contestação anulada — o ponto continua valendo.");render();});
+  document.querySelectorAll("[data-remover]").forEach(b=>b.onclick=()=>{
+    contestacoesRecebidas=contestacoesRecebidas.filter(x=>x.id!=b.dataset.remover);
+    const eq=team().ger;faltas[eq]=(faltas[eq]||0)+1;
+    if(faltas[eq]>=2){toast(`2ª FALTA! ${eq} DESCLASSIFICADO do duelo. Vitória do oponente.`,true);inBattle=false;tab="equipe";}
+    else toast(`FALTA confirmada — −1 ponto. Na TV: "FALTA". (1ª falta deste duelo)`);
+    render();});
+}
+const ONLINE=[{ger:"Ger. Pulsar",sup:"Sup. Centauro",corretores:["Rafa","Duda","Tiago"]},{ger:"Ger. Vega",sup:"Sup. Andrômeda",corretores:["Carol","João","Lia"]}];
 let cStep="level",cLevel=null,cOppGer=null,cOppCorr=null,cRuleType=null,cRuleVal=null,waitInt=null;
 function openChallenge(){cStep="level";cLevel=cOppGer=cOppCorr=cRuleType=cRuleVal=null;document.getElementById("cmodal").classList.add("on");cRender();}
 function closeChallenge(){document.getElementById("cmodal").classList.remove("on");clearInterval(waitInt);}
 function cRender(){
   const m=document.getElementById("cmodal");let h="";
-  if(cStep==="level") h=`
-    <button class="cback" onclick="closeChallenge()">✕ fechar</button>
-    <h3>Tipo de desafio</h3><p class="cl">O confronto é entre equipes ou entre corretores?</p>
-    <div class="levels">
-      <div class="lvl" onclick="cPickLevel('ger')"><div class="ic">🛡️</div><div class="nm">GERÊNCIA</div><div class="ds">equipe x equipe</div></div>
-      <div class="lvl" onclick="cPickLevel('corr')"><div class="ic">🎯</div><div class="nm">CORRETOR</div><div class="ds">corretor x corretor</div></div>
-    </div>`;
-  else if(cStep==="oppGer") h=`
-    <button class="cback" onclick="cBack('level')">← voltar</button>
-    <h3>${cLevel==='ger'?'Escolha a equipe rival':'Escolha o gerente do corretor'}</h3><p class="cl">Gerentes online agora:</p>
+  if(cStep==="level")h=`<button class="cback" onclick="closeChallenge()">✕ fechar</button><h3>Tipo de desafio</h3><p class="cl">Entre equipes ou corretores?</p>
+    <div class="levels"><div class="lvl" onclick="cPickLevel('ger')"><div class="ic">🛡️</div><div class="nm">GERÊNCIA</div><div class="ds">equipe x equipe</div></div>
+    <div class="lvl" onclick="cPickLevel('corr')"><div class="ic">🎯</div><div class="nm">CORRETOR</div><div class="ds">corretor x corretor</div></div></div>`;
+  else if(cStep==="oppGer")h=`<button class="cback" onclick="cBack('level')">← voltar</button><h3>${cLevel==='ger'?'Equipe rival':'Gerente do corretor'}</h3><p class="cl">Online agora:</p>
     <div class="clist">${ONLINE.map((o,i)=>`<div class="crow" onclick="cPickGer(${i})"><div class="av">${o.ger.split(" ").pop()[0]}</div><div class="info"><div class="nm">${o.ger}</div><div class="s">${o.sup}</div></div><div class="on"><span class="d"></span> online</div></div>`).join("")}</div>`;
-  else if(cStep==="oppCorr") h=`
-    <button class="cback" onclick="cBack('oppGer')">← voltar</button>
-    <h3>Qual corretor desafiar?</h3><p class="cl">Corretores de ${cOppGer.ger}:</p>
-    <div class="clist">${cOppGer.corretores.map((c,i)=>`<div class="crow" onclick="cPickCorr(${i})"><div class="av">${c[0]}</div><div class="info"><div class="nm">${c}</div><div class="s">${cOppGer.ger}</div></div></div>`).join("")}</div>`;
-  else if(cStep==="rule"){
-    const opp=cLevel==='ger'?cOppGer.ger:(cOppCorr+" ("+cOppGer.ger+")");
-    const opts=cRuleType==='meta'?[5,10,15,20]:[15,30,45,60];const unit=cRuleType==='meta'?'visitas':'min';
-    h=`<button class="cback" onclick="cBack('${cLevel==='ger'?'oppGer':'oppCorr'}')">← voltar</button>
-      <h3>Como vence?</h3><p class="cl">Desafiando: <b style="color:var(--cyan)">${opp}</b></p>
-      <div class="ruletabs">
-        <div class="rt ${cRuleType==='meta'?'sel':''}" onclick="cSetRule('meta')">🏁 POR META<small>primeiro a chegar</small></div>
-        <div class="rt ${cRuleType==='tempo'?'sel':''}" onclick="cSetRule('tempo')">⏱ POR TEMPO<small>quem fizer mais</small></div>
-      </div>
-      ${cRuleType?`<div class="vals">${opts.map(o=>`<div class="val ${cRuleVal===o?'sel':''}" onclick="cSetVal(${o})">${o}<small>${unit}</small></div>`).join("")}</div>`:''}
-      <button class="fire" ${cRuleType&&cRuleVal?'':'disabled'} onclick="cFire()">⚔ Lançar desafio</button>`;
-  }
-  else if(cStep==="waiting"){
-    const opp=cLevel==='ger'?cOppGer.ger:(cOppCorr+" ("+cOppGer.ger+")");
-    const rule=cRuleType==='meta'?`primeiro a ${cRuleVal} visitas`:`${cRuleVal} min — quem fizer mais`;
-    h=`<div class="waiting"><div class="eyebrow">DESAFIO LANÇADO</div>
-      <div class="vs"><span class="o1">${team().ger}</span> ⚔ <span class="o2">${opp}</span></div>
-      <div class="st">${rule}</div><div class="spinner"></div><div class="countdown" id="cwcd">10</div>
-      <div class="st">aguardando aceite do oponente…</div>
-      <button class="cback" style="margin-top:18px" onclick="closeChallenge()">cancelar</button></div>`;
-  }
+  else if(cStep==="oppCorr")h=`<button class="cback" onclick="cBack('oppGer')">← voltar</button><h3>Qual corretor?</h3><p class="cl">De ${cOppGer.ger}:</p>
+    <div class="clist">${cOppGer.corretores.map((c,i)=>`<div class="crow" onclick="cPickCorr(${i})"><div class="av">${c[0]}</div><div class="info"><div class="nm">${c}</div></div></div>`).join("")}</div>`;
+  else if(cStep==="rule"){const opp=cLevel==='ger'?cOppGer.ger:(cOppCorr+" ("+cOppGer.ger+")");const opts=cRuleType==='meta'?[5,10,15,20]:[15,30,45,60];const u=cRuleType==='meta'?'visitas':'min';
+    h=`<button class="cback" onclick="cBack('${cLevel==='ger'?'oppGer':'oppCorr'}')">← voltar</button><h3>Como vence?</h3><p class="cl">Desafiando: <b style="color:var(--cyan)">${opp}</b></p>
+    <div class="ruletabs"><div class="rt ${cRuleType==='meta'?'sel':''}" onclick="cSetRule('meta')">🏁 META<small>primeiro a chegar</small></div><div class="rt ${cRuleType==='tempo'?'sel':''}" onclick="cSetRule('tempo')">⏱ TEMPO<small>quem fizer mais</small></div></div>
+    ${cRuleType?`<div class="vals">${opts.map(o=>`<div class="val ${cRuleVal===o?'sel':''}" onclick="cSetVal(${o})">${o}<small>${u}</small></div>`).join("")}</div>`:''}
+    <button class="fire" ${cRuleType&&cRuleVal?'':'disabled'} onclick="cFire()">⚔ Lançar desafio</button>`;}
+  else if(cStep==="waiting"){const opp=cLevel==='ger'?cOppGer.ger:(cOppCorr+" ("+cOppGer.ger+")");
+    h=`<div class="waiting"><div class="eyebrow">DESAFIO LANÇADO</div><div class="vs"><span class="o1">${team().ger}</span> ⚔ <span class="o2">${opp}</span></div>
+    <div class="spinner"></div><div class="countdown" id="cwcd">10</div><div class="st">aguardando aceite…</div><button class="cback" style="margin-top:18px" onclick="closeChallenge()">cancelar</button></div>`;}
   m.innerHTML=`<div class="csheet">${h}</div>`;
 }
 function cBack(s){cStep=s;cRender();}
@@ -361,11 +307,41 @@ function cPickCorr(i){cOppCorr=cOppGer.corretores[i];cStep="rule";cRender();}
 function cSetRule(t){cRuleType=t;cRuleVal=null;cRender();}
 function cSetVal(v){cRuleVal=v;cRender();}
 function cFire(){cStep="waiting";cRender();let t=10;clearInterval(waitInt);
-  waitInt=setInterval(()=>{t--;const e=document.getElementById("cwcd");if(e)e.textContent=t;if(t<=0){clearInterval(waitInt);
-    closeChallenge();inBattle=true;render();toast("✅ "+(cLevel==='ger'?cOppGer.ger:cOppCorr)+" ACEITOU! Duelo na TV 🚀");}},1000);}
-function toggleBattle(){inBattle=!inBattle;if(active)render();toast(inBattle?"🥊 Agora você está EM BATALHA":"✓ Batalha encerrada — livre para desafiar");}
+  waitInt=setInterval(()=>{t--;const e=document.getElementById("cwcd");if(e)e.textContent=t;if(t<=0){clearInterval(waitInt);closeChallenge();entrarEmDuelo(cLevel==='ger'?cOppGer.ger:cOppCorr);}},1000);}
+function entrarEmDuelo(oppName){
+  inBattle=true;tab="arena";
+  pontosAdversarios=[
+    {id:1,equipe:oppName,tipo:"visita",foto:ph("Comprovante 1","#1a5fc4"),hora:agora(),contestado:false},
+    {id:2,equipe:oppName,tipo:"doc",foto:ph("Documentacao","#0a7d5a"),hora:agora(),contestado:false}];
+  contestacoesRecebidas=[];faltas={};
+  toast(oppName+" ACEITOU! Duelo na TV 🥊 — veja a aba Arena");render();
+}
+function toggleBattleSim(){
+  if(!active){toast("Ative uma equipe primeiro");return;}
+  if(!inBattle){entrarEmDuelo("Ger. Pulsar");return;}
+  contestacoesRecebidas.push({id:Date.now(),equipe:"Ger. Pulsar",tipo:"visita",foto:ph("Seu comprovante","#7a3a8a"),hora:agora()});
+  if(tab!=="arena")tab="arena";
+  toast("⚑ Você recebeu uma contestação! Veja na aba Arena");render();
+}
+function toast(msg,bad){const t=document.getElementById("toast");t.textContent=msg;t.className="toast on"+(bad?" bad":"");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),3200);}
+document.getElementById("zoom").onclick=()=>document.getElementById("zoom").classList.remove("on");
 
-render();
+// carrega equipes do banco (se a API responder); senão segue em modo local
+async function bootstrap(){
+  try{
+    const res=await ArenaAPI.listarEquipes();
+    if(res&&res.ok&&Array.isArray(res.equipes)&&res.equipes.length){
+      API_ON=true;
+      BASE=res.equipes.map(e=>{
+        const ids={};(e.corretores||[]).forEach(c=>ids[c.nome]=c.id);
+        return {id:e.id,dir:e.diretoria,sup:e.superintendencia,ger:e.gerencia,
+                corretores:(e.corretores||[]).map(c=>c.nome),corretoresIds:ids};
+      });
+    }
+  }catch(e){ /* sem banco: modo local com dados de exemplo */ }
+  render();
+}
+bootstrap();
 </script>
 </body>
 </html>

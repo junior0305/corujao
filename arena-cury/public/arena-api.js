@@ -57,5 +57,12 @@ const ArenaAPI = (() => {
 
     // eventos (a TV puxa para animar)
     eventosNovos: (desde) => get('eventos.php', { acao: 'novos', desde: desde || 0 }),
+
+    // contestações
+    pontosDuelo: (duelo_id, equipe_id) => get('contestacoes.php', { acao: 'pontos_duelo', duelo_id, equipe_id }),
+    contestar: (ponto_id, equipe_id) => post('contestacoes.php', { acao: 'contestar' }, { ponto_id, equipe_id }),
+    contestacoesRecebidas: (duelo_id, equipe_id) => get('contestacoes.php', { acao: 'recebidas', duelo_id, equipe_id }),
+    anularContestacao: (contestacao_id) => post('contestacoes.php', { acao: 'anular' }, { contestacao_id }),
+    removerPonto: (contestacao_id) => post('contestacoes.php', { acao: 'remover' }, { contestacao_id }),
   };
 })();
