@@ -106,3 +106,24 @@ CREATE TABLE IF NOT EXISTS eventos (
   consumido  TINYINT(1) NOT NULL DEFAULT 0,
   criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Contestações (mecânica anti-fraude)
+-- status: aberta | anulada | procedente
+CREATE TABLE IF NOT EXISTS contestacoes (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  ponto_id      INT NOT NULL,
+  contestante_equipe_id INT NOT NULL,
+  status        ENUM('aberta','anulada','procedente') NOT NULL DEFAULT 'aberta',
+  criado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  decidido_em   TIMESTAMP NULL,
+  FOREIGN KEY (ponto_id) REFERENCES pontos(id) ON DELETE CASCADE,
+  FOREIGN KEY (contestante_equipe_id) REFERENCES equipes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Faltas confirmadas por duelo (2 = desclassificação)
+CREATE TABLE IF NOT EXISTS faltas (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  duelo_id    INT NOT NULL,
+  equipe_id   INT NOT NULL,
+  criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
