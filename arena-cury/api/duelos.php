@@ -5,6 +5,42 @@ require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? '';
 $CORES = ['azul','branco','azulclaro','ciano','cinza'];
 
+if ($acao === 'para_mim') {
+  // desafios AGUARDANDO resposta, onde esta equipe é o desafiado (ordem=2)
+  $eid = (int)($_GET['equipe_id'] ?? 0);
+  if (!$eid) fail('Informe a equipe');
+  $st = db()->prepare("SELECT d.id, d.nivel, d.regra, d.regra_valor,
+                              des.gerencia AS desafiante
+                       FROM duelos d
+                       JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=? AND p.ordem=2
+                       JOIN duelo_participantes pd ON pd.duelo_id=d.id AND pd.ordem=1
+                       JOIN equipes des ON des.id=pd.equipe_id
+                       WHERE d.status='aguardando'
+                       ORDER BY d.id DESC LIMIT 1");
+  $st->execute([$eid]);
+  $row = $st->fetch();
+  ok(['desafio' => $row ?: null]);
+}
+
+if ($acao === 'meu_duelo') {
+  // situação do duelo ativo/aguardando em que a equipe participa (para o desafiante saber se foi aceito)
+  $eid = (int)($_GET['equipe_id'] ?? 0);
+  if (!$eid) fail('Informe a equipe');
+  $st = db()->prepare("SELECT d.* FROM duelos d
+                       JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=?
+                       WHERE d.status IN ('aguardando','ativo')
+                       ORDER BY d.id DESC LIMIT 1");
+  $st->execute([$eid]);
+  $d = $st->fetch();
+  if ($d) {
+    $pp = db()->prepare("SELECT p.equipe_id,p.cor,p.pontos,p.ordem,e.gerencia
+                         FROM duelo_participantes p JOIN equipes e ON e.id=p.equipe_id
+                         WHERE p.duelo_id=? ORDER BY p.ordem");
+    $pp->execute([$d['id']]); $d['participantes'] = $pp->fetchAll();
+  }
+  ok(['duelo' => $d ?: null]);
+}
+
 if ($acao === 'criar') {
   // desafiante cria; fica 'aguardando' o aceite do desafiado
   $d = body();
