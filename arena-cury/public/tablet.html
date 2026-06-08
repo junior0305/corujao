@@ -133,7 +133,6 @@
 <div class="cmodal" id="cmodal"></div>
 <div class="zoom" id="zoom"><img id="zoomImg" src=""/></div>
 <div class="toast" id="toast"></div>
-<button onclick="toggleBattleSim()" style="position:fixed;bottom:12px;right:12px;z-index:70;background:#26406a;color:#cfe2ff;border:none;border-radius:10px;padding:9px 13px;font-family:'Rajdhani';font-weight:700;cursor:pointer;font-size:12px">🥊 simular duelo</button>
 
 <script src="arena-api.js"></script>
 <script>
@@ -315,13 +314,6 @@ function entrarEmDuelo(oppName){
     {id:2,equipe:oppName,tipo:"doc",foto:ph("Documentacao","#0a7d5a"),hora:agora(),contestado:false}];
   contestacoesRecebidas=[];faltas={};
   toast(oppName+" ACEITOU! Duelo na TV 🥊 — veja a aba Arena");render();
-}
-function toggleBattleSim(){
-  if(!active){toast("Ative uma equipe primeiro");return;}
-  if(!inBattle){entrarEmDuelo("Ger. Pulsar");return;}
-  contestacoesRecebidas.push({id:Date.now(),equipe:"Ger. Pulsar",tipo:"visita",foto:ph("Seu comprovante","#7a3a8a"),hora:agora()});
-  if(tab!=="arena")tab="arena";
-  toast("⚑ Você recebeu uma contestação! Veja na aba Arena");render();
 }
 function toast(msg,bad){const t=document.getElementById("toast");t.textContent=msg;t.className="toast on"+(bad?" bad":"");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),3200);}
 document.getElementById("zoom").onclick=()=>document.getElementById("zoom").classList.remove("on");
