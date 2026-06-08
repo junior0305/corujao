@@ -267,18 +267,42 @@ function arenaHTML(){
 }
 function bindArena(){
   document.querySelectorAll("[data-zoom]").forEach(i=>i.onclick=()=>{document.getElementById("zoomImg").src=i.dataset.zoom;document.getElementById("zoom").classList.add("on");});
-  document.querySelectorAll("[data-contest]").forEach(b=>b.onclick=()=>{const p=pontosAdversarios.find(x=>x.id==b.dataset.contest);p.contestado=true;toast(`Você contestou um ponto de ${p.equipe}. Eles serão avisados.`);render();});
-  document.querySelectorAll("[data-anular]").forEach(b=>b.onclick=()=>{contestacoesRecebidas=contestacoesRecebidas.filter(c=>c.id!=b.dataset.anular);toast("Contestação anulada — o ponto continua valendo.");render();});
-  document.querySelectorAll("[data-remover]").forEach(b=>b.onclick=()=>{
-    contestacoesRecebidas=contestacoesRecebidas.filter(x=>x.id!=b.dataset.remover);
-    const eq=team().ger;faltas[eq]=(faltas[eq]||0)+1;
-    if(faltas[eq]>=2){toast(`2ª FALTA! ${eq} DESCLASSIFICADO do duelo. Vitória do oponente.`,true);inBattle=false;tab="equipe";}
-    else toast(`FALTA confirmada — −1 ponto. Na TV: "FALTA". (1ª falta deste duelo)`);
+  document.querySelectorAll("[data-contest]").forEach(b=>b.onclick=async()=>{
+    const p=pontosAdversarios.find(x=>x.id==b.dataset.contest);p.contestado=true;render();
+    if(API_ON){ try{ await ArenaAPI.contestar(p.id,team().id); }catch(e){} }
+    toast(`Você contestou um ponto de ${p.equipe}. Eles serão avisados.`);});
+  document.querySelectorAll("[data-anular]").forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.anular;contestacoesRecebidas=contestacoesRecebidas.filter(c=>c.id!=id);render();
+    if(API_ON){ try{ await ArenaAPI.anularContestacao(id); }catch(e){} }
+    toast("Contestação anulada — o ponto continua valendo.");});
+  document.querySelectorAll("[data-remover]").forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.remover;contestacoesRecebidas=contestacoesRecebidas.filter(x=>x.id!=id);
+    let desclass=false;
+    if(API_ON){
+      try{ const r=await ArenaAPI.removerPonto(id); if(r&&r.ok) desclass=r.desclassificado; }catch(e){}
+    }else{
+      const eq=team().ger;faltas[eq]=(faltas[eq]||0)+1;desclass=faltas[eq]>=2;
+    }
+    if(desclass){toast(`2ª FALTA! ${team().ger} DESCLASSIFICADO do duelo. Vitória do oponente.`,true);inBattle=false;tab="equipe";}
+    else toast(`FALTA confirmada — −1 ponto. Na TV: "FALTA".`);
     render();});
 }
-const ONLINE=[{ger:"Ger. Pulsar",sup:"Sup. Centauro",corretores:["Rafa","Duda","Tiago"]},{ger:"Ger. Vega",sup:"Sup. Andrômeda",corretores:["Carol","João","Lia"]}];
+let ONLINE=[{ger:"Ger. Pulsar",sup:"Sup. Centauro",corretores:["Rafa","Duda","Tiago"]},{ger:"Ger. Vega",sup:"Sup. Andrômeda",corretores:["Carol","João","Lia"]}];
+// carrega equipes ONLINE do banco (exceto a minha) para listar como oponentes
+async function carregarOnline(){
+  if(!API_ON)return;
+  try{
+    const res=await ArenaAPI.listarEquipes();
+    if(res&&res.ok&&Array.isArray(res.equipes)){
+      const minha=team();
+      ONLINE=res.equipes
+        .filter(e=>e.online==1 && !(minha&&e.id===minha.id))
+        .map(e=>({id:e.id,ger:e.gerencia,sup:e.superintendencia,corretores:(e.corretores||[]).map(c=>c.nome)}));
+    }
+  }catch(e){}
+}
 let cStep="level",cLevel=null,cOppGer=null,cOppCorr=null,cRuleType=null,cRuleVal=null,waitInt=null;
-function openChallenge(){cStep="level";cLevel=cOppGer=cOppCorr=cRuleType=cRuleVal=null;document.getElementById("cmodal").classList.add("on");cRender();}
+function openChallenge(){cStep="level";cLevel=cOppGer=cOppCorr=cRuleType=cRuleVal=null;document.getElementById("cmodal").classList.add("on");cRender();carregarOnline().then(()=>{if(cStep==="oppGer")cRender();});}
 function closeChallenge(){document.getElementById("cmodal").classList.remove("on");clearInterval(waitInt);}
 function cRender(){
   const m=document.getElementById("cmodal");let h="";
@@ -305,8 +329,41 @@ function cPickGer(i){cOppGer=ONLINE[i];cStep=cLevel==='ger'?"rule":"oppCorr";cRe
 function cPickCorr(i){cOppCorr=cOppGer.corretores[i];cStep="rule";cRender();}
 function cSetRule(t){cRuleType=t;cRuleVal=null;cRender();}
 function cSetVal(v){cRuleVal=v;cRender();}
-function cFire(){cStep="waiting";cRender();let t=10;clearInterval(waitInt);
-  waitInt=setInterval(()=>{t--;const e=document.getElementById("cwcd");if(e)e.textContent=t;if(t<=0){clearInterval(waitInt);closeChallenge();entrarEmDuelo(cLevel==='ger'?cOppGer.ger:cOppCorr);}},1000);}
+let meuDueloId=null;
+function cFire(){
+  cStep="waiting";cRender();
+  const meta = cRuleType==='meta'? cRuleVal : cRuleVal; // valor (visitas ou minutos)
+  let t=10; clearInterval(waitInt);
+  // cria o desafio no banco (se conectado)
+  if(API_ON && team().id && cOppGer && cOppGer.id){
+    ArenaAPI.criarDuelo({
+      nivel: cLevel==='ger'?'gerencia':'corretor',
+      regra: cRuleType, regra_valor: cRuleVal,
+      desafiante_equipe_id: team().id,
+      desafiado_equipe_id: cOppGer.id
+    }).then(r=>{ if(r&&r.ok) meuDueloId=r.duelo_id; }).catch(()=>{});
+  }
+  // conta 10s; a cada segundo verifica se o oponente aceitou
+  waitInt=setInterval(async()=>{
+    t--; const e=document.getElementById("cwcd"); if(e)e.textContent=t;
+    // verifica aceite real
+    if(API_ON && team().id){
+      try{
+        const r=await ArenaAPI.meuDuelo(team().id);
+        if(r&&r.ok&&r.duelo&&r.duelo.status==='ativo'){
+          clearInterval(waitInt);closeChallenge();
+          entrarEmDueloReal(r.duelo);
+          return;
+        }
+      }catch(err){}
+    }
+    if(t<=0){
+      clearInterval(waitInt);closeChallenge();
+      if(API_ON) toast("O oponente não respondeu a tempo (ou recusou).",true);
+      else entrarEmDuelo(cLevel==='ger'?cOppGer.ger:cOppCorr); // modo local: simula aceite
+    }
+  },1000);
+}
 function entrarEmDuelo(oppName){
   inBattle=true;tab="arena";
   pontosAdversarios=[
@@ -315,6 +372,60 @@ function entrarEmDuelo(oppName){
   contestacoesRecebidas=[];faltas={};
   toast(oppName+" ACEITOU! Duelo na TV 🥊 — veja a aba Arena");render();
 }
+
+// entra no duelo usando dados REAIS do banco
+function entrarEmDueloReal(duelo){
+  inBattle=true;tab="arena";meuDueloId=duelo.id;
+  contestacoesRecebidas=[];faltas={};pontosAdversarios=[];
+  const oppNames=(duelo.participantes||[]).filter(p=>p.equipe_id!==team().id).map(p=>p.gerencia).join(", ");
+  carregarArenaDoBanco();
+  toast((oppNames||"Oponente")+" no duelo! 🥊 — veja a aba Arena");render();
+}
+
+// busca os pontos dos adversários e as contestações recebidas do banco
+async function carregarArenaDoBanco(){
+  if(!API_ON||!meuDueloId||!team().id)return;
+  try{
+    const pr=await ArenaAPI.pontosDuelo(meuDueloId,team().id);
+    if(pr&&pr.ok) pontosAdversarios=(pr.pontos||[]).map(p=>({id:p.id,equipe:p.equipe,tipo:p.tipo==='documentacao'?'doc':'visita',foto:p.foto,hora:(p.criado_em||'').slice(11,16),contestado:p.contestado==1}));
+    const cr=await ArenaAPI.contestacoesRecebidas(meuDueloId,team().id);
+    if(cr&&cr.ok) contestacoesRecebidas=(cr.recebidas||[]).map(c=>({id:c.id,equipe:c.contestante,tipo:c.tipo==='documentacao'?'doc':'visita',foto:c.foto,hora:(c.criado_em||'').slice(11,16)}));
+    if(tab==="arena")render();
+  }catch(e){}
+}
+
+// polling: este tablet verifica se foi DESAFIADO e mostra alerta para aceitar/recusar
+let desafioPend=null;
+async function verificarDesafioRecebido(){
+  if(!API_ON||!active||inBattle||!team().id)return;
+  try{
+    const r=await ArenaAPI.desafioParaMim(team().id);
+    if(r&&r.ok&&r.desafio&&(!desafioPend||desafioPend.id!==r.desafio.id)){
+      desafioPend=r.desafio;mostrarAlertaDesafio(r.desafio);
+    }
+  }catch(e){}
+}
+function mostrarAlertaDesafio(d){
+  const m=document.getElementById("cmodal");
+  const regra=d.regra==='meta'?`${d.regra_valor} visitas (meta)`:`${d.regra_valor} min (tempo)`;
+  m.innerHTML=`<div class="csheet"><div class="eyebrow" style="color:var(--fire)">VOCÊ FOI DESAFIADO!</div>
+    <h3 style="margin:8px 0">${d.desafiante} chamou você para a arena</h3>
+    <p class="cl">Modo: <b style="color:var(--cyan)">${regra}</b></p>
+    <div class="acts" style="margin-top:20px"><button class="cancel" onclick="responderDesafio(false)">Recusar</button>
+    <button class="send" onclick="responderDesafio(true)">⚔ Aceitar e lutar</button></div></div>`;
+  m.classList.add("on");
+}
+async function responderDesafio(aceita){
+  if(!desafioPend)return;
+  const did=desafioPend.id;const d=desafioPend;desafioPend=null;
+  document.getElementById("cmodal").classList.remove("on");
+  try{ await ArenaAPI.responderDuelo(did,aceita); }catch(e){}
+  if(aceita){
+    // entra no duelo recém-aceito
+    try{ const r=await ArenaAPI.meuDuelo(team().id); if(r&&r.ok&&r.duelo) entrarEmDueloReal(r.duelo); }catch(e){}
+  }else toast("Desafio recusado.");
+}
+
 function toast(msg,bad){const t=document.getElementById("toast");t.textContent=msg;t.className="toast on"+(bad?" bad":"");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),3200);}
 document.getElementById("zoom").onclick=()=>document.getElementById("zoom").classList.remove("on");
 
@@ -332,6 +443,11 @@ async function bootstrap(){
     }
   }catch(e){ /* sem banco: modo local com dados de exemplo */ }
   render();
+  // polling: verifica desafios recebidos e atualiza a arena durante o duelo
+  setInterval(()=>{
+    verificarDesafioRecebido();
+    if(inBattle) carregarArenaDoBanco();
+  },3000);
 }
 bootstrap();
 </script>
