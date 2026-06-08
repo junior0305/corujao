@@ -316,11 +316,15 @@ function renderTeams(){
   const l=document.getElementById("teamsList");
   l.innerHTML=teams.map((t,i)=>`<div class="teamrow"><div><div class="h">${t.ger}</div><div class="c">${t.dir} · ${t.sup}</div></div><div style="text-align:right"><div class="cnt">${t.corretores.length}</div><div class="c">corretores</div></div></div>`).join("");
 }
-document.getElementById("addTeam").onclick=()=>{
+document.getElementById("addTeam").onclick=async()=>{
   const ger=prompt("Nome da gerência (ex: Ger. Nova)");if(!ger)return;
   const sup=prompt("Superintendência")||"—";const dir=prompt("Diretoria")||"—";
   const cor=(prompt("Corretores separados por vírgula")||"").split(",").map(s=>s.trim()).filter(Boolean);
-  teams.push({dir,sup,ger,corretores:cor});renderTeams();toast("Equipe adicionada!");
+  try{
+    const res=await ArenaAPI.criarEquipe({diretoria:dir,superintendencia:sup,gerencia:ger,corretores:cor});
+    if(res&&res.ok){toast("Equipe adicionada e salva no banco! ✓");await carregarEquipes();return;}
+  }catch(err){}
+  teams.push({dir,sup,ger,corretores:cor});renderTeams();toast("Equipe adicionada (modo local)");
 };
 
 // ===== REGRAS =====
