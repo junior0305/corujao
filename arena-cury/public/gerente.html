@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CORUJASTRO — Agendamento</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Teko:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root{--bg:#00060f;--cury:#1a5fc4;--cyan:#00daff;--gold:#ffcf4d;--fire:#ff5b1f;--ink:#eaf4ff;--dim:#6f8bb0;--ok:#1fd18a;--no:#ff5b6e;--card:#0a1f44;
+    --star:"Orbitron",sans-serif;--body:"Rajdhani",sans-serif;--num:"Teko",sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:radial-gradient(ellipse 90% 60% at 50% -10%,#0a3a8a44 0%,transparent 60%),var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh}
+  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;background-image:radial-gradient(1px 1px at 30px 40px,#fff,transparent),radial-gradient(1px 1px at 160px 90px,#9cf,transparent),radial-gradient(2px 2px at 300px 50px,#bdf,transparent);background-size:360px 240px}
+  .wrap{position:relative;z-index:2;max-width:680px;margin:0 auto;padding:clamp(18px,4vw,30px) clamp(16px,4vw,26px) 60px}
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:24px;justify-content:center}
+  .owl-logo{width:clamp(40px,8vw,54px);height:clamp(40px,8vw,54px);filter:drop-shadow(0 0 12px #00daff66)}
+  .brand{font-family:var(--star);font-weight:900;font-size:clamp(20px,4vw,30px);letter-spacing:.06em;background:linear-gradient(135deg,#fff 20%,#00daff 60%,#1a5fc4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .eyebrow{font-family:var(--star);font-size:10px;letter-spacing:.35em;color:var(--cyan);font-weight:600;text-align:center;margin-bottom:6px}
+  h2{font-family:var(--star);font-weight:900;font-size:clamp(20px,4vw,26px);margin-bottom:6px;text-align:center}
+  .lead{color:var(--dim);font-size:14px;margin-bottom:24px;text-align:center}
+  .step{margin-bottom:20px}.step.off{opacity:.35;pointer-events:none}
+  .step .lbl{font-family:var(--star);font-size:12px;letter-spacing:.2em;color:var(--cyan);margin-bottom:10px}
+  .opts{display:flex;flex-wrap:wrap;gap:10px}
+  .opt{font-family:var(--body);font-weight:700;font-size:16px;color:var(--ink);background:var(--card);border:1px solid #1a5fc455;border-radius:12px;padding:13px 18px;cursor:pointer;transition:all .2s}
+  .opt.sel{background:var(--cyan);color:#001030;border-color:var(--cyan);box-shadow:0 0 18px #00daff66}
+  .activate{width:100%;font-family:var(--star);font-weight:900;font-size:17px;letter-spacing:.05em;text-transform:uppercase;color:#001030;background:linear-gradient(135deg,var(--cyan),var(--cury));border:none;border-radius:14px;padding:17px;cursor:pointer;box-shadow:0 0 30px #00daff44;margin-top:8px}
+  .activate:disabled{background:#1a3050;color:#5a7a90;box-shadow:none;cursor:not-allowed}
+  .card{background:var(--card);border:1px solid #1a5fc455;border-radius:18px;padding:22px;margin-bottom:16px}
+  .ghead{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(100deg,#1a5fc433,#001030aa);border:1px solid #00daff44;border-radius:16px;padding:14px 18px;margin-bottom:20px}
+  .ghead .t{font-family:var(--star);font-weight:900;font-size:clamp(16px,3vw,22px)}
+  .ghead .s{color:var(--dim);font-size:13px;margin-top:2px}
+  .btn-sm{font-family:var(--star);font-size:11px;letter-spacing:.05em;color:var(--dim);background:transparent;border:1px solid #1a5fc455;border-radius:9px;padding:8px 11px;cursor:pointer}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-family:var(--star);font-size:11px;letter-spacing:.15em;color:var(--cyan);margin-bottom:8px}
+  .field input{width:100%;background:#001030;border:1px solid #1a5fc455;border-radius:12px;padding:14px 16px;color:var(--ink);font-family:var(--body);font-size:16px}
+  .counter{display:flex;align-items:center;gap:16px}
+  .counter button{width:50px;height:50px;border-radius:12px;border:1px solid #1a5fc455;background:#0a1f44;color:var(--cyan);font-size:26px;font-weight:700;cursor:pointer}
+  .counter .val{font-family:var(--num);font-weight:700;font-size:44px;min-width:70px;text-align:center;color:var(--cyan)}
+  .counter .hint{color:var(--dim);font-size:13px}
+  .send{width:100%;font-family:var(--star);font-weight:900;font-size:17px;text-transform:uppercase;color:#001030;background:linear-gradient(135deg,var(--gold),#e0a020);border:none;border-radius:14px;padding:17px;cursor:pointer;box-shadow:0 0 26px #ffcf4d33}
+  .send:disabled{background:#3a3520;color:#7a7050;box-shadow:none;cursor:not-allowed}
+  .okbox{text-align:center;padding:24px;background:#06283f;border:1px solid var(--ok);border-radius:16px;margin-bottom:16px}
+  .okbox .ic{font-size:44px}.okbox h3{font-family:var(--star);font-weight:900;font-size:20px;margin:10px 0 6px;color:var(--ok)}
+  .okbox p{color:var(--ink);font-size:15px}.okbox .mesa{font-family:var(--star);color:var(--gold);font-size:18px;margin-top:8px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;background:#08152e;border:1px solid var(--ok);border-radius:12px;padding:14px 22px;font-weight:700;color:var(--ok);opacity:0;transition:all .3s;pointer-events:none;text-align:center;max-width:90vw}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}.toast.bad{border-color:var(--no);color:var(--no)}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+<div class="wrap">
+  <div class="top">
+    <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" class="owl-logo"><defs><radialGradient id="h" cx="40%" cy="35%" r="70%"><stop offset="0%" stop-color="#bfe3ff" stop-opacity=".55"/><stop offset="55%" stop-color="#1a5fc4" stop-opacity=".25"/><stop offset="100%" stop-color="#001030" stop-opacity=".1"/></radialGradient><linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00daff"/><stop offset="100%" stop-color="#1a5fc4"/></linearGradient><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#cfe0f5"/></linearGradient></defs><circle cx="40" cy="38" r="30" fill="none" stroke="url(#r)" stroke-width="3.5"/><circle cx="40" cy="38" r="27" fill="url(#h)"/><path d="M24 36 q0 -16 16 -16 q16 0 16 16 q0 14 -16 14 q-16 0 -16 -14 Z" fill="url(#b)"/><path d="M26 26 q-3 -7 3 -10 q2 5 1 9 Z" fill="#fff"/><path d="M54 26 q3 -7 -3 -10 q-2 5 -1 9 Z" fill="#fff"/><circle cx="34" cy="35" r="6.2" fill="#fff"/><circle cx="46" cy="35" r="6.2" fill="#fff"/><circle cx="34" cy="35.5" r="3.4" fill="#0a2a5a"/><circle cx="46" cy="35.5" r="3.4" fill="#0a2a5a"/><circle cx="35.2" cy="34.3" r="1.1" fill="#fff"/><circle cx="47.2" cy="34.3" r="1.1" fill="#fff"/><path d="M40 39 l-3 3 l3 2 l3 -2 Z" fill="#ffb020"/></svg>
+    <span class="brand">CORUJASTRO</span>
+  </div>
+  <div id="view"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="arena-api.js"></script>
+<script>
+let API_ON=false;
+let BASE=[
+  {dir:"Diretoria Alfa",sup:"Sup. Centauro",ger:"Ger. Órion"},
+  {dir:"Diretoria Alfa",sup:"Sup. Centauro",ger:"Ger. Pulsar"},
+  {dir:"Diretoria Alfa",sup:"Sup. Andrômeda",ger:"Ger. Vega"},
+];
+let sel={dir:null,sup:null,ger:null}, active=false;
+let ag={dia:"",hora:"",lugares:5};
+
+const uniq=a=>[...new Set(a)];
+const dirs=()=>uniq(BASE.map(b=>b.dir));
+const sups=()=>uniq(BASE.filter(b=>b.dir===sel.dir).map(b=>b.sup));
+const gers=()=>uniq(BASE.filter(b=>b.dir===sel.dir&&b.sup===sel.sup).map(b=>b.ger));
+const team=()=>BASE.find(b=>b.dir===sel.dir&&b.sup===sel.sup&&b.ger===sel.ger);
+
+function render(){
+  const v=document.getElementById("view");
+  if(!active){v.innerHTML=logonHTML();bindLogon();return;}
+  v.innerHTML=agendaHTML();bindAgenda();
+}
+function logonHTML(){
+  const o=(arr,cur,k)=>arr.map(x=>`<button class="opt${cur===x?' sel':''}" data-k="${k}" data-v="${x}">${x}</button>`).join("");
+  return `<div class="eyebrow">ACESSO DO GERENTE</div><h2>Identifique sua equipe</h2>
+  <p class="lead">Faça o login para agendar seu horário na arena.</p>
+  <div class="step"><div class="lbl">1 · DIRETORIA</div><div class="opts">${o(dirs(),sel.dir,"dir")}</div></div>
+  <div class="step ${sel.dir?'':'off'}"><div class="lbl">2 · SUPERINTENDENTE</div><div class="opts">${sel.dir?o(sups(),sel.sup,"sup"):''}</div></div>
+  <div class="step ${sel.sup?'':'off'}"><div class="lbl">3 · VOCÊ (GERENTE)</div><div class="opts">${sel.sup?o(gers(),sel.ger,"ger"):''}</div></div>
+  <button class="activate" id="actBtn" ${sel.ger?'':'disabled'}>Entrar →</button>`;
+}
+function bindLogon(){
+  document.querySelectorAll(".opt[data-k]").forEach(b=>b.onclick=()=>{const k=b.dataset.k,val=b.dataset.v;
+    if(k==="dir"){sel.dir=val;sel.sup=null;sel.ger=null;}if(k==="sup"){sel.sup=val;sel.ger=null;}if(k==="ger")sel.ger=val;render();});
+  const a=document.getElementById("actBtn");if(a)a.onclick=()=>{active=true;render();};
+}
+function agendaHTML(){
+  const t=team();
+  return `<div class="ghead"><div><div class="t">${t.ger}</div><div class="s">${t.dir} · ${t.sup}</div></div>
+    <button class="btn-sm" id="logout">sair</button></div>
+  <div class="card">
+    <div class="eyebrow" style="text-align:left;margin-bottom:14px">AGENDAR NA ARENA</div>
+    <div class="field"><label>📅 Data</label><input type="date" id="agDia" value="${ag.dia}"/></div>
+    <div class="field"><label>🕐 Horário (9h às 20h)</label><input type="time" id="agHora" min="09:00" max="20:00" value="${ag.hora}"/></div>
+    <div class="field"><label>👥 Quantos corretores vão participar?</label>
+      <div class="counter"><button id="minus">−</button><span class="val" id="lugVal">${ag.lugares}</span><button id="plus">+</button>
+      <span class="hint">lugares reservados</span></div></div>
+    <button class="send" id="agSend" ${ag.dia&&ag.hora?'':'disabled'}>⚡ Confirmar agendamento</button>
+  </div>`;
+}
+function bindAgenda(){
+  document.getElementById("logout").onclick=()=>{active=false;sel={dir:null,sup:null,ger:null};render();};
+  document.getElementById("agDia").onchange=e=>{ag.dia=e.target.value;upd();};
+  document.getElementById("agHora").onchange=e=>{ag.hora=e.target.value;upd();};
+  document.getElementById("minus").onclick=()=>{ag.lugares=Math.max(1,ag.lugares-1);render();};
+  document.getElementById("plus").onclick=()=>{ag.lugares=Math.min(20,ag.lugares+1);render();};
+  document.getElementById("agSend").onclick=confirmar;
+}
+function upd(){const b=document.getElementById("agSend");if(b)b.disabled=!(ag.dia&&ag.hora);}
+async function confirmar(){
+  const t=team();
+  if(!API_ON){ mostrarOk("(modo demonstração)","—"); return; }
+  try{
+    const r=await ArenaAPI.criarReserva({dia:ag.dia,horario:ag.hora,nivel:'ger',nome:t.ger,lugares:ag.lugares,equipe_id:t.id});
+    if(r&&r.ok){ mostrarOk(`${ag.dia} às ${ag.hora}`, r.mesa_nome||"definida"); }
+    else { toast(r&&r.erro?r.erro:"Não foi possível agendar",true); }
+  }catch(e){ toast("Erro ao agendar. Tente outro horário.",true); }
+}
+function mostrarOk(quando,mesa){
+  const v=document.getElementById("view");
+  v.innerHTML=`<div class="okbox"><div class="ic">✅</div><h3>Agendamento confirmado!</h3>
+    <p>${team().ger} — ${quando}</p><div class="mesa">Mesa: ${mesa}</div></div>
+    <button class="activate" onclick="novoAgendamento()">Fazer outro agendamento</button>
+    <button class="btn-sm" style="width:100%;margin-top:10px;padding:14px" onclick="sair()">Sair</button>`;
+}
+function novoAgendamento(){ag={dia:"",hora:"",lugares:5};render();}
+function sair(){active=false;sel={dir:null,sup:null,ger:null};render();}
+function toast(msg,bad){const t=document.getElementById("toast");t.textContent=msg;t.className="toast on"+(bad?" bad":"");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),3500);}
+
+async function bootstrap(){
+  try{
+    const res=await ArenaAPI.listarEquipes();
+    if(res&&res.ok&&Array.isArray(res.equipes)&&res.equipes.length){
+      API_ON=true;
+      BASE=res.equipes.map(e=>({id:e.id,dir:e.diretoria,sup:e.superintendencia,ger:e.gerencia}));
+    }
+  }catch(e){}
+  render();
+}
+bootstrap();
+</script>
+</body>
+</html>

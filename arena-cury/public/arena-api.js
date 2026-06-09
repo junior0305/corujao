@@ -47,6 +47,13 @@ const ArenaAPI = (() => {
     listarReservas: () => get('reservas.php', { acao: 'listar' }),
     criarReserva: (r) => post('reservas.php', { acao: 'criar' }, r),
     removerReserva: (id) => post('reservas.php', { acao: 'remover' }, { id }),
+    reposicionarReserva: (reserva_id, mesa_id) => post('reservas.php', { acao: 'reposicionar' }, { reserva_id, mesa_id }),
+    liberarReserva: (reserva_id) => post('reservas.php', { acao: 'liberar' }, { reserva_id }),
+
+    // mesas
+    listarMesas: () => get('mesas.php', { acao: 'listar' }),
+    renomearMesa: (mesa_id, nome) => post('mesas.php', { acao: 'renomear' }, { mesa_id, nome }),
+    mapaMesas: (dia) => get('mesas.php', dia ? { acao: 'mapa', dia } : { acao: 'mapa' }),
 
     // duelos
     criarDuelo: (d) => post('duelos.php', { acao: 'criar' }, d),
