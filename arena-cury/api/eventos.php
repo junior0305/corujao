@@ -12,6 +12,11 @@ if ($acao === 'novos') {
   foreach ($rows as &$r) { $r['payload'] = $r['payload'] ? json_decode($r['payload'], true) : null; }
   ok(['eventos' => $rows]);
 }
+if ($acao === 'ultimo') {
+  // maior id de evento atual — a TV usa para começar a ouvir só o que vier DEPOIS
+  $r = db()->query('SELECT COALESCE(MAX(id),0) AS ultimo FROM eventos')->fetch();
+  ok(['ultimo' => (int)$r['ultimo']]);
+}
 if ($acao === 'limpar') {
   db()->query('DELETE FROM eventos'); // zera a fila (uso administrativo)
   ok();
