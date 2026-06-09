@@ -9,10 +9,14 @@ try{
     login VARCHAR(60) NOT NULL UNIQUE,
     senha_hash VARCHAR(255) NOT NULL,
     nome VARCHAR(120) NOT NULL,
+    diretoria VARCHAR(120) NULL,
     superintendencia VARCHAR(120) NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
   $log[]="OK: tabela usuarios";
+  // garante a coluna diretoria caso a tabela já existisse sem ela
+  try{ db()->exec("ALTER TABLE usuarios ADD COLUMN diretoria VARCHAR(120) NULL"); $log[]="OK: coluna diretoria"; }
+  catch(Exception $e){ $log[]="diretoria: já existia"; }
 }catch(Exception $e){ $log[]="obs: ".$e->getMessage(); }
 
 // cria um admin inicial se a tabela estiver vazia (login: admin / senha: admin123)

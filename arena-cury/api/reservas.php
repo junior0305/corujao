@@ -26,6 +26,15 @@ if ($acao === 'criar') {
   if (!diaValido($dia)) fail('A arena não funciona aos fins de semana');
   if ($hora < '09:00' || $hora > '20:00') fail('Horário permitido: 9h às 20h');
 
+  // limite: não pode reservar mais lugares do que corretores cadastrados na equipe
+  if ($equipe_id) {
+    $cc = db()->prepare("SELECT COUNT(*) n FROM corretores WHERE equipe_id=?");
+    $cc->execute([$equipe_id]);
+    $nCorr = (int)$cc->fetch()['n'];
+    if ($nCorr === 0) fail('Cadastre os corretores da equipe antes de agendar');
+    if ($lugares > $nCorr) fail("Você só pode reservar até $nCorr lugares (corretores cadastrados)");
+  }
+
   // a mesma equipe já tem reserva nesse dia/horário?
   if ($equipe_id) {
     $c = db()->prepare("SELECT id FROM reservas WHERE equipe_id=? AND dia=? AND horario=?");
