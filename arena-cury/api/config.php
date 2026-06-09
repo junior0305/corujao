@@ -1,8 +1,11 @@
 <?php
 // config.php — regras da sessão e rodada geral
-// Ações: ler | salvar | rodada (iniciar/pausar/encerrar)
+// Ações: ler | salvar | rodada | start
 require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? 'ler';
+
+// garante a coluna rodada_modo (meta|tempo) sem precisar de instalador separado
+try { db()->exec("ALTER TABLE config ADD COLUMN rodada_modo VARCHAR(10) NOT NULL DEFAULT 'tempo'"); } catch (Exception $e) {}
 
 if ($acao === 'ler') {
   ok(['config' => db()->query('SELECT * FROM config WHERE id=1')->fetch()]);
@@ -20,5 +23,15 @@ if ($acao === 'rodada') {
   else db()->prepare('UPDATE config SET rodada_status=? WHERE id=1')->execute([$st]);
   emitir('rodada', ['status' => $st]);
   ok();
+}
+// START da sala: define modo (meta/tempo), valor, e inicia a rodada
+if ($acao === 'start') {
+  $d = body();
+  $modo = ($d['modo'] ?? 'tempo') === 'meta' ? 'meta' : 'tempo';
+  $valor = (int)($d['valor'] ?? 0); // minutos (tempo) ou nº de visitas (meta)
+  db()->prepare("UPDATE config SET rodada_modo=?, rodada_min=?, rodada_status='ativa', rodada_inicio=NOW() WHERE id=1")
+      ->execute([$modo, $valor]);
+  emitir('rodada', ['status'=>'ativa', 'modo'=>$modo, 'valor'=>$valor]);
+  ok(['modo'=>$modo, 'valor'=>$valor]);
 }
 fail('Ação desconhecida: '.$acao, 404);
