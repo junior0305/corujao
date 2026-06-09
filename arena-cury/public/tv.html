@@ -215,6 +215,10 @@
   #duel{position:fixed;inset:0;z-index:60;display:none;overflow:hidden;
     background:radial-gradient(ellipse 80% 70% at 50% 40%,#04162e 0%,#020c1f 50%,#01060f 82%)}
   #duel.on{display:block}
+  /* alterna entre a tela 1×1 dedicada (#duelArena) e o ringue de 3+ (#arena) */
+  #duelArena{display:none}
+  #duel.mode-duo #duelArena{display:block}
+  #duel.mode-duo #arena{display:none}
   /* ===== RINGUE ÚNICO — BATALHA COM ATÉ 5 COMPETIDORES ===== */
   #arena{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;padding:clamp(96px,13vh,150px) clamp(14px,2vw,40px) clamp(16px,3vh,40px)}
   #arenaBar{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
@@ -456,6 +460,19 @@
     <div id="duoVS">VS</div>
     <div id="joinReq"></div>
     <div id="arenaResult"></div>
+  </div>
+  <div id="duelArena">
+    <div class="fighters">
+      <div class="fighter red-f left-f" id="dRedCard"><div class="corner">CANTO LARANJA</div><div class="av" id="dRedAv">A</div><div class="fname" id="dRedName">Equipe A</div><div class="fsub" id="dRedSub">Sup.</div><div class="frec" id="dRedRec">0<small>PONTOS</small></div></div>
+      <div class="fighter blue-f right-f" id="dBlueCard"><div class="corner">CANTO RUBRO</div><div class="av" id="dBlueAv">B</div><div class="fname" id="dBlueName">Equipe B</div><div class="fsub" id="dBlueSub">Sup.</div><div class="frec" id="dBlueRec">0<small>PONTOS</small></div></div>
+    </div>
+    <div class="vsbadge">VS</div>
+    <div class="duel-astro l" id="duelAstroL"></div>
+    <div class="duel-astro r" id="duelAstroR"></div>
+    <div class="duel-impact l" id="dimpL">💥</div>
+    <div class="duel-impact r" id="dimpR">💥</div>
+    <div class="duelfoot" id="duelfoot">QUE COMECE A LUTA</div>
+    <div id="duelResult"></div>
   </div>
 </div>
 </div>
@@ -753,7 +770,7 @@ function openBattle(info){
   document.getElementById("arenaMode").textContent =
     battle.mode==="tempo" ? ("POR TEMPO · "+Math.round(battle.dur/60)+" min") : ("PRIMEIRO A "+battle.meta);
   document.getElementById("arenaResult").classList.remove("on");
-  renderFighters();
+  renderBattleView();
   startBattleClock();
   whoosh();bell();
 }
@@ -769,7 +786,7 @@ function joinBattle(info){
   battle.comps.push({eid:info.eid,name:info.name,sub:info.sub||"",pts:0,color:color,uid:"c"+battle.comps.length+"_"+battle.id});
   // explode a solicitação na tela
   showJoinRequest(info.name);
-  renderFighters(true);
+  renderBattleView(true);
   refreshJoinBadge();
   return true;
 }
@@ -780,6 +797,70 @@ function showJoinRequest(name){
   jr.classList.add("on");bell();
   setTimeout(()=>speakPhrase("Novo desafiante"),300);
   setTimeout(()=>jr.classList.remove("on"),2200);
+}
+
+// dispatcher: 2 competidores => tela 1×1 dedicada; 3+ => ringue lado a lado
+function renderBattleView(animateLast){
+  if(!battle) return;
+  if(battle.comps.length===2){ renderDuelScreen(); }
+  else { document.getElementById("duel").classList.remove("mode-duo"); renderFighters(animateLast); }
+}
+
+// preenche um lado da tela 1×1 (pfx = 'dRed' | 'dBlue') a partir de um competidor
+function setFighter(pfx,c){
+  const last=((c.name||"").trim().split(" ").pop()||"?");
+  const av=document.getElementById(pfx+"Av"); if(av) av.textContent=(last[0]||"?").toUpperCase();
+  const nm=document.getElementById(pfx+"Name"); if(nm) nm.textContent=c.name||"";
+  const sub=document.getElementById(pfx+"Sub"); if(sub) sub.textContent=c.sub||"";
+  const rec=document.getElementById(pfx+"Rec"); if(rec) rec.innerHTML=(c.pts||0)+'<small>PONTOS</small>';
+}
+
+// monta a tela 1×1 (boxeadores grandes deslizando) a partir de battle.comps
+function renderDuelScreen(){
+  const A=battle.comps[0], B=battle.comps[1];
+  document.getElementById("duel").classList.add("mode-duo");
+  document.getElementById("duelTitle").textContent=(A.name||"Equipe A")+" × "+(B.name||"Equipe B");
+  setFighter("dRed",A); setFighter("dBlue",B);
+  document.getElementById("duelAstroL").innerHTML=buildFighter(A.color,"L"+battle.id);
+  document.getElementById("duelAstroR").innerHTML=buildFighter(B.color,"R"+battle.id);
+  document.getElementById("duelfoot").textContent =
+    battle.mode==="tempo" ? ("POR TEMPO · "+Math.round(battle.dur/60)+" MIN") : ("PRIMEIRO A "+battle.meta+" VENCE");
+  document.getElementById("duelResult").classList.remove("on");
+  ["duelAstroL","duelAstroR"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove("ko","punch","hit");});
+  // re-dispara o slide-in dos cards (display none->block nem sempre reinicia)
+  ["dRedCard","dBlueCard"].forEach(id=>{const e=document.getElementById(id);if(e){e.style.animation="none";void e.offsetWidth;e.style.animation="";}});
+}
+
+// ponto na tela 1×1: idx 0 = esquerda (laranja), 1 = direita (rubro). O atacante soca, o outro apanha.
+function duelScreenPoint(idx,tipo){
+  const strong=tipo==="documentacao";
+  const att=document.getElementById(idx===0?"duelAstroL":"duelAstroR");
+  const def=document.getElementById(idx===0?"duelAstroR":"duelAstroL");
+  const imp=document.getElementById(idx===0?"dimpR":"dimpL");
+  if(att)att.classList.add("punch");
+  setTimeout(()=>{if(def)def.classList.add("hit");if(imp)imp.classList.add("go");punchSnd(strong);},250);
+  setTimeout(()=>{if(att)att.classList.remove("punch");if(def)def.classList.remove("hit");if(imp)imp.classList.remove("go");},820);
+  const rec=document.getElementById(idx===0?"dRedRec":"dBlueRec");
+  if(rec){rec.innerHTML=(battle.comps[idx].pts)+'<small>PONTOS</small>';rec.classList.add("bump");setTimeout(()=>rec.classList.remove("bump"),250);}
+}
+
+// fim da batalha na tela 1×1: vencedor (forçado ou maior placar); empate = sem vencedor
+function duelScreenEnd(forcedWinnerEid){
+  const A=battle.comps[0], B=battle.comps[1];
+  let win=null;
+  if(forcedWinnerEid) win = String(A.eid)===String(forcedWinnerEid)?0 : (String(B.eid)===String(forcedWinnerEid)?1:null);
+  else if(A.pts!==B.pts) win = A.pts>B.pts?0:1;
+  const r=document.getElementById("duelResult");
+  const astL=document.getElementById("duelAstroL"), astR=document.getElementById("duelAstroR");
+  if(win===null){
+    if(astL)astL.classList.add("ko"); if(astR)astR.classList.add("ko"); punchSnd(true);
+    setTimeout(()=>{bell();r.innerHTML='<div class="belt">🤝</div><div class="big tie">EMPATE</div><div class="who">Sem vencedor</div>';r.classList.add("on");},900);
+  }else{
+    const winAst=win===0?astL:astR, loseAst=win===0?astR:astL, winName=win===0?A.name:B.name;
+    if(winAst)winAst.classList.add("punch");
+    setTimeout(()=>{if(loseAst){loseAst.classList.remove("hit");loseAst.classList.add("ko");}punchSnd(true);},170);
+    setTimeout(()=>{bell();r.innerHTML='<div class="belt">🏆</div><div class="big">NOCAUTE!</div><div class="who">'+(winName||"")+' venceu</div>';r.classList.add("on");},900);
+  }
 }
 
 function renderFighters(animateLast){
@@ -841,18 +922,8 @@ function battlePoint(eid,tipo){
   const cflash=colorHex(c.color);
 
   if(duo){
-    // ---- modo 1×1: atacante avança e o OUTRO apanha ----
-    const isLeft = idx===0;
-    if(card) card.classList.add(isLeft?"atkL":"atkR");
-    const op=battle.comps[isLeft?1:0];
-    const opBx=document.getElementById("bx_"+op.uid);
-    const opIm=document.getElementById("im_"+op.uid);
-    setTimeout(()=>{
-      if(opBx){opBx.classList.add("hit");setTimeout(()=>opBx.classList.remove("hit"),450);}
-      if(opIm){opIm.classList.add("go");setTimeout(()=>opIm.classList.remove("go"),550);}
-      punchSnd(strong);
-    },230);
-    setTimeout(()=>{if(card)card.classList.remove("atkL","atkR");},600);
+    // ---- modo 1×1: tela dedicada (boxeadores grandes socando no centro) ----
+    duelScreenPoint(idx,tipo);
   } else {
     // ---- modo 3+: golpe + flash de cor + faíscas + tremor dos outros ----
     if(bx){bx.classList.add("punch");setTimeout(()=>bx.classList.remove("punch"),520);}
@@ -903,6 +974,8 @@ function endBattle(forcedWinnerEid){
   if(!battle||battle.ended) return; battle.ended=true;
   clearInterval(battleClock);
   document.getElementById("joinBadge").classList.remove("on");
+  // modo 1×1: usa a tela dedicada (nocaute/empate dos boxeadores grandes)
+  if(battle.comps.length===2){ duelScreenEnd(forcedWinnerEid); setTimeout(()=>closeBattle(),6500); return; }
   const top=Math.max(0,...battle.comps.map(c=>c.pts));
   const leaders=battle.comps.filter(c=>c.pts===top);
   const r=document.getElementById("arenaResult");
@@ -927,13 +1000,17 @@ function leaveBattle(eid){
   if(!battle||battle.ended) return;
   battle.comps=battle.comps.filter(c=>String(c.eid)!==String(eid));
   if(battle.comps.length<=1){ endBattle(battle.comps[0]?battle.comps[0].eid:null); return; }
-  renderFighters();
+  renderBattleView();
 }
 
 function closeBattle(){
   battle=null; clearInterval(battleClock);
   document.getElementById("arenaResult").classList.remove("on");
   document.getElementById("joinReq").classList.remove("on");
+  // limpa a tela 1×1
+  const dr=document.getElementById("duelResult"); if(dr) dr.classList.remove("on");
+  document.getElementById("duel").classList.remove("mode-duo");
+  ["duelAstroL","duelAstroR"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove("ko","punch","hit");});
   arenaVisible(false);
 }
 
@@ -1073,7 +1150,7 @@ function montarBatalhaDoBanco(d){
     battle.mode==="tempo" ? ("POR TEMPO · "+Math.round(battle.dur/60)+" min") : ("PRIMEIRO A "+battle.meta);
   document.getElementById("arenaResult").classList.remove("on");
   document.getElementById("joinReq").classList.remove("on");
-  renderFighters();
+  renderBattleView();
   startBattleClock();
 }
 
