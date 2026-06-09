@@ -66,5 +66,11 @@ const ArenaAPI = (() => {
     contestacoesRecebidas: (duelo_id, equipe_id) => get('contestacoes.php', { acao: 'recebidas', duelo_id, equipe_id }),
     anularContestacao: (contestacao_id) => post('contestacoes.php', { acao: 'anular' }, { contestacao_id }),
     removerPonto: (contestacao_id) => post('contestacoes.php', { acao: 'remover' }, { contestacao_id }),
+
+    // presença (check-in)
+    presencaHoje: (equipe_id) => get('presencas.php', { acao: 'hoje', equipe_id }),
+    presencaUltimo: (equipe_id) => get('presencas.php', { acao: 'ultimo', equipe_id }),
+    marcarPresenca: (corretor_id, equipe_id) => post('presencas.php', { acao: 'marcar' }, { corretor_id, equipe_id }),
+    desmarcarPresenca: (corretor_id) => post('presencas.php', { acao: 'desmarcar' }, { corretor_id }),
   };
 })();
