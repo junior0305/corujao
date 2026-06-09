@@ -57,6 +57,21 @@
   .challenge-btn{width:100%;font-family:var(--star);font-weight:900;font-size:clamp(22px,4vw,30px);letter-spacing:.06em;text-transform:uppercase;color:#fff;background:linear-gradient(135deg,var(--fire),#e01030);border:none;border-radius:16px;padding:24px;cursor:pointer;box-shadow:0 0 30px #ff5b1f44;position:relative;overflow:hidden;transition:transform .15s}
   .challenge-btn:active{transform:scale(.98)}
   .challenge-btn span{display:block;font-family:var(--body);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:none;opacity:.85;margin-top:6px}
+  /* batalhas abertas para entrar (3º ao 5º) */
+  .joinbox{background:linear-gradient(135deg,#0a2e4d,#001030);border:1px solid #00daff55;border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 0 24px #00daff22}
+  .joinbox .jh{font-family:var(--star);font-weight:700;font-size:13px;letter-spacing:.12em;color:var(--cyan);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .joinbox .jh .live{width:8px;height:8px;border-radius:50%;background:#1fd18a;box-shadow:0 0 8px #1fd18a;animation:jlive 1.3s ease-in-out infinite}
+  @keyframes jlive{50%{opacity:.4}}
+  .joinbox .jsub{font-family:var(--body);font-size:12px;color:var(--dim);margin-bottom:12px}
+  .jcard{background:#06122c;border:1px solid #1a5fc455;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .jcard:last-child{margin-bottom:0}
+  .jcard .jvs{font-family:var(--star);font-weight:700;font-size:14px;color:#eaf4ff;line-height:1.3}
+  .jcard .jmeta{font-family:var(--body);font-size:12px;color:var(--gold);letter-spacing:.06em;margin-top:3px}
+  .jcard .jbar{height:6px;background:#0a1a30;border-radius:6px;overflow:hidden;margin:9px 0;border:1px solid #ffffff10}
+  .jcard .jbar i{display:block;height:100%;background:linear-gradient(90deg,#1fd18a,#00daff);border-radius:6px}
+  .jcard .jwin{font-family:var(--body);font-size:11px;color:var(--dim);margin-bottom:9px}
+  .jenter{width:100%;font-family:var(--star);font-weight:900;font-size:16px;letter-spacing:.05em;text-transform:uppercase;color:#001030;background:linear-gradient(135deg,#1fd18a,#00daff);border:none;border-radius:11px;padding:13px;cursor:pointer;transition:transform .15s}
+  .jenter:active{transform:scale(.97)}
   .challenge-btn::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 38%,#fff3 50%,transparent 62%);background-size:280% 100%;animation:csweep 3.5s linear infinite}
   @keyframes csweep{to{background-position:-280% 0}}
   .challenge-btn.locked{background:linear-gradient(135deg,#2a1518,#1a0e12);color:#ff8a6e;box-shadow:none;cursor:not-allowed}
@@ -178,6 +193,7 @@ let BASE=[
 let scores={}, sel={dir:null,sup:null,ger:null}, active=false, tab="equipe";
 let presentes=[]; // ids dos corretores presentes hoje (quando API_ON); em modo local, nomes
 let inBattle=false, faltas={};
+let batalhasAbertas=[]; // batalhas em andamento com janela de entrada aberta
 let pontosAdversarios=[], contestacoesRecebidas=[];
 function ph(t,c){return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='"+c+"'/><text x='100' y='100' font-family='sans-serif' font-size='16' fill='#fff' text-anchor='middle'>"+t+"</text></svg>")));}
 const uniq=a=>[...new Set(a)];
@@ -304,7 +320,29 @@ function equipeHTML(){
     <div class="grid">${list.map(n=>{const sc=scores[keyOf(n)]||{v:0,d:0};
       return `<button class="bro" data-n="${n}"><div class="nm">${n}</div><div class="sc">${sc.v*1+sc.d*3}</div><div class="dt">${sc.v} vis · ${sc.d} doc</div></button>`;}).join("")}</div>`;
   }
-  return `${placarBatalhaHTML()}${challengeBtn}${cabecalho}${corpo}`;
+  return `${placarBatalhaHTML()}${challengeBtn}${inBattle?'':joinableHTML()}${cabecalho}${corpo}`;
+}
+function joinableHTML(){
+  // só batalhas que ainda aceitam entrada e nas quais eu ainda não estou
+  const lista=batalhasAbertas.filter(d=>d.pode_entrar && !(d.participantes||[]).some(p=>String(p.equipe_id)===String(team().id)));
+  if(!lista.length) return "";
+  const cards=lista.map(d=>{
+    const nomes=(d.participantes||[]).map(p=>p.gerencia).join("  ×  ");
+    const regra=d.regra==="tempo"?`${d.regra_valor} min — quem fizer mais`:`primeiro a ${d.regra_valor} visitas`;
+    const pct=Math.min(100,Math.round((d.progresso||0)/0.20*100)); // % da janela de entrada consumida
+    return `<div class="jcard">
+      <div class="jvs">${nomes}</div>
+      <div class="jmeta">${regra} · ${d.vagas} vaga${d.vagas!==1?'s':''}</div>
+      <div class="jbar"><i style="width:${pct}%"></i></div>
+      <div class="jwin">janela de entrada: ${pct}% usada (fecha aos 20% da batalha)</div>
+      <button class="jenter" data-did="${d.id}">⚡ Entrar nesta batalha</button>
+    </div>`;
+  }).join("");
+  return `<div class="joinbox">
+    <div class="jh"><span class="live"></span> BATALHAS ABERTAS PARA ENTRAR</div>
+    <div class="jsub">Você pode pular para uma batalha que ainda está no início (até 20%). Entra com placar zerado.</div>
+    ${cards}
+  </div>`;
 }
 function bindEquipe(){
   const cb=document.getElementById("challengeBtn");if(cb)cb.onclick=openChallenge;
@@ -312,6 +350,36 @@ function bindEquipe(){
   const qa=document.getElementById("qadd");if(qa)qa.onclick=()=>{const i=document.getElementById("qn");const nm=i.value.trim();if(!nm)return;cadastrarCorretorRapido(nm);};
   const s=document.getElementById("search");if(s)s.oninput=e=>{filter=e.target.value;render();const s2=document.getElementById("search");if(s2){s2.focus();s2.value=filter;s2.setSelectionRange(filter.length,filter.length);}};
   document.querySelectorAll(".bro").forEach(b=>b.onclick=()=>openMarcar(b.dataset.n));
+  document.querySelectorAll(".jenter").forEach(b=>b.onclick=()=>pedirEntrada(b.dataset.did));
+}
+async function carregarBatalhasAbertas(){
+  if(!API_ON||inBattle){ if(batalhasAbertas.length){batalhasAbertas=[];if(tab==="equipe")render();} return; }
+  try{
+    const r=await ArenaAPI.duelosAtivos();
+    const lista=(r&&r.duelos)?r.duelos:[];
+    // só as que aceitam entrada e onde eu não estou
+    const novas=lista.filter(d=>d.pode_entrar && !(d.participantes||[]).some(p=>String(p.equipe_id)===String(team().id)));
+    // re-renderiza só se mudou (evita piscar)
+    const antes=JSON.stringify(batalhasAbertas.map(d=>[d.id,d.progresso,d.vagas]));
+    batalhasAbertas=novas;
+    const depois=JSON.stringify(novas.map(d=>[d.id,d.progresso,d.vagas]));
+    if(antes!==depois && tab==="equipe") render();
+  }catch(e){}
+}
+async function pedirEntrada(did){
+  if(!API_ON){toast("Entrada disponível no modo conectado");return;}
+  try{
+    const r=await ArenaAPI.entrarDuelo(did,team().id);
+    if(r&&r.ok){
+      toast("⚡ Você entrou na batalha! 🥊");
+      // entra na arena buscando o duelo atual
+      try{ const md=await ArenaAPI.meuDuelo(team().id); if(md&&md.ok&&md.duelo) entrarEmDueloReal(md.duelo); }catch(e){}
+      batalhasAbertas=[];
+    } else {
+      toast((r&&r.erro)?r.erro:"Não foi possível entrar (janela fechou)",true);
+      carregarBatalhasAbertas();
+    }
+  }catch(e){ toast("Falha ao entrar na batalha",true); }
 }
 // cadastro rápido: cria corretor no banco e já marca presente
 async function cadastrarCorretorRapido(nm){
@@ -656,6 +724,7 @@ async function bootstrap(){
   setInterval(()=>{
     verificarDesafioRecebido();
     if(inBattle) carregarArenaDoBanco();
+    else carregarBatalhasAbertas();
   },3000);
 }
 bootstrap();
