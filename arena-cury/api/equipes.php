@@ -75,4 +75,15 @@ if ($acao === 'online') {
   ok();
 }
 
+if ($acao === 'tirar_da_sala') {
+  // remove a equipe do salão HOJE: tira online, apaga presenças do dia e a alocação manual
+  $d = body(); $eid = (int)($d['equipe_id'] ?? 0);
+  if (!$eid) fail('Informe a equipe');
+  $hoje = date('Y-m-d');
+  db()->prepare('UPDATE equipes SET online=0 WHERE id=?')->execute([$eid]);
+  db()->prepare('DELETE FROM presencas WHERE equipe_id=? AND dia=?')->execute([$eid,$hoje]);
+  try { db()->prepare('DELETE FROM alocacoes_presenca WHERE equipe_id=? AND dia=?')->execute([$eid,$hoje]); } catch (Exception $e) {}
+  ok();
+}
+
 fail('Ação desconhecida: '.$acao, 404);

@@ -158,9 +158,20 @@ if ($acao === 'ativos') {
 
 if ($acao === 'encerrar') {
   $d = body(); $did=(int)($d['duelo_id']??0); $venc=(int)($d['vencedor_equipe_id']??0);
+  if (!$did) fail('Informe o duelo');
+  // se não veio vencedor explícito, vence quem está na frente (maior placar); empate → sem vencedor
+  if (!$venc) {
+    $ps = db()->prepare("SELECT equipe_id, pontos FROM duelo_participantes WHERE duelo_id=? ORDER BY pontos DESC");
+    $ps->execute([$did]); $rows = $ps->fetchAll();
+    if (count($rows) >= 1) {
+      $topo = (int)$rows[0]['pontos'];
+      $lideres = array_filter($rows, fn($r)=>(int)$r['pontos']===$topo);
+      if (count($lideres) === 1 && $topo > 0) $venc = (int)$rows[0]['equipe_id'];
+    }
+  }
   db()->prepare("UPDATE duelos SET status='encerrado', vencedor_equipe_id=?, encerrado_em=NOW() WHERE id=?")->execute([$venc?:null,$did]);
-  emitir('nocaute', ['duelo_id'=>$did,'vencedor_equipe_id'=>$venc]);
-  ok();
+  emitir('nocaute', ['duelo_id'=>$did,'vencedor_equipe_id'=>$venc,'encerrado_pela_recepcao'=>true]);
+  ok(['vencedor_equipe_id'=>$venc]);
 }
 
 fail('Ação desconhecida: '.$acao, 404);

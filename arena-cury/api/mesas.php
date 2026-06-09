@@ -1,9 +1,29 @@
 <?php
 // mesas.php — mesas do salão com ocupação (reservado vs presente)
-// Ações: listar | renomear | mapa
+// Ações: listar | renomear | mapa | alocar_presenca
 require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? 'listar';
 $hoje = date('Y-m-d');
+
+// alocação manual de equipes PRESENTES (sem reserva) a uma mesa, por dia
+db()->exec("CREATE TABLE IF NOT EXISTS alocacoes_presenca (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  equipe_id INT NOT NULL,
+  mesa_id INT NOT NULL,
+  dia DATE NOT NULL,
+  criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_aloc (equipe_id, dia)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+// mover (ou fixar) uma equipe presente-sem-reserva para uma mesa específica
+if ($acao === 'alocar_presenca') {
+  $d = body(); $eid=(int)($d['equipe_id']??0); $mesa=(int)($d['mesa_id']??0);
+  $dia = $d['dia'] ?? $hoje;
+  if (!$eid || !$mesa) fail('Dados inválidos');
+  db()->prepare("INSERT INTO alocacoes_presenca (equipe_id,mesa_id,dia) VALUES (?,?,?)
+                 ON DUPLICATE KEY UPDATE mesa_id=VALUES(mesa_id)")->execute([$eid,$mesa,$dia]);
+  ok();
+}
 
 if ($acao === 'listar') {
   ok(['mesas' => db()->query('SELECT * FROM mesas ORDER BY ordem, id')->fetchAll()]);
@@ -61,30 +81,38 @@ if ($acao === 'mapa') {
     if (isset($equipesComReserva[(int)$e['id']])) continue; // já está numa mesa via reserva
     $semReserva[] = $e;
   }
-  // aloca cada equipe presente-sem-reserva na 1ª mesa com lugar livre
+  // aloca cada equipe presente-sem-reserva: respeita alocação MANUAL; senão, automática
+  // carrega alocações manuais do dia
+  $alq = db()->prepare("SELECT equipe_id, mesa_id FROM alocacoes_presenca WHERE dia=?");
+  $alq->execute([$dia]);
+  $manual = [];
+  foreach ($alq->fetchAll() as $a) $manual[(int)$a['equipe_id']] = (int)$a['mesa_id'];
+
   foreach ($semReserva as $e) {
     $lug = max(1, (int)$e['presentes']); // ocupa pelo nº de presentes (mín. 1)
-    $alocou = false;
-    foreach ($mesas as &$m) {
-      if ($m['livres'] >= $lug) {
-        $m['equipes'][] = [
-          'id' => null, 'equipe_id' => (int)$e['id'], 'gerencia' => $e['gerencia'],
-          'lugares' => $lug, 'horario' => '', 'presentes' => (int)$e['presentes'],
-          'ociosos' => 0, 'tipo' => 'presenca' // sem reserva, presente no salão
-        ];
-        $m['ocupados'] += $lug;
-        $m['livres'] = max(0, (int)$m['lugares'] - $m['ocupados']);
-        $alocou = true; break;
-      }
+    $eid = (int)$e['id'];
+    $card = [
+      'id' => null, 'equipe_id' => $eid, 'gerencia' => $e['gerencia'],
+      'lugares' => $lug, 'horario' => '', 'presentes' => (int)$e['presentes'],
+      'ociosos' => 0, 'tipo' => 'presenca'
+    ];
+    $alvo = null;
+    // 1) alocação manual escolhida pela recepção
+    if (isset($manual[$eid])) {
+      foreach ($mesas as $idx=>$m) if ((int)$m['id']===$manual[$eid]) { $alvo=$idx; break; }
     }
-    unset($m);
-    // se não coube em nenhuma mesa, ainda assim devolve numa lista à parte
-    if (!$alocou) {
-      $mesas[0]['equipes'][] = [
-        'id'=>null,'equipe_id'=>(int)$e['id'],'gerencia'=>$e['gerencia'],
-        'lugares'=>$lug,'horario'=>'','presentes'=>(int)$e['presentes'],
-        'ociosos'=>0,'tipo'=>'presenca','sem_mesa'=>true
-      ];
+    // 2) automática: 1ª mesa com lugar livre
+    if ($alvo===null) {
+      foreach ($mesas as $idx=>$m) if ($m['livres'] >= $lug) { $alvo=$idx; break; }
+    }
+    if ($alvo!==null) {
+      $mesas[$alvo]['equipes'][] = $card;
+      $mesas[$alvo]['ocupados'] += $lug;
+      $mesas[$alvo]['livres'] = max(0, (int)$mesas[$alvo]['lugares'] - $mesas[$alvo]['ocupados']);
+    } else {
+      // não coube em nenhuma → mostra na 1ª mesa marcada como sem_mesa
+      $card['sem_mesa'] = true;
+      $mesas[0]['equipes'][] = $card;
     }
   }
   ok(['mesas'=>$mesas, 'dia'=>$dia]);
