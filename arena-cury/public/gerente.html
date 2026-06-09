@@ -67,6 +67,7 @@ let BASE=[
 ];
 let sel={dir:null,sup:null,ger:null}, active=false;
 let ag={dia:"",hora:"",lugares:5};
+let auth=null; // usuário logado
 
 const uniq=a=>[...new Set(a)];
 const dirs=()=>uniq(BASE.map(b=>b.dir));
@@ -76,22 +77,51 @@ const team=()=>BASE.find(b=>b.dir===sel.dir&&b.sup===sel.sup&&b.ger===sel.ger);
 
 function render(){
   const v=document.getElementById("view");
+  if(!auth){v.innerHTML=loginHTML();bindLogin();return;}
   if(!active){v.innerHTML=logonHTML();bindLogon();return;}
   v.innerHTML=agendaHTML();bindAgenda();
 }
+function loginHTML(){
+  return `<div class="eyebrow">ÁREA RESTRITA</div><h2>Acesso ao agendamento</h2>
+  <p class="lead">Entre com seu login e senha. O acesso é fornecido pela recepção.</p>
+  <div class="card">
+    <div class="field"><label>👤 Login</label><input id="liUser" autocomplete="username" placeholder="seu login"/></div>
+    <div class="field"><label>🔒 Senha</label><input id="liPass" type="password" autocomplete="current-password" placeholder="sua senha"/></div>
+    <button class="activate" id="liBtn">Entrar →</button>
+  </div>`;
+}
+function bindLogin(){
+  const btn=document.getElementById("liBtn");
+  const tryLogin=async()=>{
+    const login=document.getElementById("liUser").value.trim();
+    const senha=document.getElementById("liPass").value;
+    if(!login||!senha){toast("Preencha login e senha",true);return;}
+    if(!API_ON){ auth={nome:"Demo"}; render(); return; }
+    btn.disabled=true;btn.textContent="Entrando…";
+    try{
+      const r=await ArenaAPI.login(login,senha);
+      if(r&&r.ok&&r.usuario){ auth=r.usuario; toast("Bem-vindo, "+auth.nome+"!"); render(); }
+      else { toast(r&&r.erro?r.erro:"Login inválido",true); btn.disabled=false;btn.textContent="Entrar →"; }
+    }catch(e){ toast("Falha de conexão",true); btn.disabled=false;btn.textContent="Entrar →"; }
+  };
+  btn.onclick=tryLogin;
+  document.getElementById("liPass").onkeydown=e=>{if(e.key==="Enter")tryLogin();};
+}
 function logonHTML(){
   const o=(arr,cur,k)=>arr.map(x=>`<button class="opt${cur===x?' sel':''}" data-k="${k}" data-v="${x}">${x}</button>`).join("");
-  return `<div class="eyebrow">ACESSO DO GERENTE</div><h2>Identifique sua equipe</h2>
-  <p class="lead">Faça o login para agendar seu horário na arena.</p>
+  return `<div class="eyebrow">ACESSO DO GERENTE · ${auth.nome||''}</div><h2>Identifique sua equipe</h2>
+  <p class="lead">Selecione a equipe para agendar o horário na arena.</p>
   <div class="step"><div class="lbl">1 · DIRETORIA</div><div class="opts">${o(dirs(),sel.dir,"dir")}</div></div>
   <div class="step ${sel.dir?'':'off'}"><div class="lbl">2 · SUPERINTENDENTE</div><div class="opts">${sel.dir?o(sups(),sel.sup,"sup"):''}</div></div>
-  <div class="step ${sel.sup?'':'off'}"><div class="lbl">3 · VOCÊ (GERENTE)</div><div class="opts">${sel.sup?o(gers(),sel.ger,"ger"):''}</div></div>
-  <button class="activate" id="actBtn" ${sel.ger?'':'disabled'}>Entrar →</button>`;
+  <div class="step ${sel.sup?'':'off'}"><div class="lbl">3 · GERÊNCIA</div><div class="opts">${sel.sup?o(gers(),sel.ger,"ger"):''}</div></div>
+  <button class="activate" id="actBtn" ${sel.ger?'':'disabled'}>Continuar →</button>
+  <button class="btn-sm" style="width:100%;margin-top:10px;padding:13px" id="sairLogin">sair da conta</button>`;
 }
 function bindLogon(){
   document.querySelectorAll(".opt[data-k]").forEach(b=>b.onclick=()=>{const k=b.dataset.k,val=b.dataset.v;
     if(k==="dir"){sel.dir=val;sel.sup=null;sel.ger=null;}if(k==="sup"){sel.sup=val;sel.ger=null;}if(k==="ger")sel.ger=val;render();});
   const a=document.getElementById("actBtn");if(a)a.onclick=()=>{active=true;render();};
+  const sl=document.getElementById("sairLogin");if(sl)sl.onclick=()=>{auth=null;sel={dir:null,sup:null,ger:null};active=false;render();};
 }
 function agendaHTML(){
   const t=team();
@@ -123,8 +153,16 @@ async function confirmar(){
     const r=await ArenaAPI.criarReserva({dia:ag.dia,horario:ag.hora,nivel:'ger',nome:t.ger,lugares:ag.lugares,equipe_id:t.id});
     if(r&&r.ok){ mostrarOk(`${ag.dia} às ${ag.hora}`, r.mesa_nome||"definida"); }
     else { toast(r&&r.erro?r.erro:"Não foi possível agendar",true); }
-  }catch(e){ toast("Erro ao agendar. Tente outro horário.",true); }
+  }catch(e){ toast("Falha de conexão com o servidor.",true); }
 }
+// diagnóstico opcional: ?diag na URL mostra o estado do banco
+async function diag(){
+  try{
+    const m=await ArenaAPI.listarMesas();
+    alert("Mesas no banco: "+(m&&m.mesas?m.mesas.length:0)+"\n"+JSON.stringify(m).slice(0,300));
+  }catch(e){ alert("Erro: "+e.message); }
+}
+if(location.search.includes("diag")) setTimeout(diag,800);
 function mostrarOk(quando,mesa){
   const v=document.getElementById("view");
   v.innerHTML=`<div class="okbox"><div class="ic">✅</div><h3>Agendamento confirmado!</h3>
