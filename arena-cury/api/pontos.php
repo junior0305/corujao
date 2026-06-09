@@ -26,9 +26,22 @@ if ($acao === 'marcar') {
                        WHERE p.equipe_id=? AND d.status='ativo' LIMIT 1");
   $st->execute([$eid]);
   $duelo = $st->fetch(); $duelo_id = $duelo ? $duelo['id'] : null;
-  $ins = db()->prepare('INSERT INTO pontos (equipe_id,corretor_id,tipo,valor,foto,duelo_id) VALUES (?,?,?,?,?,?)');
+  // Mecânica de contestação: o ponto VALE NA HORA (entra como aprovado).
+  // A fiscalização é feita depois pelos adversários (contestação), não por aprovação prévia.
+  $ins = db()->prepare("INSERT INTO pontos (equipe_id,corretor_id,tipo,valor,foto,duelo_id,status,decidido_em)
+                        VALUES (?,?,?,?,?,?, 'aprovado', NOW())");
   $ins->execute([$eid,$cid,$tipo,$valor,$foto,$duelo_id]);
-  ok(['id' => db()->lastInsertId(), 'status' => 'pendente']);
+  $pid = db()->lastInsertId();
+  // se há duelo ativo, soma no placar do duelo na hora
+  if ($duelo_id) {
+    db()->prepare('UPDATE duelo_participantes SET pontos=pontos+? WHERE duelo_id=? AND equipe_id=?')
+        ->execute([$valor,$duelo_id,$eid]);
+  }
+  // evento para a TV animar (soco/explosão)
+  $e = db()->prepare('SELECT gerencia FROM equipes WHERE id=?'); $e->execute([$eid]);
+  $ger = $e->fetch()['gerencia'] ?? '';
+  emitir($tipo, ['equipe_id'=>$eid, 'gerencia'=>$ger, 'valor'=>$valor, 'duelo_id'=>$duelo_id]);
+  ok(['id' => $pid, 'status' => 'aprovado']);
 }
 
 if ($acao === 'pendentes') {
