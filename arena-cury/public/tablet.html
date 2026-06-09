@@ -195,8 +195,19 @@ function bindLogon(){
     active=true;
     const t=team();
     if(API_ON&&t.id){ try{ await ArenaAPI.setOnline(t.id,true); }catch(e){} }
+    salvarEstado();
     render();toast(t.ger+" ativada na arena! 🚀");
   };
+}
+// ---- persistência do logon (sobrevive ao F5) ----
+function salvarEstado(){
+  try{ localStorage.setItem("arena_logon", JSON.stringify({dir:sel.dir,sup:sel.sup,ger:sel.ger})); }catch(e){}
+}
+function limparEstado(){
+  try{ localStorage.removeItem("arena_logon"); }catch(e){}
+}
+function lerEstado(){
+  try{ const s=localStorage.getItem("arena_logon"); return s?JSON.parse(s):null; }catch(e){ return null; }
 }
 function shellHTML(){
   const t=team();const nC=contestacoesRecebidas.length;
@@ -208,7 +219,7 @@ function shellHTML(){
   </div><div class="pane on" id="pane"></div>`;
 }
 function bindShell(){
-  document.getElementById("logout").onclick=()=>{active=false;sel={dir:null,sup:null,ger:null};tab="equipe";render();};
+  document.getElementById("logout").onclick=()=>{limparEstado();active=false;sel={dir:null,sup:null,ger:null};tab="equipe";inBattle=false;dueloPlacar=[];meuDueloId=null;render();};
   document.querySelectorAll(".tab[data-tab]").forEach(b=>b.onclick=()=>{
     if(b.dataset.tab==="arena"&&!inBattle){toast("A aba Arena abre quando você está em um duelo");return;}
     tab=b.dataset.tab;render();});
@@ -495,6 +506,25 @@ async function bootstrap(){
       });
     }
   }catch(e){ /* sem banco: modo local com dados de exemplo */ }
+
+  // restaura logon salvo (sobrevive ao F5)
+  const salvo=lerEstado();
+  if(salvo&&salvo.ger){
+    const existe=BASE.find(b=>b.dir===salvo.dir&&b.sup===salvo.sup&&b.ger===salvo.ger);
+    if(existe){
+      sel.dir=salvo.dir;sel.sup=salvo.sup;sel.ger=salvo.ger;active=true;
+      // marca online de novo e verifica se está em batalha
+      if(API_ON&&existe.id){
+        try{ await ArenaAPI.setOnline(existe.id,true); }catch(e){}
+        try{
+          const r=await ArenaAPI.meuDuelo(existe.id);
+          if(r&&r.ok&&r.duelo&&r.duelo.status==='ativo'){
+            entrarEmDueloReal(r.duelo); // restaura a batalha e o placar
+          }
+        }catch(e){}
+      }
+    }
+  }
   render();
   // polling: verifica desafios recebidos e atualiza a arena durante o duelo
   setInterval(()=>{
