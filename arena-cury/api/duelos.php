@@ -41,6 +41,28 @@ if ($acao === 'meu_duelo') {
   ok(['duelo' => $d ?: null]);
 }
 
+if ($acao === 'desistir') {
+  // equipe abandona o duelo voluntariamente (continua online no sistema)
+  $d = body(); $did=(int)($d['duelo_id']??0); $eid=(int)($d['equipe_id']??0);
+  if (!$did || !$eid) fail('Dados inválidos');
+  $g = db()->prepare('SELECT gerencia FROM equipes WHERE id=?'); $g->execute([$eid]);
+  $ger = $g->fetch()['gerencia'] ?? '';
+  // remove do duelo
+  db()->prepare('DELETE FROM duelo_participantes WHERE duelo_id=? AND equipe_id=?')->execute([$did,$eid]);
+  emitir('desistencia', ['duelo_id'=>$did, 'equipe_id'=>$eid, 'gerencia'=>$ger]);
+  // se sobrou só 1, encerra com vitória dele
+  $rest = db()->prepare('SELECT equipe_id FROM duelo_participantes WHERE duelo_id=?');
+  $rest->execute([$did]); $sobra = $rest->fetchAll();
+  if (count($sobra) <= 1) {
+    $venc = $sobra ? $sobra[0]['equipe_id'] : null;
+    db()->prepare("UPDATE duelos SET status='encerrado', vencedor_equipe_id=?, encerrado_em=NOW() WHERE id=?")
+        ->execute([$venc, $did]);
+    emitir('nocaute', ['duelo_id'=>$did, 'vencedor_equipe_id'=>$venc, 'por_desistencia'=>true]);
+    ok(['encerrado'=>true]);
+  }
+  ok(['encerrado'=>false]);
+}
+
 if ($acao === 'criar') {
   // desafiante cria; fica 'aguardando' o aceite do desafiado
   $d = body();
