@@ -51,3 +51,23 @@ function emitir($tipo, $payload = []) {
   $st = db()->prepare('INSERT INTO eventos (tipo, payload) VALUES (?, ?)');
   $st->execute([$tipo, json_encode($payload, JSON_UNESCAPED_UNICODE)]);
 }
+
+// ------------------------------------------------------------
+// Manutenção: apaga a FOTO (base64) de pontos com mais de 24h.
+// Mantém o ponto e o placar — só remove a imagem pesada, que só é útil
+// no dia do evento (comprovante p/ contestação). Alivia o banco.
+// Trava por arquivo: a checagem roda em toda requisição, mas o UPDATE
+// executa no máximo 1x a cada 30 min e nunca derruba a requisição.
+// ------------------------------------------------------------
+function limparFotosAntigas($throttleSeg = 1800) {
+  $marker = sys_get_temp_dir().'/arena_foto_cleanup';
+  if (is_file($marker) && (time() - @filemtime($marker)) < $throttleSeg) return;
+  @touch($marker); // marca antes de rodar p/ evitar corrida entre requisições simultâneas
+  try {
+    db()->query("UPDATE pontos SET foto=NULL
+                 WHERE foto IS NOT NULL AND criado_em < (NOW() - INTERVAL 24 HOUR)");
+  } catch (Exception $e) { /* manutenção é silenciosa: não pode quebrar a API */ }
+}
+
+// dispara a manutenção automática em toda requisição (a trava cuida da frequência)
+limparFotosAntigas();

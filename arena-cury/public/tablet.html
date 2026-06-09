@@ -446,9 +446,29 @@ function openMarcar(n){
   document.getElementById("tyV").onclick=()=>{mTipo="visita";updM();};
   document.getElementById("tyD").onclick=()=>{mTipo="doc";updM();};
   document.getElementById("photoBtn").onclick=()=>document.getElementById("file").click();
-  document.getElementById("file").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{mFoto=r.result;updM();};r.readAsDataURL(f);};
+  document.getElementById("file").onchange=e=>{const f=e.target.files[0];if(!f)return;comprimirFoto(f,d=>{mFoto=d;updM();});};
   document.getElementById("mCancel").onclick=()=>m.classList.remove("on");
   document.getElementById("mSend").onclick=registrarPonto;
+}
+// reduz a foto da câmera (máx ~1280px, JPEG q.0.6) antes de enviar — corta o tamanho ~20-30x,
+// o que evita o atraso de upload/gravação que travava a animação na TV. Fallback: usa a original.
+function comprimirFoto(file,cb){
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const MAX=1280; let{width:w,height:h}=img;
+        if(w>MAX||h>MAX){const s=Math.min(MAX/w,MAX/h);w=Math.round(w*s);h=Math.round(h*s);}
+        const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+        cv.getContext("2d").drawImage(img,0,0,w,h);
+        cb(cv.toDataURL("image/jpeg",0.6));
+      }catch(err){cb(r.result);} // se não der pra processar, manda a original
+    };
+    img.onerror=()=>cb(r.result); // formato não desenhável (ex.: HEIC) — manda a original
+    img.src=r.result;
+  };
+  r.readAsDataURL(file);
 }
 function updM(){
   document.getElementById("tyV").classList.toggle("sel",mTipo==="visita");
