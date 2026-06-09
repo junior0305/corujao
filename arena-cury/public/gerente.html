@@ -100,7 +100,11 @@ function bindLogin(){
     btn.disabled=true;btn.textContent="Entrando…";
     try{
       const r=await ArenaAPI.login(login,senha);
-      if(r&&r.ok&&r.usuario){ auth=r.usuario; toast("Bem-vindo, "+auth.nome+"!"); render(); }
+      if(r&&r.ok&&r.usuario){ auth=r.usuario;
+        // pré-seleciona a diretoria e superintendência do superintendente logado
+        if(auth.diretoria)sel.dir=auth.diretoria;
+        if(auth.superintendencia)sel.sup=auth.superintendencia;
+        toast("Bem-vindo, "+auth.nome+"!"); render(); }
       else { toast(r&&r.erro?r.erro:"Login inválido",true); btn.disabled=false;btn.textContent="Entrar →"; }
     }catch(e){ toast("Falha de conexão",true); btn.disabled=false;btn.textContent="Entrar →"; }
   };
@@ -109,11 +113,15 @@ function bindLogin(){
 }
 function logonHTML(){
   const o=(arr,cur,k)=>arr.map(x=>`<button class="opt${cur===x?' sel':''}" data-k="${k}" data-v="${x}">${x}</button>`).join("");
-  return `<div class="eyebrow">ACESSO DO GERENTE · ${auth.nome||''}</div><h2>Identifique sua equipe</h2>
-  <p class="lead">Selecione a equipe para agendar o horário na arena.</p>
-  <div class="step"><div class="lbl">1 · DIRETORIA</div><div class="opts">${o(dirs(),sel.dir,"dir")}</div></div>
-  <div class="step ${sel.dir?'':'off'}"><div class="lbl">2 · SUPERINTENDENTE</div><div class="opts">${sel.dir?o(sups(),sel.sup,"sup"):''}</div></div>
-  <div class="step ${sel.sup?'':'off'}"><div class="lbl">3 · GERÊNCIA</div><div class="opts">${sel.sup?o(gers(),sel.ger,"ger"):''}</div></div>
+  const listaGer=gers();
+  return `<div class="eyebrow">ACESSO DO SUPERINTENDENTE · ${auth.nome||''}</div><h2>Agendar para uma gerência</h2>
+  <p class="lead">Você está logado como superintendente. Escolha a gerência que vai agendar.</p>
+  <div class="card" style="margin-bottom:16px;padding:16px">
+    <div style="font-family:var(--star);font-size:11px;letter-spacing:.15em;color:var(--dim);margin-bottom:6px">SUA POSIÇÃO</div>
+    <div style="font-weight:700">${sel.dir||'—'}</div>
+    <div style="color:var(--dim);font-size:13px">${sel.sup||'—'}</div>
+  </div>
+  <div class="step"><div class="lbl">GERÊNCIA</div><div class="opts">${listaGer.length?o(listaGer,sel.ger,"ger"):'<span style="color:var(--dim)">Nenhuma gerência cadastrada para você. Peça à recepção para cadastrar a equipe.</span>'}</div></div>
   <button class="activate" id="actBtn" ${sel.ger?'':'disabled'}>Continuar →</button>
   <button class="btn-sm" style="width:100%;margin-top:10px;padding:13px" id="sairLogin">sair da conta</button>`;
 }
@@ -125,6 +133,9 @@ function bindLogon(){
 }
 function agendaHTML(){
   const t=team();
+  const maxLug=Math.max(1, t.nCorretores||0);
+  if(ag.lugares>maxLug)ag.lugares=maxLug;
+  const semCorr=(t.nCorretores||0)===0;
   return `<div class="ghead"><div><div class="t">${t.ger}</div><div class="s">${t.dir} · ${t.sup}</div></div>
     <button class="btn-sm" id="logout">sair</button></div>
   <div class="card">
@@ -133,15 +144,18 @@ function agendaHTML(){
     <div class="field"><label>🕐 Horário (9h às 20h)</label><input type="time" id="agHora" min="09:00" max="20:00" value="${ag.hora}"/></div>
     <div class="field"><label>👥 Quantos corretores vão participar?</label>
       <div class="counter"><button id="minus">−</button><span class="val" id="lugVal">${ag.lugares}</span><button id="plus">+</button>
-      <span class="hint">lugares reservados</span></div></div>
-    <button class="send" id="agSend" ${ag.dia&&ag.hora?'':'disabled'}>⚡ Confirmar agendamento</button>
+      <span class="hint">de ${maxLug} cadastrado${maxLug!==1?'s':''}</span></div></div>
+    ${semCorr?`<p style="color:var(--no);font-size:13px;margin-bottom:14px">⚠ Esta equipe não tem corretores cadastrados. Peça à recepção para cadastrar antes de agendar.</p>`:''}
+    <button class="send" id="agSend" ${ag.dia&&ag.hora&&!semCorr?'':'disabled'}>⚡ Confirmar agendamento</button>
   </div>`;
 }
 function bindAgenda(){
-  document.getElementById("logout").onclick=()=>{active=false;sel={dir:null,sup:null,ger:null};render();};
+  const t=team();const maxLug=Math.max(1, t.nCorretores||0);
+  document.getElementById("logout").onclick=()=>{active=false;sel.ger=null;render();};
   document.getElementById("agDia").onchange=e=>{ag.dia=e.target.value;upd();};
   document.getElementById("agHora").onchange=e=>{ag.hora=e.target.value;upd();};
   document.getElementById("minus").onclick=()=>{ag.lugares=Math.max(1,ag.lugares-1);render();};
+  document.getElementById("plus").onclick=()=>{ag.lugares=Math.min(maxLug,ag.lugares+1);render();};
   document.getElementById("plus").onclick=()=>{ag.lugares=Math.min(20,ag.lugares+1);render();};
   document.getElementById("agSend").onclick=confirmar;
 }
@@ -179,7 +193,7 @@ async function bootstrap(){
     const res=await ArenaAPI.listarEquipes();
     if(res&&res.ok&&Array.isArray(res.equipes)&&res.equipes.length){
       API_ON=true;
-      BASE=res.equipes.map(e=>({id:e.id,dir:e.diretoria,sup:e.superintendencia,ger:e.gerencia}));
+      BASE=res.equipes.map(e=>({id:e.id,dir:e.diretoria,sup:e.superintendencia,ger:e.gerencia,nCorretores:(e.corretores||[]).length}));
     }
   }catch(e){}
   render();
