@@ -76,9 +76,13 @@ if ($acao === 'criar') {
   $cores = $CORES; shuffle($cores);
   db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,cor,ordem) VALUES (?,?,?,1)')->execute([$did,$desafiante,$cores[0]]);
   db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,cor,ordem) VALUES (?,?,?,2)')->execute([$did,$desafiado,$cores[1]]);
-  $g = db()->prepare('SELECT id,gerencia FROM equipes WHERE id IN (?,?)'); $g->execute([$desafiante,$desafiado]);
-  $nomes=[]; foreach($g->fetchAll() as $r)$nomes[$r['id']]=$r['gerencia'];
-  emitir('desafio', ['duelo_id'=>$did,'desafiante'=>$nomes[$desafiante]??'','desafiado'=>$nomes[$desafiado]??'','regra'=>$regra,'regra_valor'=>$rv]);
+  $g = db()->prepare('SELECT id,gerencia,superintendencia FROM equipes WHERE id IN (?,?)'); $g->execute([$desafiante,$desafiado]);
+  $nomes=[]; $sups=[]; foreach($g->fetchAll() as $r){$nomes[$r['id']]=$r['gerencia'];$sups[$r['id']]=$r['superintendencia'];}
+  emitir('desafio', ['duelo_id'=>$did,
+    'desafiante'=>$nomes[$desafiante]??'','desafiado'=>$nomes[$desafiado]??'',
+    'desafiante_id'=>$desafiante,'desafiado_id'=>$desafiado,
+    'desafiante_sup'=>$sups[$desafiante]??'','desafiado_sup'=>$sups[$desafiado]??'',
+    'regra'=>$regra,'regra_valor'=>$rv]);
   ok(['duelo_id'=>$did]);
 }
 
@@ -98,17 +102,36 @@ if ($acao === 'responder') {
 }
 
 if ($acao === 'entrar') {
-  // 3º ao 5º entra direto (sem aceite)
+  // 3º ao 5º entra direto (sem aceite), DESDE QUE dentro da janela de 20% da batalha
   $d = body(); $did=(int)($d['duelo_id']??0); $eid=(int)($d['equipe_id']??0);
   if (!$did||!$eid) fail('Dados inválidos');
+  // carrega o duelo para checar a janela de entrada
+  $dl=db()->prepare('SELECT * FROM duelos WHERE id=?'); $dl->execute([$did]); $duelo=$dl->fetch();
+  if (!$duelo) fail('Duelo não encontrado', 404);
+  if ($duelo['status']!=='ativo') fail('A batalha não está ativa para entrada');
+  // progresso: por tempo = decorrido/duração; por meta = maior placar / meta
+  $prog = 1.0;
+  if ($duelo['regra']==='tempo') {
+    $dur = max(1, (int)$duelo['regra_valor']*60); // regra_valor em minutos
+    $ini = $duelo['iniciado_em'] ? strtotime($duelo['iniciado_em']) : time();
+    $prog = (time() - $ini) / $dur;
+  } else {
+    $mp=db()->prepare('SELECT COALESCE(MAX(pontos),0) m FROM duelo_participantes WHERE duelo_id=?'); $mp->execute([$did]);
+    $top=(int)$mp->fetch()['m']; $meta=max(1,(int)$duelo['regra_valor']);
+    $prog = $top / $meta;
+  }
+  if ($prog > 0.20) fail('Janela de entrada encerrada: a batalha já passou de 20%');
   $st=db()->prepare('SELECT COUNT(*) n FROM duelo_participantes WHERE duelo_id=?'); $st->execute([$did]);
   $n=(int)$st->fetch()['n']; if ($n>=5) fail('Duelo cheio (máx 5)');
+  // não pode entrar duas vezes
+  $ja=db()->prepare('SELECT 1 FROM duelo_participantes WHERE duelo_id=? AND equipe_id=?'); $ja->execute([$did,$eid]);
+  if ($ja->fetch()) fail('Equipe já está na batalha');
   $usadas=db()->prepare('SELECT cor FROM duelo_participantes WHERE duelo_id=?'); $usadas->execute([$did]);
   $u=array_column($usadas->fetchAll(),'cor'); $livres=array_values(array_diff($CORES,$u));
   $cor=$livres? $livres[0] : $CORES[array_rand($CORES)];
   db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,cor,ordem,pontos) VALUES (?,?,?,?,0)')->execute([$did,$eid,$cor,$n+1]);
-  $g=db()->prepare('SELECT gerencia FROM equipes WHERE id=?'); $g->execute([$eid]);
-  emitir('entra_duelo', ['duelo_id'=>$did,'gerencia'=>$g->fetch()['gerencia']??'','cor'=>$cor]);
+  $g=db()->prepare('SELECT gerencia,superintendencia FROM equipes WHERE id=?'); $g->execute([$eid]); $eq=$g->fetch();
+  emitir('entra_duelo', ['duelo_id'=>$did,'equipe_id'=>$eid,'gerencia'=>$eq['gerencia']??'','superintendencia'=>$eq['superintendencia']??'','cor'=>$cor]);
   ok();
 }
 
