@@ -113,6 +113,7 @@ async function carregarMapa(){
     <div class="dayrow"><label style="color:var(--dim);font-size:13px">Dia:</label><input type="date" id="mapaDia" value="${mapaDia}" style="width:auto;background:#001030;border:1px solid #1a5fc455;border-radius:10px;padding:8px 12px;color:var(--ink)"/>
     <button class="btn btn-ghost" id="reloadMapa">Atualizar</button></div>
     <p class="lead" id="mapaResumo" style="margin-top:-6px"></p>
+    <div id="duelosAtivos"></div>
     <div id="mesasGrid" class="mesas-grid"><p class="lead">Carregando...</p></div>`;
   document.getElementById("mapaDia").onchange=e=>{mapaDia=e.target.value;carregarMapa();};
   document.getElementById("reloadMapa").onclick=carregarMapa;
@@ -121,7 +122,29 @@ async function carregarMapa(){
     const r=await ArenaAPI.mapaMesas(mapaDia);
     mesasMapa=(r&&r.ok)?(r.mesas||[]):[];
     renderMesas();
+    carregarDuelosAtivos();
   }catch(e){document.getElementById("mesasGrid").innerHTML=`<p class="empty">Erro ao carregar o mapa.</p>`;}
+}
+async function carregarDuelosAtivos(){
+  const box=document.getElementById("duelosAtivos");if(!box)return;
+  if(!API_ON){box.innerHTML="";return;}
+  let duelos=[];
+  try{const r=await ArenaAPI.duelosAtivos();duelos=(r&&r.duelos)?r.duelos.filter(d=>d.status==="ativo"):[];}catch(e){box.innerHTML="";return;}
+  if(!duelos.length){box.innerHTML="";return;}
+  box.innerHTML=`<div style="background:#1a0e1e;border:1px solid #ff5b6e44;border-radius:14px;padding:14px;margin-bottom:18px">
+    <div style="font-family:var(--star);font-size:13px;letter-spacing:.1em;color:#ff8a9c;margin-bottom:10px">🥊 DUELOS EM ANDAMENTO — encerrar em caso de erro ou desistência</div>
+    ${duelos.map(d=>{
+      const nomes=(d.participantes||[]).map(p=>`${p.gerencia} <b style="color:var(--cyan)">${p.pontos}</b>`).join(" &nbsp;×&nbsp; ");
+      const regra=d.regra==="tempo"?`${d.regra_valor} min`:`até ${d.regra_valor}`;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #ffffff10">
+        <div><div style="font-weight:700">${nomes}</div><div style="font-size:12px;color:var(--dim)">${regra} · ${(d.participantes||[]).length} competidores</div></div>
+        <button class="btn btn-no" data-encerrar="${d.id}" style="border:1px solid #ff5b6e55;white-space:nowrap">encerrar duelo</button>
+      </div>`;
+    }).join("")}
+  </div>`;
+  box.querySelectorAll("[data-encerrar]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Encerrar este duelo? Use em caso de desafio errado ou equipe que foi embora. Vence quem estiver na frente."))return;
+    try{const r=await ArenaAPI.encerrarDuelo(b.dataset.encerrar,0);if(r&&r.ok){toast("Duelo encerrado");carregarDuelosAtivos();}}catch(e){toast("Erro ao encerrar",true);}});
 }
 function renderMesas(){
   const g=document.getElementById("mesasGrid");if(!g)return;
@@ -139,12 +162,14 @@ function renderMesas(){
       const ocioso=q.ociosos>0;
       const presenca = q.tipo==='presenca';
       if(presenca){
-        // equipe presente no salão (entrou pelo tablet) — sem reserva
-        return `<div class="eq presenca" data-eqid="${q.equipe_id}" style="border-left:3px solid var(--ok)">
+        // equipe presente no salão (entrou pelo tablet) — sem reserva, mas movível e removível
+        return `<div class="eq presenca" draggable="true" data-eqid="${q.equipe_id}" style="border-left:3px solid var(--ok)">
           <div class="eq-top"><span class="eq-nm">${q.gerencia||q.nome||'Equipe'}</span>
           <span class="ocioso-tag" style="background:#1fd18a22;color:var(--ok);border-color:#1fd18a55">presente</span></div>
           <div class="eq-meta">no salão agora · ${q.presentes} presente${q.presentes!==1?'s':''}${q.sem_mesa?' · ⚠ sem mesa':''}</div>
-        </div>`;
+          <div class="eq-acts">
+            <button class="btn-no" data-tirar="${q.equipe_id}" style="border:1px solid #ff5b6e55">tirar da sala</button>
+          </div></div>`;
       }
       return `<div class="eq ${ocioso?'ocioso':''}" draggable="true" data-rid="${q.id}">
         <div class="eq-top"><span class="eq-nm">${q.gerencia||q.nome||'Equipe'}</span>
@@ -176,17 +201,28 @@ function bindMapa(){
   document.querySelectorAll("[data-remres]").forEach(b=>b.onclick=async()=>{
     if(!confirm("Remover esta reserva da mesa?"))return;
     try{await ArenaAPI.removerReserva(b.dataset.remres);toast("Reserva removida");carregarMapa();}catch(e){}});
-  let dragRid=null;
-  document.querySelectorAll(".eq[draggable]").forEach(el=>{el.ondragstart=()=>{dragRid=el.dataset.rid;};});
+  // tirar equipe presente da sala (foi embora / marcou presença por engano)
+  document.querySelectorAll("[data-tirar]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Tirar esta equipe da sala? Isso remove a presença de hoje."))return;
+    try{const r=await ArenaAPI.tirarDaSala(b.dataset.tirar);if(r&&r.ok){toast("Equipe retirada da sala");carregarMapa();}}catch(e){toast("Erro ao retirar",true);}});
+  // drag-and-drop: distingue reserva (rid) de presença sem reserva (eqid)
+  let drag={tipo:null,id:null};
+  document.querySelectorAll(".eq[draggable]").forEach(el=>{el.ondragstart=()=>{
+    if(el.dataset.rid){drag={tipo:"reserva",id:el.dataset.rid};}
+    else if(el.dataset.eqid){drag={tipo:"presenca",id:el.dataset.eqid};}
+  };});
   document.querySelectorAll(".mesa").forEach(m=>{
     m.ondragover=e=>{e.preventDefault();m.classList.add("drop");};
     m.ondragleave=()=>m.classList.remove("drop");
     m.ondrop=async e=>{e.preventDefault();m.classList.remove("drop");
-      const mesaId=m.dataset.mesa;if(!dragRid||!mesaId)return;
-      try{const r=await ArenaAPI.reposicionarReserva(dragRid,mesaId);
+      const mesaId=m.dataset.mesa;if(!drag.id||!mesaId)return;
+      try{
+        let r;
+        if(drag.tipo==="reserva") r=await ArenaAPI.reposicionarReserva(drag.id,mesaId);
+        else r=await ArenaAPI.alocarPresenca(drag.id,mesaId,mapaDia);
         if(r&&r.ok){toast("Equipe movida");carregarMapa();}else{toast(r&&r.erro?r.erro:"Não coube nessa mesa",true);}
       }catch(e){toast("Erro ao mover",true);}
-      dragRid=null;};
+      drag={tipo:null,id:null};};
   });
 }
 
