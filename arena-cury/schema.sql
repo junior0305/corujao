@@ -127,3 +127,15 @@ CREATE TABLE IF NOT EXISTS faltas (
   equipe_id   INT NOT NULL,
   criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Presença de corretores por dia/evento (check-in)
+CREATE TABLE IF NOT EXISTS presencas (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  corretor_id INT NOT NULL,
+  equipe_id   INT NOT NULL,
+  dia         DATE NOT NULL,
+  criado_em   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_presenca (corretor_id, dia),
+  FOREIGN KEY (corretor_id) REFERENCES corretores(id) ON DELETE CASCADE,
+  FOREIGN KEY (equipe_id) REFERENCES equipes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
