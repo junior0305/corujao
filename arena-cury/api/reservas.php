@@ -1,44 +1,92 @@
 <?php
-// reservas.php — reservas do salão com as regras (5 mesas x 20 = 100; diretoria bloqueia o dia; seg-sex 9h-20h)
+// reservas.php — reservas por LUGARES com alocação automática de mesa
+// Ações: listar | criar | remover | reposicionar | liberar
 require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? 'listar';
-const CAP_TOTAL = 100;
+
+function diaValido($dia){
+  $wd = (int)date('w', strtotime($dia)); // 0=dom 6=sab
+  return !($wd===0 || $wd===6);
+}
 
 if ($acao === 'listar') {
-  ok(['reservas' => db()->query('SELECT * FROM reservas ORDER BY dia, horario')->fetchAll()]);
+  $rows = db()->query("SELECT r.*, e.gerencia, m.nome AS mesa_nome
+                       FROM reservas r LEFT JOIN equipes e ON e.id=r.equipe_id
+                       LEFT JOIN mesas m ON m.id=r.mesa_id
+                       ORDER BY r.dia, r.horario")->fetchAll();
+  ok(['reservas' => $rows]);
 }
+
 if ($acao === 'criar') {
   $d = body();
-  $dia = $d['dia'] ?? ''; $hora = $d['horario'] ?? ''; $nivel = $d['nivel'] ?? '';
-  $nome = trim($d['nome'] ?? ''); $part = (int)($d['participantes'] ?? 0);
-  $buf = !empty($d['buffet']) ? 1 : 0; $bufh = $d['buffet_hora'] ?? null;
-  if (!$dia || !$hora || !in_array($nivel,['dir','sup','ger']) || $nome==='') fail('Preencha os campos da reserva');
-  // fim de semana
-  $wd = (int)date('w', strtotime($dia)); // 0=dom 6=sab
-  if ($wd === 0 || $wd === 6) fail('A arena não funciona aos fins de semana');
+  $dia=$d['dia']??''; $hora=$d['horario']??''; $nivel=$d['nivel']??'ger';
+  $nome=trim($d['nome']??''); $lugares=(int)($d['lugares']??0);
+  $equipe_id = !empty($d['equipe_id']) ? (int)$d['equipe_id'] : null;
+  if (!$dia || !$hora || $lugares<1) fail('Preencha dia, horário e nº de lugares');
+  if (!diaValido($dia)) fail('A arena não funciona aos fins de semana');
   if ($hora < '09:00' || $hora > '20:00') fail('Horário permitido: 9h às 20h');
-  // diretoria = salão todo
-  if ($nivel === 'dir') $part = CAP_TOTAL;
-  // dia já bloqueado por diretoria?
-  $st = db()->prepare("SELECT nome FROM reservas WHERE dia=? AND nivel='dir' LIMIT 1");
-  $st->execute([$dia]);
-  if ($r = $st->fetch()) fail('Dia bloqueado pela '.$r['nome']);
-  // nova diretoria mas já há reservas nesse dia?
-  if ($nivel === 'dir') {
-    $st = db()->prepare('SELECT COUNT(*) n FROM reservas WHERE dia=?'); $st->execute([$dia]);
-    if ((int)$st->fetch()['n'] > 0) fail('Já há reservas nesse dia — diretoria não pode bloquear');
+
+  // a mesma equipe já tem reserva nesse dia/horário?
+  if ($equipe_id) {
+    $c = db()->prepare("SELECT id FROM reservas WHERE equipe_id=? AND dia=? AND horario=?");
+    $c->execute([$equipe_id,$dia,$hora]);
+    if ($c->fetch()) fail('Sua equipe já tem uma reserva nesse dia e horário');
   }
-  // capacidade do dia
-  $st = db()->prepare('SELECT COALESCE(SUM(participantes),0) u FROM reservas WHERE dia=?'); $st->execute([$dia]);
-  $usados = (int)$st->fetch()['u'];
-  if ($usados + $part > CAP_TOTAL) fail('Sem lugares suficientes nesse dia ('.(CAP_TOTAL-$usados).' livres)');
-  db()->prepare('INSERT INTO reservas (dia,horario,nivel,nome,participantes,buffet,buffet_hora) VALUES (?,?,?,?,?,?,?)')
-      ->execute([$dia,$hora,$nivel,$nome,$part,$buf,$bufh]);
-  ok(['id' => db()->lastInsertId()]);
+
+  // ALOCAÇÃO AUTOMÁTICA: acha a 1ª mesa com lugares livres suficientes nesse dia
+  $mesas = db()->query('SELECT * FROM mesas ORDER BY ordem, id')->fetchAll();
+  $mesaEscolhida = null;
+  foreach ($mesas as $m) {
+    $st = db()->prepare("SELECT COALESCE(SUM(lugares),0) u FROM reservas WHERE mesa_id=? AND dia=?");
+    $st->execute([$m['id'],$dia]);
+    $usados = (int)$st->fetch()['u'];
+    if ($usados + $lugares <= (int)$m['lugares']) { $mesaEscolhida = $m['id']; break; }
+  }
+  if (!$mesaEscolhida) fail('Não há mesa com '.$lugares.' lugares livres nesse dia');
+
+  db()->prepare("INSERT INTO reservas (dia,horario,nivel,nome,participantes,lugares,mesa_id,equipe_id)
+                 VALUES (?,?,?,?,?,?,?,?)")
+      ->execute([$dia,$hora,$nivel,$nome,$lugares,$lugares,$mesaEscolhida,$equipe_id]);
+  $id = db()->lastInsertId();
+  $mn = db()->prepare('SELECT nome FROM mesas WHERE id=?'); $mn->execute([$mesaEscolhida]);
+  ok(['id'=>$id, 'mesa_id'=>$mesaEscolhida, 'mesa_nome'=>$mn->fetch()['nome']??'']);
 }
+
 if ($acao === 'remover') {
-  $d = body(); $id = (int)($d['id'] ?? 0);
+  $d = body(); $id=(int)($d['id']??0);
   db()->prepare('DELETE FROM reservas WHERE id=?')->execute([$id]);
   ok();
 }
+
+// recepcionista move uma reserva para outra mesa
+if ($acao === 'reposicionar') {
+  $d = body(); $id=(int)($d['reserva_id']??0); $mesa=(int)($d['mesa_id']??0);
+  if (!$id || !$mesa) fail('Dados inválidos');
+  // valida capacidade da mesa destino
+  $r = db()->prepare('SELECT * FROM reservas WHERE id=?'); $r->execute([$id]); $res=$r->fetch();
+  if (!$res) fail('Reserva não encontrada');
+  $st = db()->prepare("SELECT COALESCE(SUM(lugares),0) u FROM reservas WHERE mesa_id=? AND dia=? AND id<>?");
+  $st->execute([$mesa,$res['dia'],$id]);
+  $usados=(int)$st->fetch()['u'];
+  $cap = db()->prepare('SELECT lugares FROM mesas WHERE id=?'); $cap->execute([$mesa]);
+  $capm=(int)$cap->fetch()['lugares'];
+  if ($usados + (int)$res['lugares'] > $capm) fail('A mesa destino não tem lugares suficientes');
+  db()->prepare('UPDATE reservas SET mesa_id=? WHERE id=?')->execute([$mesa,$id]);
+  ok();
+}
+
+// liberar lugares ociosos: ajusta a reserva para o nº de presentes (libera o resto)
+if ($acao === 'liberar') {
+  $d = body(); $id=(int)($d['reserva_id']??0);
+  if (!$id) fail('Informe a reserva');
+  $r = db()->prepare('SELECT * FROM reservas WHERE id=?'); $r->execute([$id]); $res=$r->fetch();
+  if (!$res) fail('Reserva não encontrada');
+  $p = db()->prepare("SELECT COUNT(*) n FROM presencas WHERE equipe_id=? AND dia=?");
+  $p->execute([$res['equipe_id'],$res['dia']]);
+  $pres=(int)$p->fetch()['n'];
+  $novo = max(1,$pres); // não zera; mínimo 1
+  db()->prepare('UPDATE reservas SET lugares=? WHERE id=?')->execute([$novo,$id]);
+  ok(['lugares'=>$novo,'liberados'=>(int)$res['lugares']-$novo]);
+}
+
 fail('Ação desconhecida: '.$acao, 404);
