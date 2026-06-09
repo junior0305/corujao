@@ -4,6 +4,21 @@
 require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? '';
 $CORES = ['azul','branco','azulclaro','ciano','cinza'];
+define('JANELA_ENTRADA', 0.20); // 3º ao 5º só entram até 20% da batalha
+
+// progresso (0..1) de uma batalha já carregada (linha da tabela duelos)
+function progressoDuelo($duelo) {
+  if (($duelo['status'] ?? '') !== 'ativo') return 1.0;
+  if ($duelo['regra'] === 'tempo') {
+    $dur = max(1, (int)$duelo['regra_valor']*60);
+    $ini = $duelo['iniciado_em'] ? strtotime($duelo['iniciado_em']) : time();
+    return (time() - $ini) / $dur;
+  }
+  $mp = db()->prepare('SELECT COALESCE(MAX(pontos),0) m FROM duelo_participantes WHERE duelo_id=?');
+  $mp->execute([$duelo['id']]);
+  $top = (int)$mp->fetch()['m']; $meta = max(1,(int)$duelo['regra_valor']);
+  return $top / $meta;
+}
 
 if ($acao === 'para_mim') {
   // desafios AGUARDANDO resposta, onde esta equipe é o desafiado (ordem=2)
@@ -109,18 +124,7 @@ if ($acao === 'entrar') {
   $dl=db()->prepare('SELECT * FROM duelos WHERE id=?'); $dl->execute([$did]); $duelo=$dl->fetch();
   if (!$duelo) fail('Duelo não encontrado', 404);
   if ($duelo['status']!=='ativo') fail('A batalha não está ativa para entrada');
-  // progresso: por tempo = decorrido/duração; por meta = maior placar / meta
-  $prog = 1.0;
-  if ($duelo['regra']==='tempo') {
-    $dur = max(1, (int)$duelo['regra_valor']*60); // regra_valor em minutos
-    $ini = $duelo['iniciado_em'] ? strtotime($duelo['iniciado_em']) : time();
-    $prog = (time() - $ini) / $dur;
-  } else {
-    $mp=db()->prepare('SELECT COALESCE(MAX(pontos),0) m FROM duelo_participantes WHERE duelo_id=?'); $mp->execute([$did]);
-    $top=(int)$mp->fetch()['m']; $meta=max(1,(int)$duelo['regra_valor']);
-    $prog = $top / $meta;
-  }
-  if ($prog > 0.20) fail('Janela de entrada encerrada: a batalha já passou de 20%');
+  if (progressoDuelo($duelo) > JANELA_ENTRADA) fail('Janela de entrada encerrada: a batalha já passou de 20%');
   $st=db()->prepare('SELECT COUNT(*) n FROM duelo_participantes WHERE duelo_id=?'); $st->execute([$did]);
   $n=(int)$st->fetch()['n']; if ($n>=5) fail('Duelo cheio (máx 5)');
   // não pode entrar duas vezes
@@ -136,13 +140,18 @@ if ($acao === 'entrar') {
 }
 
 if ($acao === 'ativos') {
-  // duelos em andamento, com participantes e placar (para a TV montar a tela)
+  // duelos em andamento, com participantes e placar (para a TV montar a tela e o tablet listar entradas)
   $duelos = db()->query("SELECT * FROM duelos WHERE status IN ('aguardando','ativo') ORDER BY id")->fetchAll();
   foreach ($duelos as &$d) {
     $st = db()->prepare("SELECT p.equipe_id,p.cor,p.pontos,p.ordem,e.gerencia,e.superintendencia
                          FROM duelo_participantes p JOIN equipes e ON e.id=p.equipe_id
                          WHERE p.duelo_id=? ORDER BY p.ordem");
     $st->execute([$d['id']]); $d['participantes'] = $st->fetchAll();
+    $prog = progressoDuelo($d);
+    $d['progresso'] = round($prog, 3);
+    $d['vagas'] = max(0, 5 - count($d['participantes']));
+    // 3º ao 5º só entram em batalha ATIVA, dentro da janela e com vaga
+    $d['pode_entrar'] = ($d['status']==='ativo' && $prog <= JANELA_ENTRADA && $d['vagas'] > 0);
   }
   ok(['duelos' => $duelos]);
 }
