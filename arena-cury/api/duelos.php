@@ -20,6 +20,30 @@ function progressoDuelo($duelo) {
   return $top / $meta;
 }
 
+// Encerra AUTOMATICAMENTE um duelo 'ativo' que já terminou (meta atingida ou tempo esgotado).
+// Faz do servidor a fonte da verdade: sem isso, a TV "revive" o duelo encerrado e o tablet
+// fica preso em batalha (o fim era só animação local). Retorna true se encerrou agora.
+function autoEncerrarSeTerminou($duelo) {
+  if (($duelo['status'] ?? '') !== 'ativo') return false;
+  if (progressoDuelo($duelo) < 1.0) return false; // ainda em andamento
+  // vencedor: maior placar; empate no topo (ou 0x0) => sem vencedor
+  $ps = db()->prepare("SELECT equipe_id, pontos FROM duelo_participantes WHERE duelo_id=? ORDER BY pontos DESC");
+  $ps->execute([$duelo['id']]); $rows = $ps->fetchAll();
+  $venc = null;
+  if ($rows) {
+    $topo = (int)$rows[0]['pontos'];
+    $lideres = array_filter($rows, fn($r)=>(int)$r['pontos']===$topo);
+    if (count($lideres) === 1 && $topo > 0) $venc = (int)$rows[0]['equipe_id'];
+  }
+  // o WHERE ... status='ativo' + rowCount garante que só UM request encerra e emite o nocaute
+  $st = db()->prepare("UPDATE duelos SET status='encerrado', vencedor_equipe_id=?, encerrado_em=NOW()
+                       WHERE id=? AND status='ativo'");
+  $st->execute([$venc, $duelo['id']]);
+  if ($st->rowCount() === 0) return false; // outro request já encerrou
+  emitir('nocaute', ['duelo_id'=>(int)$duelo['id'], 'vencedor_equipe_id'=>$venc, 'auto'=>true]);
+  return true;
+}
+
 if ($acao === 'para_mim') {
   // desafios AGUARDANDO resposta, onde esta equipe é o desafiado (ordem=2)
   $eid = (int)($_GET['equipe_id'] ?? 0);
@@ -48,6 +72,8 @@ if ($acao === 'meu_duelo') {
   $st->execute([$eid]);
   $d = $st->fetch();
   if ($d) {
+    // se a batalha já terminou (meta/tempo), encerra agora e avisa o tablet para sair do duelo
+    if (autoEncerrarSeTerminou($d)) $d['status'] = 'encerrado';
     $pp = db()->prepare("SELECT p.equipe_id,p.cor,p.pontos,p.ordem,e.gerencia
                          FROM duelo_participantes p JOIN equipes e ON e.id=p.equipe_id
                          WHERE p.duelo_id=? ORDER BY p.ordem");
@@ -142,7 +168,11 @@ if ($acao === 'entrar') {
 if ($acao === 'ativos') {
   // duelos em andamento, com participantes e placar (para a TV montar a tela e o tablet listar entradas)
   $duelos = db()->query("SELECT * FROM duelos WHERE status IN ('aguardando','ativo') ORDER BY id")->fetchAll();
-  foreach ($duelos as &$d) {
+  $saida = [];
+  foreach ($duelos as $d) {
+    // batalha que já terminou (meta/tempo) é encerrada aqui e NÃO entra na lista de ativos
+    // — é isso que impede a TV de "reviver" o duelo no próximo sincronizarEstado.
+    if (autoEncerrarSeTerminou($d)) continue;
     $st = db()->prepare("SELECT p.equipe_id,p.cor,p.pontos,p.ordem,e.gerencia,e.superintendencia
                          FROM duelo_participantes p JOIN equipes e ON e.id=p.equipe_id
                          WHERE p.duelo_id=? ORDER BY p.ordem");
@@ -152,8 +182,9 @@ if ($acao === 'ativos') {
     $d['vagas'] = max(0, 5 - count($d['participantes']));
     // 3º ao 5º só entram em batalha ATIVA, dentro da janela e com vaga
     $d['pode_entrar'] = ($d['status']==='ativo' && $prog <= JANELA_ENTRADA && $d['vagas'] > 0);
+    $saida[] = $d;
   }
-  ok(['duelos' => $duelos]);
+  ok(['duelos' => $saida]);
 }
 
 if ($acao === 'encerrar') {

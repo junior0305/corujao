@@ -636,6 +636,7 @@ function entrarEmDuelo(oppName){
 
 // entra no duelo usando dados REAIS do banco
 function entrarEmDueloReal(duelo){
+  if(!duelo||duelo.status!=='ativo') return; // nunca entra em duelo já encerrado/recusado
   inBattle=true;tab="arena";meuDueloId=duelo.id;
   contestacoesRecebidas=[];faltas={};pontosAdversarios=[];
   dueloPlacar=duelo.participantes||[];dueloRegra=duelo.regra;dueloRegraValor=duelo.regra_valor;
@@ -652,13 +653,14 @@ async function carregarArenaDoBanco(){
   try{
     // atualiza o placar da batalha (participantes + pontos do duelo)
     const md=await ArenaAPI.meuDuelo(team().id);
-    if(md&&md.ok&&md.duelo){
-      dueloPlacar=md.duelo.participantes||dueloPlacar;
-      dueloRegra=md.duelo.regra;dueloRegraValor=md.duelo.regra_valor;
-      if(md.duelo.status==='encerrado'){ // duelo acabou
-        inBattle=false;tab="equipe";dueloPlacar=[];
+    if(md&&md.ok){
+      // servidor é a fonte da verdade: sem duelo ativo OU já encerrado => sai da batalha
+      if(!md.duelo||md.duelo.status!=='ativo'){
+        inBattle=false;tab="equipe";dueloPlacar=[];meuDueloId=null;
         toast("Duelo encerrado!");render();return;
       }
+      dueloPlacar=md.duelo.participantes||dueloPlacar;
+      dueloRegra=md.duelo.regra;dueloRegraValor=md.duelo.regra_valor;
     }
     const pr=await ArenaAPI.pontosDuelo(meuDueloId,team().id);
     if(pr&&pr.ok) pontosAdversarios=(pr.pontos||[]).map(p=>({id:p.id,equipe:p.equipe,tipo:p.tipo==='documentacao'?'doc':'visita',foto:p.foto,hora:(p.criado_em||'').slice(11,16),contestado:p.contestado==1}));
