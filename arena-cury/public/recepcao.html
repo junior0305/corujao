@@ -3,406 +3,306 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Arena Cury — Recepção</title>
+<title>CORUJASTRO — Recepção</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Teko:wght@600;700&display=swap" rel="stylesheet"/>
 <style>
-  :root{--bg:#00060f;--cury:#1a5fc4;--cyan:#00daff;--gold:#ffcf4d;--fire:#ff5b1f;--ink:#eaf4ff;--dim:#6f8bb0;
-    --ok:#1fd18a;--no:#ff5b6e;--card:#0a1f44;
+  :root{--bg:#00060f;--cury:#1a5fc4;--cyan:#00daff;--gold:#ffcf4d;--fire:#ff5b1f;--ink:#eaf4ff;--dim:#6f8bb0;--ok:#1fd18a;--no:#ff5b6e;--card:#0a1f44;
     --star:"Orbitron",sans-serif;--body:"Rajdhani",sans-serif;--num:"Teko",sans-serif;}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%}
   body{background:radial-gradient(ellipse 90% 60% at 50% -10%,#0a3a8a44 0%,transparent 60%),var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh}
   .stars{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;background-image:radial-gradient(1px 1px at 30px 40px,#fff,transparent),radial-gradient(1px 1px at 160px 90px,#9cf,transparent),radial-gradient(2px 2px at 300px 50px,#bdf,transparent);background-size:360px 240px}
-  .wrap{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:clamp(16px,3vw,32px) clamp(14px,3vw,28px) 80px}
-  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
-  .logo{display:flex;align-items:center;gap:10px}
-  .logo .mk{font-family:var(--star);font-weight:900;font-size:clamp(18px,3vw,26px);color:#fff;background:linear-gradient(135deg,var(--cury),#003070);padding:3px 12px;border-radius:9px;box-shadow:0 0 18px #1a5fc455}
-  .logo .ar{font-family:var(--star);font-weight:900;font-size:clamp(15px,2.4vw,22px);letter-spacing:.12em;color:var(--cyan)}
-  .eyebrow{font-family:var(--star);font-size:10px;letter-spacing:.35em;color:var(--cyan);font-weight:600}
-
-  /* abas */
-  .tabs{display:flex;gap:8px;margin-bottom:24px;border-bottom:1px solid #1a5fc433;flex-wrap:wrap}
-  .tab{font-family:var(--star);font-weight:700;font-size:14px;letter-spacing:.05em;color:var(--dim);background:transparent;border:none;border-bottom:3px solid transparent;padding:14px 18px;cursor:pointer;transition:all .2s}
-  .tab.on{color:var(--cyan);border-bottom-color:var(--cyan)}
-
-  h2{font-family:var(--star);font-weight:900;font-size:clamp(18px,3vw,26px);margin-bottom:4px}
-  .lead{color:var(--dim);font-size:14px;margin-bottom:20px}
-  .pane{display:none}.pane.on{display:block;animation:fade .3s both}
+  .wrap{position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:clamp(16px,3vw,28px) clamp(14px,3vw,24px) 60px}
+  .top{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .owl-logo{width:46px;height:46px;filter:drop-shadow(0 0 12px #00daff66);flex-shrink:0}
+  .brand{font-family:var(--star);font-weight:900;font-size:clamp(20px,3.4vw,28px);letter-spacing:.06em;background:linear-gradient(135deg,#fff 20%,#00daff 60%,#1a5fc4);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .top .eyebrow{margin-left:auto;font-family:var(--star);font-size:10px;letter-spacing:.3em;color:var(--cyan)}
+  .tabs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+  .tab{font-family:var(--star);font-weight:700;font-size:13px;letter-spacing:.03em;color:var(--dim);background:var(--card);border:1px solid #1a5fc444;border-radius:12px;padding:12px 16px;cursor:pointer;transition:all .2s}
+  .tab.on{color:#001030;background:var(--cyan);border-color:var(--cyan)}
+  .pane{display:none}.pane.on{display:block;animation:fade .25s both}
   @keyframes fade{from{opacity:0}to{opacity:1}}
-
-  .field{margin-bottom:16px}
-  .field label{display:block;font-family:var(--star);font-size:11px;letter-spacing:.15em;color:var(--cyan);margin-bottom:8px}
-  .field input,.field select{width:100%;background:#001030;border:1px solid #1a5fc455;border-radius:11px;padding:13px 15px;color:var(--ink);font-family:var(--body);font-size:16px}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{font-family:var(--body);font-weight:700;font-size:14px;color:var(--ink);background:var(--card);border:1px solid #1a5fc455;border-radius:10px;padding:10px 16px;cursor:pointer;transition:all .2s}
-  .chip.sel{background:var(--cyan);color:#001030;border-color:var(--cyan)}
-  .toggle{display:flex;gap:10px}
-  .toggle .chip{flex:1;text-align:center}
-  .save{width:100%;font-family:var(--star);font-weight:900;font-size:17px;letter-spacing:.05em;text-transform:uppercase;color:#001030;background:linear-gradient(135deg,var(--cyan),var(--cury));border:none;border-radius:14px;padding:17px;cursor:pointer;box-shadow:0 0 26px #00daff44;margin-top:6px}
-  .save:active{transform:scale(.98)}
-
-  /* mapa de mesas */
-  .roommap{background:var(--card);border:1px solid #1a5fc444;border-radius:18px;padding:22px;margin:22px 0}
-  .roommap .rt{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-  .roommap .rt .ti{font-family:var(--star);font-weight:700;font-size:15px;letter-spacing:.1em}
-  .roommap .cap{font-family:var(--num);font-weight:700;font-size:20px;color:var(--cyan)}
-  .tables{display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
-  .tbl{width:108px;text-align:center}
-  .tbl .circle{width:96px;height:96px;border-radius:50%;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    border:3px solid #1a3050;background:#06122c;transition:all .3s;position:relative}
-  .tbl .circle .n{font-family:var(--num);font-weight:700;font-size:30px;color:var(--dim)}
-  .tbl .circle .seats{font-size:10px;color:var(--dim);letter-spacing:.05em}
-  .tbl.occ .circle{border-color:var(--c);background:var(--cbg);box-shadow:0 0 22px var(--cglow)}
-  .tbl.occ .circle .n{color:#fff}
-  .tbl .who{font-family:var(--body);font-weight:700;font-size:12px;margin-top:8px;color:var(--dim);min-height:16px}
-  .tbl.occ .who{color:var(--ink)}
-  .blocked-banner{background:linear-gradient(100deg,#e0103022,#001030aa);border:1px solid var(--no);border-radius:14px;padding:14px 18px;margin-top:16px;text-align:center;font-family:var(--star);font-weight:700;color:var(--no);font-size:14px;display:none}
-  .blocked-banner.on{display:block}
-
-  /* lista de reservas */
-  .reslist{margin-top:24px}
-  .resitem{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid #1a5fc455;border-radius:14px;padding:14px 16px;margin-bottom:10px}
-  .resitem .lvl{font-family:var(--star);font-size:10px;letter-spacing:.1em;padding:4px 10px;border-radius:99px;flex-shrink:0}
-  .resitem .lvl.dir{background:var(--no);color:#fff}.resitem .lvl.sup{background:var(--gold);color:#012}.resitem .lvl.ger{background:var(--cyan);color:#012}
-  .resitem .info{flex:1;min-width:0}.resitem .nm{font-family:var(--star);font-weight:700;font-size:15px}.resitem .dt{color:var(--dim);font-size:12px;margin-top:2px}
-  .resitem .del{background:transparent;border:1px solid #ff5b6e44;color:var(--no);border-radius:9px;padding:7px 11px;cursor:pointer;font-size:12px}
-
-  /* equipes */
-  .upload{border:1px dashed #00daff66;border-radius:14px;padding:22px;text-align:center;color:var(--cyan);cursor:pointer;margin-bottom:18px}
-  .teamrow{background:var(--card);border:1px solid #1a5fc455;border-radius:12px;padding:12px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-  .teamrow .h{font-family:var(--star);font-weight:700;font-size:14px}
-  .teamrow .c{color:var(--dim);font-size:12px;margin-top:2px}
-  .teamrow .cnt{font-family:var(--num);font-weight:700;font-size:18px;color:var(--cyan)}
-
-  /* regras */
-  .rulebox{background:var(--card);border:1px solid #1a5fc455;border-radius:16px;padding:20px;margin-bottom:16px}
-  .rulebox h3{font-family:var(--star);font-size:14px;letter-spacing:.1em;color:var(--cyan);margin-bottom:14px}
-  .ptrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
-  .ptrow .lab{font-weight:700}.ptrow .sub{color:var(--dim);font-size:12px}
-  .stepper{display:flex;align-items:center;gap:10px}
-  .stepper button{width:38px;height:38px;border-radius:10px;border:1px solid #1a5fc455;background:#001030;color:var(--cyan);font-size:20px;cursor:pointer}
-  .stepper .v{font-family:var(--num);font-weight:700;font-size:26px;min-width:40px;text-align:center}
-
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:50;background:#08152e;border:1px solid var(--ok);border-radius:12px;padding:14px 22px;font-weight:700;color:var(--ok);opacity:0;transition:all .3s;pointer-events:none;text-align:center}
-  .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}
-  .toast.bad{border-color:var(--no);color:var(--no)}
+  h2{font-family:var(--star);font-weight:900;font-size:22px;margin-bottom:6px}
+  .lead{color:var(--dim);font-size:14px;margin-bottom:18px}
+  .card{background:var(--card);border:1px solid #1a5fc455;border-radius:16px;padding:18px;margin-bottom:16px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-family:var(--star);font-size:11px;letter-spacing:.12em;color:var(--cyan);margin-bottom:7px}
+  .field input,.field select{width:100%;background:#001030;border:1px solid #1a5fc455;border-radius:11px;padding:12px 14px;color:var(--ink);font-family:var(--body);font-size:16px}
+  .btn{font-family:var(--star);font-weight:700;font-size:14px;border:none;border-radius:11px;padding:13px 18px;cursor:pointer}
+  .btn-cyan{background:linear-gradient(135deg,var(--cyan),var(--cury));color:#001030}
+  .btn-gold{background:var(--gold);color:#001030}
+  .btn-ok{background:var(--ok);color:#012}
+  .btn-no{background:transparent;border:1px solid #ff5b6e55;color:var(--no)}
+  .btn-ghost{background:transparent;border:1px solid #1a5fc455;color:var(--dim)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .mesas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+  .mesa{background:var(--card);border:1px solid #1a5fc455;border-radius:16px;padding:16px;min-height:120px}
+  .mesa.drop{border-color:var(--cyan);box-shadow:0 0 16px #00daff44}
+  .mesa-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+  .mesa-nome{font-family:var(--star);font-weight:700;font-size:16px;background:transparent;border:none;color:var(--ink);border-bottom:1px dashed transparent;cursor:text;max-width:60%}
+  .mesa-nome:focus{outline:none;border-bottom-color:var(--cyan)}
+  .mesa-cap{font-family:var(--num);font-weight:700;font-size:18px;color:var(--cyan)}
+  .mesa-cap small{font-family:var(--body);font-size:11px;color:var(--dim)}
+  .bar{height:8px;border-radius:5px;background:#001030;overflow:hidden;margin-bottom:12px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--cury))}
+  .eq{background:#06122c;border:1px solid #1a5fc444;border-radius:11px;padding:10px 12px;margin-bottom:8px;cursor:grab}
+  .eq:active{cursor:grabbing}
+  .eq-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .eq-nm{font-weight:700;font-size:15px}
+  .eq-meta{font-size:12px;color:var(--dim);margin-top:3px}
+  .eq.ocioso{border-color:#ffcf4d66}
+  .ocioso-tag{color:var(--gold);font-size:11px;font-weight:700}
+  .eq-acts{display:flex;gap:6px;margin-top:8px}
+  .eq-acts button{font-size:11px;padding:7px 10px;border-radius:8px;font-family:var(--star);font-weight:700;border:none;cursor:pointer}
+  .empty{color:var(--dim);font-size:13px;text-align:center;padding:14px}
+  .pill{display:inline-block;font-family:var(--star);font-size:11px;padding:7px 13px;border-radius:99px;border:1px solid #1a5fc455;color:var(--dim);cursor:pointer}
+  .pill.sel{background:var(--gold);color:#001030;border-color:var(--gold)}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:10px;border-bottom:1px solid #1a305055;font-size:14px}
+  th{font-family:var(--star);font-size:11px;letter-spacing:.1em;color:var(--cyan)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;background:#08152e;border:1px solid var(--ok);border-radius:12px;padding:14px 22px;font-weight:700;color:var(--ok);opacity:0;transition:all .3s;pointer-events:none;text-align:center;max-width:90vw}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}.toast.bad{border-color:var(--no);color:var(--no)}
+  .dayrow{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .statusbadge{font-family:var(--star);font-size:11px;padding:6px 12px;border-radius:99px}
+  .st-parada{background:#3a3a4a;color:#aab}.st-ativa{background:#0a7d5a;color:#fff}.st-pausada{background:#7d5a0a;color:#fff}.st-encerrada{background:#7d0a1a;color:#fff}
 </style>
 </head>
 <body>
 <div class="stars"></div>
 <div class="wrap">
   <div class="top">
-    <div class="logo"><span class="mk">CURY</span><span class="ar">ARENA</span></div>
-    <div class="eyebrow">RECEPÇÃO · CENTRAL</div>
+    <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" class="owl-logo"><defs><radialGradient id="h" cx="40%" cy="35%" r="70%"><stop offset="0%" stop-color="#bfe3ff" stop-opacity=".55"/><stop offset="55%" stop-color="#1a5fc4" stop-opacity=".25"/><stop offset="100%" stop-color="#001030" stop-opacity=".1"/></radialGradient><linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00daff"/><stop offset="100%" stop-color="#1a5fc4"/></linearGradient><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#cfe0f5"/></linearGradient></defs><circle cx="40" cy="38" r="30" fill="none" stroke="url(#r)" stroke-width="3.5"/><circle cx="40" cy="38" r="27" fill="url(#h)"/><path d="M24 36 q0 -16 16 -16 q16 0 16 16 q0 14 -16 14 q-16 0 -16 -14 Z" fill="url(#b)"/><path d="M26 26 q-3 -7 3 -10 q2 5 1 9 Z" fill="#fff"/><path d="M54 26 q3 -7 -3 -10 q-2 5 -1 9 Z" fill="#fff"/><circle cx="34" cy="35" r="6.2" fill="#fff"/><circle cx="46" cy="35" r="6.2" fill="#fff"/><circle cx="34" cy="35.5" r="3.4" fill="#0a2a5a"/><circle cx="46" cy="35.5" r="3.4" fill="#0a2a5a"/><circle cx="35.2" cy="34.3" r="1.1" fill="#fff"/><circle cx="47.2" cy="34.3" r="1.1" fill="#fff"/><path d="M40 39 l-3 3 l3 2 l3 -2 Z" fill="#ffb020"/></svg>
+    <span class="brand">CORUJASTRO</span><span class="eyebrow">RECEPÇÃO</span>
   </div>
-
   <div class="tabs">
-    <button class="tab on" data-t="reserva">📅 Reserva</button>
-    <button class="tab" data-t="equipes">👥 Equipes</button>
-    <button class="tab" data-t="regras">⚙️ Regras</button>
-    <button class="tab" data-t="controle">🎛️ Controle</button>
+    <button class="tab on" data-tab="mapa">🗺 Mapa de Mesas</button>
+    <button class="tab" data-tab="equipes">👥 Equipes</button>
+    <button class="tab" data-tab="usuarios">🔑 Acessos</button>
+    <button class="tab" data-tab="rodada">⚙ Regras & Rodada</button>
+    <button class="tab" data-tab="reservas">📅 Reservas</button>
   </div>
-
-  <!-- RESERVA -->
-  <div class="pane on" id="p-reserva">
-    <h2>Reserva do salão</h2>
-    <p class="lead">5 mesas redondas · 20 lugares cada · 100 pessoas no total. Seg a sex, das 9h às 20h.</p>
-    <div class="row2">
-      <div class="field"><label>DIA</label><input type="date" id="rDay"/></div>
-      <div class="field"><label>HORÁRIO</label><input type="time" id="rTime" min="09:00" max="20:00" value="09:00"/></div>
-    </div>
-    <div class="field">
-      <label>QUEM RESERVA</label>
-      <div class="toggle">
-        <div class="chip sel" data-lvl="dir">Diretoria</div>
-        <div class="chip" data-lvl="sup">Superintendência</div>
-        <div class="chip" data-lvl="ger">Gerência</div>
-      </div>
-    </div>
-    <div class="field"><label>NOME (qual diretoria/sup/gerência)</label><input id="rNome" placeholder="Ex: Diretoria Alfa"/></div>
-    <div class="field" id="partField"><label>Nº DE PARTICIPANTES</label><input type="number" id="rPart" min="1" max="100" placeholder="quantas pessoas"/></div>
-    <div class="field">
-      <label>BUFFET EXTERNO</label>
-      <div class="toggle">
-        <div class="chip sel" data-buf="nao">Não terá</div>
-        <div class="chip" data-buf="sim">Sim, terá</div>
-      </div>
-    </div>
-    <div class="field" id="bufField" style="display:none"><label>HORÁRIO DE CHEGADA DO BUFFET</label><input type="time" id="rBufTime" value="11:00"/></div>
-    <button class="save" id="rSave">Confirmar reserva</button>
-
-    <!-- mapa -->
-    <div class="roommap">
-      <div class="rt"><div class="ti">MAPA DO SALÃO</div><div class="cap" id="capInfo">0 / 100 lugares</div></div>
-      <div class="tables" id="tables"></div>
-      <div class="blocked-banner" id="blockBanner">🔒 SALÃO RESERVADO POR DIRETORIA — data e horário bloqueados</div>
-    </div>
-
-    <div class="reslist" id="reslist"></div>
-  </div>
-
-  <!-- EQUIPES -->
-  <div class="pane" id="p-equipes">
-    <h2>Base de equipes</h2>
-    <p class="lead">Importe a planilha (CSV) com a hierarquia, ou cadastre/ajuste aqui. Isso alimenta os tablets e a TV.</p>
-    <input type="file" id="csvFile" accept=".csv" style="display:none"/>
-    <div class="upload" id="uploadBtn">📄 Importar CSV<br><small style="color:var(--dim)">colunas: diretoria, superintendencia, gerencia, corretores (separados por ;)</small></div>
-    <div id="teamsList"></div>
-    <button class="save" id="addTeam" style="background:transparent;border:1px dashed #00daff88;color:var(--cyan);box-shadow:none;margin-top:8px">+ Adicionar equipe manualmente</button>
-  </div>
-
-  <!-- REGRAS -->
-  <div class="pane" id="p-regras">
-    <h2>Regras da sessão</h2>
-    <p class="lead">Defina quanto vale cada ponto e a rodada geral.</p>
-    <div class="rulebox">
-      <h3>PONTUAÇÃO</h3>
-      <div class="ptrow"><div><div class="lab">🎯 Visita / Agendamento</div><div class="sub">cada visita registrada</div></div>
-        <div class="stepper"><button data-pt="v" data-d="-1">−</button><span class="v" id="ptV">1</span><button data-pt="v" data-d="1">+</button></div></div>
-      <div class="ptrow"><div><div class="lab">🏆 Documentação</div><div class="sub">cada documentação fechada</div></div>
-        <div class="stepper"><button data-pt="d" data-d="-1">−</button><span class="v" id="ptD">3</span><button data-pt="d" data-d="1">+</button></div></div>
-    </div>
-    <div class="rulebox">
-      <h3>RODADA GERAL</h3>
-      <div class="field"><label>DURAÇÃO DA RODADA</label>
-        <div class="chips" id="roundOpts">
-          <div class="chip" data-r="60">1 h</div><div class="chip sel" data-r="120">2 h</div>
-          <div class="chip" data-r="180">3 h</div><div class="chip" data-r="0">sem limite</div>
-        </div>
-      </div>
-      <button class="save" id="startRound">▶ Iniciar rodada na arena</button>
-    </div>
-  </div>
-
-  <!-- CONTROLE -->
-  <div class="pane" id="p-controle">
-    <h2>Controle ao vivo</h2>
-    <p class="lead">Painel de comando da Recepção. Encerramento automático às 20h.</p>
-
-    <div class="rulebox">
-      <h3>JORNADA DO DIA</h3>
-      <div class="ptrow">
-        <div><div class="lab" id="clock">--:--</div><div class="sub">a arena encerra às 20h00</div></div>
-        <div class="stepper"><span class="v" id="closeIn" style="font-size:18px;color:var(--gold)">—</span></div>
-      </div>
-      <div id="closeWarn" class="blocked-banner" style="display:none;margin-top:12px"></div>
-      <div class="toggle" style="margin-top:14px">
-        <div class="chip" id="pauseRound">⏸ Pausar rodada</div>
-        <div class="chip" id="endRound" style="border-color:#ff5b6e55;color:#ff5b6e">⏹ Encerrar agora</div>
-      </div>
-    </div>
-
-    <div class="rulebox">
-      <h3>RESET DE EQUIPE</h3>
-      <p style="color:var(--dim);font-size:13px;margin-bottom:14px">Tira a equipe da arena: zera pontos, marca como offline e encerra duelos dela. Use em caso de erro.</p>
-      <div id="resetList"></div>
-    </div>
-  </div>
+  <div class="pane on" id="pane-mapa"></div>
+  <div class="pane" id="pane-equipes"></div>
+  <div class="pane" id="pane-usuarios"></div>
+  <div class="pane" id="pane-rodada"></div>
+  <div class="pane" id="pane-reservas"></div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script src="arena-api.js"></script>
 <script>
-// ===== estado =====
-const CAP_PER_TABLE=20, TABLES=5, TOTAL_CAP=CAP_PER_TABLE*TABLES;
-const COLORS=["#1a5fc4","#00daff","#ffcf4d","#1fd18a","#ff5b1f"];
-let resLevel="dir", resBuf="nao";
-let reservas=[]; // {day,time,level,nome,part,buf,bufTime}
-let teams=[
-  {dir:"Diretoria Alfa",sup:"Sup. Centauro",ger:"Ger. Órion",corretores:["Lucas","Marina","Pedro","Bia"]},
-  {dir:"Diretoria Alfa",sup:"Sup. Andrômeda",ger:"Ger. Vega",corretores:["Carol","João","Lia"]},
-  {dir:"Diretoria Beta",sup:"Sup. Lyra",ger:"Ger. Cometa",corretores:["Bruno","Aline"]},
-];
-let pts={v:1,d:3}, roundDur=120;
+let API_ON=false, hoje=new Date().toISOString().slice(0,10);
+let mapaDia=hoje, mesasMapa=[], equipes=[], usuarios=[], reservas=[], cfg={pts_visita:1,pts_documentacao:3,rodada_min:120,rodada_status:'parada',rodada_modo:'tempo'};
 
-// ===== abas =====
-document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
+function toast(m,bad){const t=document.getElementById("toast");t.textContent=m;t.className="toast on"+(bad?" bad":"");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),3200);}
+function tab(name){
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.tab===name));
   document.querySelectorAll(".pane").forEach(p=>p.classList.remove("on"));
-  document.getElementById("p-"+t.dataset.t).classList.add("on");
-});
-
-// ===== RESERVA =====
-document.querySelectorAll("[data-lvl]").forEach(c=>c.onclick=()=>{
-  document.querySelectorAll("[data-lvl]").forEach(x=>x.classList.remove("sel"));c.classList.add("sel");resLevel=c.dataset.lvl;
-  // diretoria não precisa de nº de participantes (toma tudo)
-  document.getElementById("partField").style.display = resLevel==="dir" ? "none":"block";
-});
-document.querySelectorAll("[data-buf]").forEach(c=>c.onclick=()=>{
-  document.querySelectorAll("[data-buf]").forEach(x=>x.classList.remove("sel"));c.classList.add("sel");resBuf=c.dataset.buf;
-  document.getElementById("bufField").style.display = resBuf==="sim" ? "block":"none";
-});
-document.getElementById("rSave").onclick=()=>{
-  const day=document.getElementById("rDay").value, time=document.getElementById("rTime").value;
-  const nome=document.getElementById("rNome").value.trim();
-  const part=resLevel==="dir"?TOTAL_CAP:(+document.getElementById("rPart").value||0);
-  if(!day){toast("Escolha o dia",1);return;}
-  // fim de semana?
-  const d=new Date(day+"T00:00"); const wd=d.getDay();
-  if(wd===0||wd===6){toast("A arena não funciona aos fins de semana",1);return;}
-  if(time<"09:00"||time>"20:00"){toast("Horário permitido: 9h às 20h",1);return;}
-  if(!nome){toast("Informe quem está reservando",1);return;}
-  if(resLevel!=="dir"&&part<1){toast("Informe o número de participantes",1);return;}
-  // dia bloqueado por diretoria?
-  const dirBlock=reservas.find(r=>r.day===day&&r.level==="dir");
-  if(dirBlock){toast("Esse dia está bloqueado pela "+dirBlock.nome,1);return;}
-  // se a nova é diretoria, e já há reservas nesse dia, não pode
-  if(resLevel==="dir"&&reservas.some(r=>r.day===day)){toast("Já há reservas nesse dia — diretoria não pode bloquear",1);return;}
-  // capacidade nesse dia
-  const usados=reservas.filter(r=>r.day===day).reduce((s,r)=>s+r.part,0);
-  if(usados+part>TOTAL_CAP){toast("Não há lugares suficientes nesse dia ("+(TOTAL_CAP-usados)+" livres)",1);return;}
-  reservas.push({day,time,level:resLevel,nome,part,buf:resBuf,bufTime:document.getElementById("rBufTime").value});
-  toast("Reserva confirmada! ✓");
-  renderRoom(day);renderResList();
-};
-
-function renderRoom(day){
-  const dayRes = day ? reservas.filter(r=>r.day===day) : reservas;
-  const isDirBlock = dayRes.some(r=>r.level==="dir");
-  const tables=document.getElementById("tables");tables.innerHTML="";
-  // distribui mesas: diretoria = todas; senão por participantes
-  let assign=Array(TABLES).fill(null);
-  if(isDirBlock){const dr=dayRes.find(r=>r.level==="dir");for(let i=0;i<TABLES;i++)assign[i]={nome:dr.nome,ci:0};}
-  else{
-    let ti=0;
-    dayRes.forEach((r,ri)=>{const need=Math.ceil(r.part/CAP_PER_TABLE);for(let k=0;k<need&&ti<TABLES;k++){assign[ti++]={nome:r.nome,ci:ri%COLORS.length};}});
-  }
-  for(let i=0;i<TABLES;i++){
-    const a=assign[i];const c=a?COLORS[a.ci]:null;
-    const el=document.createElement("div");el.className="tbl"+(a?" occ":"");
-    if(a){el.style.setProperty("--c",c);el.style.setProperty("--cbg",c+"22");el.style.setProperty("--cglow",c+"55");}
-    el.innerHTML=`<div class="circle"><div class="n">${i+1}</div><div class="seats">20 lug.</div></div><div class="who">${a?a.nome:"livre"}</div>`;
-    tables.appendChild(el);
-  }
-  const used=isDirBlock?TOTAL_CAP:dayRes.reduce((s,r)=>s+r.part,0);
-  document.getElementById("capInfo").textContent=used+" / "+TOTAL_CAP+" lugares";
-  document.getElementById("blockBanner").classList.toggle("on",isDirBlock);
+  document.getElementById("pane-"+name).classList.add("on");
+  if(name==="mapa")carregarMapa();
+  if(name==="equipes")renderEquipes();
+  if(name==="usuarios")renderUsuarios();
+  if(name==="rodada")renderRodada();
+  if(name==="reservas")renderReservas();
 }
-function renderResList(){
-  const l=document.getElementById("reslist");
-  if(reservas.length===0){l.innerHTML="";return;}
-  const lvlName={dir:"DIRETORIA",sup:"SUPER",ger:"GERÊNCIA"};
-  l.innerHTML="<h2 style='font-size:16px;margin:10px 0'>Reservas</h2>"+reservas.map((r,i)=>`
-    <div class="resitem">
-      <span class="lvl ${r.level}">${lvlName[r.level]}</span>
-      <div class="info"><div class="nm">${r.nome}</div>
-        <div class="dt">${fmtDay(r.day)} · ${r.time} · ${r.level==="dir"?"salão inteiro":r.part+" pessoas"}${r.buf==="sim"?" · 🍽 buffet "+r.bufTime:""}</div></div>
-      <button class="del" data-i="${i}">remover</button>
-    </div>`).join("");
-  l.querySelectorAll(".del").forEach(b=>b.onclick=()=>{reservas.splice(+b.dataset.i,1);renderResList();renderRoom(document.getElementById("rDay").value);toast("Reserva removida");});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>tab(b.dataset.tab));
+
+// ===== MAPA DE MESAS =====
+async function carregarMapa(){
+  const p=document.getElementById("pane-mapa");
+  p.innerHTML=`<h2>Mapa de Mesas</h2><p class="lead">Cada mesa tem 20 lugares. Veja reservado x presente, arraste equipes entre mesas e ajuste lugares ociosos.</p>
+    <div class="dayrow"><label style="color:var(--dim);font-size:13px">Dia:</label><input type="date" id="mapaDia" value="${mapaDia}" style="width:auto;background:#001030;border:1px solid #1a5fc455;border-radius:10px;padding:8px 12px;color:var(--ink)"/>
+    <button class="btn btn-ghost" id="reloadMapa">Atualizar</button></div>
+    <div id="mesasGrid" class="mesas-grid"><p class="lead">Carregando...</p></div>`;
+  document.getElementById("mapaDia").onchange=e=>{mapaDia=e.target.value;carregarMapa();};
+  document.getElementById("reloadMapa").onclick=carregarMapa;
+  if(!API_ON){document.getElementById("mesasGrid").innerHTML=`<p class="empty">Conecte ao banco para ver as mesas.</p>`;return;}
+  try{
+    const r=await ArenaAPI.mapaMesas(mapaDia);
+    mesasMapa=(r&&r.ok)?(r.mesas||[]):[];
+    renderMesas();
+  }catch(e){document.getElementById("mesasGrid").innerHTML=`<p class="empty">Erro ao carregar o mapa.</p>`;}
 }
-function fmtDay(d){const x=new Date(d+"T00:00");return x.toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"});}
+function renderMesas(){
+  const g=document.getElementById("mesasGrid");if(!g)return;
+  g.innerHTML=mesasMapa.map(m=>{
+    const pct=Math.min(100,Math.round((m.ocupados/m.lugares)*100));
+    const eqs=(m.equipes||[]).map(q=>{
+      const ocioso=q.ociosos>0;
+      return `<div class="eq ${ocioso?'ocioso':''}" draggable="true" data-rid="${q.id}">
+        <div class="eq-top"><span class="eq-nm">${q.gerencia||q.nome||'Equipe'}</span>
+        <span>${ocioso?`<span class="ocioso-tag">${q.ociosos} ocioso${q.ociosos!==1?'s':''}</span>`:''}</span></div>
+        <div class="eq-meta">reservou ${q.lugares} · presentes ${q.presentes} · ${(q.horario||'').slice(0,5)}</div>
+        <div class="eq-acts">
+          ${ocioso?`<button class="btn-gold" data-liberar="${q.id}">liberar ${q.ociosos}</button>`:''}
+          <button class="btn-no" data-remres="${q.id}" style="border:1px solid #ff5b6e55">remover</button>
+        </div></div>`;
+    }).join("") || `<div class="empty">Mesa livre</div>`;
+    return `<div class="mesa" data-mesa="${m.id}">
+      <div class="mesa-head">
+        <input class="mesa-nome" value="${m.nome}" data-renome="${m.id}"/>
+        <span class="mesa-cap">${m.ocupados}/${m.lugares}<small> lug</small></span>
+      </div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      ${eqs}</div>`;
+  }).join("");
+  bindMapa();
+}
+function bindMapa(){
+  document.querySelectorAll("[data-renome]").forEach(inp=>{
+    inp.onblur=async()=>{const id=inp.dataset.renome;const nome=inp.value.trim();if(!nome)return;
+      try{await ArenaAPI.renomearMesa(id,nome);toast("Mesa renomeada");}catch(e){}};
+    inp.onkeydown=e=>{if(e.key==="Enter")inp.blur();};
+  });
+  document.querySelectorAll("[data-liberar]").forEach(b=>b.onclick=async()=>{
+    try{const r=await ArenaAPI.liberarReserva(b.dataset.liberar);if(r&&r.ok){toast(`${r.liberados} lugares liberados`);carregarMapa();}}catch(e){}});
+  document.querySelectorAll("[data-remres]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Remover esta reserva da mesa?"))return;
+    try{await ArenaAPI.removerReserva(b.dataset.remres);toast("Reserva removida");carregarMapa();}catch(e){}});
+  let dragRid=null;
+  document.querySelectorAll(".eq[draggable]").forEach(el=>{el.ondragstart=()=>{dragRid=el.dataset.rid;};});
+  document.querySelectorAll(".mesa").forEach(m=>{
+    m.ondragover=e=>{e.preventDefault();m.classList.add("drop");};
+    m.ondragleave=()=>m.classList.remove("drop");
+    m.ondrop=async e=>{e.preventDefault();m.classList.remove("drop");
+      const mesaId=m.dataset.mesa;if(!dragRid||!mesaId)return;
+      try{const r=await ArenaAPI.reposicionarReserva(dragRid,mesaId);
+        if(r&&r.ok){toast("Equipe movida");carregarMapa();}else{toast(r&&r.erro?r.erro:"Não coube nessa mesa",true);}
+      }catch(e){toast("Erro ao mover",true);}
+      dragRid=null;};
+  });
+}
 
 // ===== EQUIPES =====
-document.getElementById("uploadBtn").onclick=()=>document.getElementById("csvFile").click();
-document.getElementById("csvFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=async()=>{
-    // tenta enviar ao servidor (persiste no banco). Se falhar, faz só local.
-    try{
-      const res=await ArenaAPI.importarCSV(r.result);
-      if(res&&res.ok){toast(`CSV importado! ${res.equipes_importadas} equipes, ${res.corretores} corretores ✓`);await carregarEquipes();return;}
-    }catch(err){/* sem servidor: cai no parse local */}
-    parseCSV(r.result);toast("CSV importado (modo local)");
-  };r.readAsText(f);};
-function parseCSV(txt){
-  const lines=txt.split(/\r?\n/).filter(l=>l.trim());
-  const out=[];
-  lines.slice(1).forEach(line=>{const c=line.split(",");if(c.length>=3)out.push({dir:(c[0]||"").trim(),sup:(c[1]||"").trim(),ger:(c[2]||"").trim(),corretores:(c[3]||"").split(";").map(s=>s.trim()).filter(Boolean)});});
-  if(out.length)teams=out;renderTeams();
+async function renderEquipes(){
+  const p=document.getElementById("pane-equipes");
+  p.innerHTML=`<h2>Equipes</h2><p class="lead">Importe por CSV ou cadastre manualmente. Tudo grava no banco.</p>
+    <div class="card"><div class="row">
+      <input type="file" id="csvFile" accept=".csv" style="display:none"/>
+      <button class="btn btn-cyan" id="upBtn">Importar CSV</button>
+      <button class="btn btn-ok" id="addBtn">+ Cadastrar equipe</button>
+    </div></div>
+    <div id="teamsList"></div>`;
+  document.getElementById("upBtn").onclick=()=>document.getElementById("csvFile").click();
+  document.getElementById("csvFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+    r.onload=async()=>{try{const res=await ArenaAPI.importarCSV(r.result);if(res&&res.ok){toast(`${res.equipes_importadas} equipes, ${res.corretores} corretores ✓`);carregarEquipes();return;}}catch(err){}toast("Falha ao importar",true);};r.readAsText(f);};
+  document.getElementById("addBtn").onclick=async()=>{
+    const ger=prompt("Gerência (ex: Ger. Nova)");if(!ger)return;
+    const sup=prompt("Superintendência")||"—";const dir=prompt("Diretoria")||"—";
+    const cor=(prompt("Corretores separados por vírgula")||"").split(",").map(s=>s.trim()).filter(Boolean);
+    try{const res=await ArenaAPI.criarEquipe({diretoria:dir,superintendencia:sup,gerencia:ger,corretores:cor});if(res&&res.ok){toast("Equipe salva ✓");carregarEquipes();return;}}catch(e){}toast("Falha ao salvar",true);};
+  carregarEquipes();
 }
-function renderTeams(){
-  const l=document.getElementById("teamsList");
-  l.innerHTML=teams.map((t,i)=>`<div class="teamrow"><div><div class="h">${t.ger}</div><div class="c">${t.dir} · ${t.sup}</div></div><div style="text-align:right"><div class="cnt">${t.corretores.length}</div><div class="c">corretores</div></div></div>`).join("");
-}
-document.getElementById("addTeam").onclick=async()=>{
-  const ger=prompt("Nome da gerência (ex: Ger. Nova)");if(!ger)return;
-  const sup=prompt("Superintendência")||"—";const dir=prompt("Diretoria")||"—";
-  const cor=(prompt("Corretores separados por vírgula")||"").split(",").map(s=>s.trim()).filter(Boolean);
-  try{
-    const res=await ArenaAPI.criarEquipe({diretoria:dir,superintendencia:sup,gerencia:ger,corretores:cor});
-    if(res&&res.ok){toast("Equipe adicionada e salva no banco! ✓");await carregarEquipes();return;}
-  }catch(err){}
-  teams.push({dir,sup,ger,corretores:cor});renderTeams();toast("Equipe adicionada (modo local)");
-};
-
-// ===== REGRAS =====
-document.querySelectorAll("[data-pt]").forEach(b=>b.onclick=()=>{
-  const k=b.dataset.pt,d=+b.dataset.d;pts[k]=Math.max(1,pts[k]+d);
-  document.getElementById(k==="v"?"ptV":"ptD").textContent=pts[k];
-});
-document.querySelectorAll("[data-r]").forEach(c=>c.onclick=()=>{
-  document.querySelectorAll("[data-r]").forEach(x=>x.classList.remove("sel"));c.classList.add("sel");roundDur=+c.dataset.r;
-});
-document.getElementById("startRound").onclick=()=>toast("Rodada iniciada na arena! 🚀 ("+(roundDur?roundDur+" min":"sem limite")+")");
-
-// ===== CONTROLE =====
-let roundPaused=false, roundEnded=false;
-function tickClock(){
-  const now=new Date();
-  const hh=String(now.getHours()).padStart(2,"0"),mm=String(now.getMinutes()).padStart(2,"0");
-  const cl=document.getElementById("clock");if(cl)cl.textContent=hh+":"+mm;
-  // minutos até as 20h
-  const close=new Date(now);close.setHours(20,0,0,0);
-  const diffMin=Math.floor((close-now)/60000);
-  const ci=document.getElementById("closeIn");
-  const warn=document.getElementById("closeWarn");
-  if(!ci||!warn)return;
-  if(roundEnded){ci.textContent="encerrada";warn.style.display="none";return;}
-  if(diffMin<=0){ci.textContent="fechada";if(!roundEnded){roundEnded=true;warn.style.display="block";warn.className="blocked-banner on";warn.textContent="🔒 20h00 — ARENA ENCERRADA. Rodada finalizada automaticamente.";}return;}
-  ci.textContent="faltam "+diffMin+" min";
-  // avisos progressivos
-  if(diffMin<=30){warn.style.display="block";warn.className="blocked-banner on";
-    warn.textContent = diffMin<=10 ? "⚠ ÚLTIMOS "+diffMin+" MINUTOS — reta final na arena!" : "⏰ Faltam "+diffMin+" min para encerrar (20h).";
-  } else { warn.style.display="none"; }
-}
-setInterval(tickClock,1000);tickClock();
-document.getElementById("pauseRound").onclick=function(){roundPaused=!roundPaused;this.classList.toggle("sel",roundPaused);this.textContent=roundPaused?"▶ Retomar rodada":"⏸ Pausar rodada";toast(roundPaused?"Rodada pausada":"Rodada retomada");};
-document.getElementById("endRound").onclick=()=>{if(confirm("Encerrar a rodada agora? A TV mostrará o resultado final.")){roundEnded=true;tickClock();toast("Rodada encerrada — resultado na TV 🏆");}};
-
-function renderResetList(){
-  const l=document.getElementById("resetList");
-  l.innerHTML=teams.map((t,i)=>`<div class="teamrow"><div><div class="h">${t.ger}</div><div class="c">${t.dir} · ${t.sup}</div></div>
-    <div style="display:flex;gap:8px">
-      <button class="del" data-ri="${i}" style="border-color:#ffb02055;color:#ffb020">🔄 reset</button>
-      <button class="del" data-rem="${i}" style="border-color:#ff5b6e44;color:#ff5b6e">🗑 remover</button>
-    </div></div>`).join("");
-  l.querySelectorAll("[data-ri]").forEach(b=>b.onclick=()=>{
-    const t=teams[+b.dataset.ri];
-    if(confirm("Resetar "+t.ger+"?\n\nA equipe CONTINUA na arena, mas: zera os pontos, fica offline e encerra duelos dela.")){
-      toast("🔄 "+t.ger+" foi resetada — pontos zerados");
-    }
-  });
-  l.querySelectorAll("[data-rem]").forEach(b=>b.onclick=()=>{
-    const t=teams[+b.dataset.rem];
-    if(confirm("REMOVER "+t.ger+" da base?\n\nA equipe some de tudo: Controle, logon dos tablets e placar da TV. Use se foi cadastrada por engano ou não está presente.")){
-      teams.splice(+b.dataset.rem,1);
-      renderResetList();renderTeams();
-      toast("🗑 "+t.ger+" removida da base");
-    }
-  });
-}
-renderResetList();
-
-function toast(msg,bad){const t=document.getElementById("toast");t.textContent=msg;t.className="toast on"+(bad?" bad":"");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),3000);}
-
-// init
-document.getElementById("partField").style.display="none"; // começa em diretoria
-renderRoom();renderResList();renderTeams();
-// tenta carregar equipes do banco (se a API estiver disponível)
 async function carregarEquipes(){
-  try{
-    const res=await ArenaAPI.listarEquipes();
-    if(res&&res.ok&&Array.isArray(res.equipes)){
-      teams=res.equipes.map(e=>({id:e.id,dir:e.diretoria,sup:e.superintendencia,ger:e.gerencia,
-        corretores:(e.corretores||[]).map(c=>c.nome)}));
-      renderTeams();renderResetList();
-    }
-  }catch(err){/* sem servidor: mantém os dados de exemplo */}
+  if(!API_ON){document.getElementById("teamsList").innerHTML=`<p class="empty">Conecte ao banco.</p>`;return;}
+  try{const res=await ArenaAPI.listarEquipes();equipes=(res&&res.ok)?(res.equipes||[]):[];}catch(e){equipes=[];}
+  const l=document.getElementById("teamsList");if(!l)return;
+  l.innerHTML=`<div class="card"><table><tr><th>Gerência</th><th>Superintendência</th><th>Corretores</th><th></th></tr>
+    ${equipes.map(e=>`<tr><td>${e.gerencia}</td><td>${e.superintendencia}</td><td>${(e.corretores||[]).length}</td>
+    <td style="text-align:right"><button class="btn btn-no" data-delteam="${e.id}" style="padding:7px 12px;font-size:12px">remover</button></td></tr>`).join("")}</table></div>`;
+  l.querySelectorAll("[data-delteam]").forEach(b=>b.onclick=async()=>{if(!confirm("Remover equipe e seus dados?"))return;try{await ArenaAPI.removerEquipe(b.dataset.delteam);toast("Equipe removida");carregarEquipes();}catch(e){}});
 }
-carregarEquipes();
 
+// ===== USUÁRIOS =====
+async function renderUsuarios(){
+  const p=document.getElementById("pane-usuarios");
+  p.innerHTML=`<h2>Acessos ao Agendamento</h2><p class="lead">Crie os logins dos superintendentes. Só quem tem acesso pode agendar pelo app.</p>
+    <div class="card">
+      <div class="field"><label>Nome do superintendente</label><input id="uNome" placeholder="ex: João Silva"/></div>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:200px"><label>Diretoria</label><input id="uDir" placeholder="Diretoria"/></div>
+        <div class="field" style="flex:1;min-width:200px"><label>Superintendência</label><input id="uSup" placeholder="Superintendência"/></div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:160px"><label>Login</label><input id="uLogin" placeholder="login"/></div>
+        <div class="field" style="flex:1;min-width:160px"><label>Senha</label><input id="uSenha" placeholder="senha (mín. 4)"/></div>
+      </div>
+      <button class="btn btn-ok" id="uCriar">+ Criar acesso</button>
+    </div>
+    <div id="usersList"></div>`;
+  document.getElementById("uCriar").onclick=async()=>{
+    const nome=document.getElementById("uNome").value.trim(), dir=document.getElementById("uDir").value.trim(),
+      sup=document.getElementById("uSup").value.trim(), login=document.getElementById("uLogin").value.trim(), senha=document.getElementById("uSenha").value;
+    if(!nome||!login||!senha){toast("Preencha nome, login e senha",true);return;}
+    try{const r=await ArenaAPI.criarUsuario({nome,diretoria:dir,superintendencia:sup,login,senha});
+      if(r&&r.ok){toast("Acesso criado ✓");carregarUsuarios();}else{toast(r&&r.erro?r.erro:"Falha",true);}}catch(e){toast("Falha ao criar",true);}};
+  carregarUsuarios();
+}
+async function carregarUsuarios(){
+  if(!API_ON){document.getElementById("usersList").innerHTML=`<p class="empty">Conecte ao banco.</p>`;return;}
+  try{const r=await ArenaAPI.listarUsuarios();usuarios=(r&&r.ok)?(r.usuarios||[]):[];}catch(e){usuarios=[];}
+  const l=document.getElementById("usersList");if(!l)return;
+  l.innerHTML=`<div class="card"><table><tr><th>Nome</th><th>Login</th><th>Diretoria / Sup.</th><th></th></tr>
+    ${usuarios.map(u=>`<tr><td>${u.nome}</td><td>${u.login}</td><td>${(u.diretoria||'—')} / ${(u.superintendencia||'—')}</td>
+    <td style="text-align:right"><button class="btn btn-ghost" data-reset="${u.id}" style="padding:7px 10px;font-size:12px">nova senha</button>
+    <button class="btn btn-no" data-deluser="${u.id}" style="padding:7px 10px;font-size:12px">remover</button></td></tr>`).join("")||'<tr><td colspan="4" class="empty">Nenhum acesso criado</td></tr>'}</table></div>`;
+  l.querySelectorAll("[data-deluser]").forEach(b=>b.onclick=async()=>{if(!confirm("Remover este acesso?"))return;try{await ArenaAPI.removerUsuario(b.dataset.deluser);toast("Acesso removido");carregarUsuarios();}catch(e){}});
+  l.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{const s=prompt("Nova senha (mín. 4):");if(!s)return;try{await ArenaAPI.resetarUsuario(b.dataset.reset,s);toast("Senha alterada");}catch(e){}});
+}
+
+// ===== REGRAS & RODADA =====
+async function renderRodada(){
+  if(API_ON){try{const r=await ArenaAPI.lerConfig();if(r&&r.ok)cfg=r.config;}catch(e){}}
+  const p=document.getElementById("pane-rodada");
+  const stClass="st-"+(cfg.rodada_status||'parada');
+  p.innerHTML=`<h2>Regras & Rodada</h2><p class="lead">Defina a pontuação e dê o start da sala.</p>
+    <div class="card"><h2 style="font-size:16px">Pontuação</h2>
+      <div class="row" style="margin-top:10px">
+        <div class="field" style="flex:1;min-width:140px"><label>Visita (pts)</label><input type="number" id="cV" value="${cfg.pts_visita}" min="1"/></div>
+        <div class="field" style="flex:1;min-width:140px"><label>Documentação (pts)</label><input type="number" id="cD" value="${cfg.pts_documentacao}" min="1"/></div>
+      </div>
+      <button class="btn btn-cyan" id="salvarPts">Salvar pontuação</button>
+    </div>
+    <div class="card"><h2 style="font-size:16px">Start da sala</h2>
+      <p class="lead" style="margin:8px 0 14px">Status atual: <span class="statusbadge ${stClass}">${(cfg.rodada_status||'parada').toUpperCase()}</span></p>
+      <div class="field"><label>Modo da rodada</label>
+        <div class="row"><span class="pill ${cfg.rodada_modo!=='meta'?'sel':''}" data-modo="tempo">Por tempo</span><span class="pill ${cfg.rodada_modo==='meta'?'sel':''}" data-modo="meta">Por meta</span></div></div>
+      <div class="field"><label id="valLbl">${cfg.rodada_modo==='meta'?'Meta (nº de visitas)':'Duração (minutos)'}</label>
+        <div class="row" id="atalhos" style="margin-bottom:10px"></div>
+        <input type="number" id="cVal" value="${cfg.rodada_min||0}" min="0" placeholder="digite o valor"/></div>
+      <div class="row">
+        <button class="btn btn-ok" id="btnStart">▶ Dar START</button>
+        <button class="btn btn-ghost" id="btnPausar">Pausar</button>
+        <button class="btn btn-no" id="btnEncerrar">Encerrar</button>
+      </div>
+    </div>`;
+  let modo=cfg.rodada_modo==='meta'?'meta':'tempo';
+  const renderAtalhos=()=>{
+    const a=document.getElementById("atalhos");
+    const opts=modo==='tempo'?[[60,'1h'],[120,'2h'],[180,'3h'],[0,'sem limite']]:[[5,'5'],[10,'10'],[15,'15'],[20,'20']];
+    a.innerHTML=opts.map(o=>`<span class="pill" data-val="${o[0]}">${o[1]}</span>`).join("");
+    a.querySelectorAll("[data-val]").forEach(b=>b.onclick=()=>{document.getElementById("cVal").value=b.dataset.val;});
+    document.getElementById("valLbl").textContent=modo==='meta'?'Meta (nº de visitas)':'Duração (minutos)';
+  };
+  renderAtalhos();
+  document.querySelectorAll("[data-modo]").forEach(b=>b.onclick=()=>{modo=b.dataset.modo;
+    document.querySelectorAll("[data-modo]").forEach(x=>x.classList.toggle("sel",x.dataset.modo===modo));renderAtalhos();});
+  document.getElementById("salvarPts").onclick=async()=>{
+    const v=+document.getElementById("cV").value,d=+document.getElementById("cD").value;
+    try{await ArenaAPI.salvarConfig({pts_visita:v,pts_documentacao:d,rodada_min:cfg.rodada_min||120});toast("Pontuação salva ✓");}catch(e){}};
+  document.getElementById("btnStart").onclick=async()=>{
+    const val=+document.getElementById("cVal").value;
+    try{await ArenaAPI.startSala(modo,val);toast("Sala iniciada! 🚀");renderRodada();}catch(e){toast("Falha",true);}};
+  document.getElementById("btnPausar").onclick=async()=>{try{await ArenaAPI.rodada('pausada');toast("Pausada");renderRodada();}catch(e){}};
+  document.getElementById("btnEncerrar").onclick=async()=>{if(!confirm("Encerrar a rodada?"))return;try{await ArenaAPI.rodada('encerrada');toast("Encerrada");renderRodada();}catch(e){}};
+}
+
+// ===== RESERVAS =====
+async function renderReservas(){
+  const p=document.getElementById("pane-reservas");
+  if(API_ON){try{const r=await ArenaAPI.listarReservas();reservas=(r&&r.ok)?(r.reservas||[]):[];}catch(e){reservas=[];}}
+  p.innerHTML=`<h2>Reservas</h2><p class="lead">Os gerentes agendam pelo app; aqui você acompanha e ajusta no Mapa.</p>
+    <div class="card"><table><tr><th>Dia</th><th>Hora</th><th>Equipe</th><th>Mesa</th><th>Lugares</th><th></th></tr>
+    ${reservas.map(r=>`<tr><td>${(r.dia||'').split('-').reverse().join('/')}</td><td>${(r.horario||'').slice(0,5)}</td>
+      <td>${r.gerencia||r.nome||'—'}</td><td>${r.mesa_nome||'—'}</td><td>${r.lugares||r.participantes||0}</td>
+      <td style="text-align:right"><button class="btn btn-no" data-delr="${r.id}" style="padding:6px 11px;font-size:12px">remover</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Nenhuma reserva</td></tr>'}</table></div>`;
+  p.querySelectorAll("[data-delr]").forEach(b=>b.onclick=async()=>{if(!confirm("Remover reserva?"))return;try{await ArenaAPI.removerReserva(b.dataset.delr);toast("Removida");renderReservas();}catch(e){}});
+}
+
+async function bootstrap(){
+  try{const r=await ArenaAPI.listarEquipes();if(r&&r.ok){API_ON=true;}}catch(e){}
+  carregarMapa();
+}
+bootstrap();
 </script>
 </body>
 </html>

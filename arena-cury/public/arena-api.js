@@ -42,6 +42,7 @@ const ArenaAPI = (() => {
     lerConfig: () => get('config.php', { acao: 'ler' }),
     salvarConfig: (c) => post('config.php', { acao: 'salvar' }, c),
     rodada: (status) => post('config.php', { acao: 'rodada' }, { status }),
+    startSala: (modo, valor) => post('config.php', { acao: 'start' }, { modo, valor }),
 
     // reservas
     listarReservas: () => get('reservas.php', { acao: 'listar' }),
