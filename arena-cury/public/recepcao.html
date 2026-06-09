@@ -112,6 +112,7 @@ async function carregarMapa(){
   p.innerHTML=`<h2>Mapa de Mesas</h2><p class="lead">Cada mesa tem 20 lugares. Veja reservado x presente, arraste equipes entre mesas e ajuste lugares ociosos.</p>
     <div class="dayrow"><label style="color:var(--dim);font-size:13px">Dia:</label><input type="date" id="mapaDia" value="${mapaDia}" style="width:auto;background:#001030;border:1px solid #1a5fc455;border-radius:10px;padding:8px 12px;color:var(--ink)"/>
     <button class="btn btn-ghost" id="reloadMapa">Atualizar</button></div>
+    <p class="lead" id="mapaResumo" style="margin-top:-6px"></p>
     <div id="mesasGrid" class="mesas-grid"><p class="lead">Carregando...</p></div>`;
   document.getElementById("mapaDia").onchange=e=>{mapaDia=e.target.value;carregarMapa();};
   document.getElementById("reloadMapa").onclick=carregarMapa;
@@ -124,10 +125,27 @@ async function carregarMapa(){
 }
 function renderMesas(){
   const g=document.getElementById("mesasGrid");if(!g)return;
+  // resumo: quantas equipes presentes (tablet) e quantas com reserva
+  let nPres=0,nRes=0,pessoas=0;
+  mesasMapa.forEach(m=>(m.equipes||[]).forEach(q=>{
+    if(q.tipo==='presenca'){nPres++;pessoas+=(+q.presentes||0);}
+    else {nRes++;pessoas+=(+q.presentes||0);}
+  }));
+  const resumo=document.getElementById("mapaResumo");
+  if(resumo) resumo.innerHTML=`<b style="color:var(--ok)">${nPres}</b> presente${nPres!==1?'s':''} no salão (via tablet) · <b style="color:var(--cyan)">${nRes}</b> com reserva · <b>${pessoas}</b> pessoas`;
   g.innerHTML=mesasMapa.map(m=>{
     const pct=Math.min(100,Math.round((m.ocupados/m.lugares)*100));
     const eqs=(m.equipes||[]).map(q=>{
       const ocioso=q.ociosos>0;
+      const presenca = q.tipo==='presenca';
+      if(presenca){
+        // equipe presente no salão (entrou pelo tablet) — sem reserva
+        return `<div class="eq presenca" data-eqid="${q.equipe_id}" style="border-left:3px solid var(--ok)">
+          <div class="eq-top"><span class="eq-nm">${q.gerencia||q.nome||'Equipe'}</span>
+          <span class="ocioso-tag" style="background:#1fd18a22;color:var(--ok);border-color:#1fd18a55">presente</span></div>
+          <div class="eq-meta">no salão agora · ${q.presentes} presente${q.presentes!==1?'s':''}${q.sem_mesa?' · ⚠ sem mesa':''}</div>
+        </div>`;
+      }
       return `<div class="eq ${ocioso?'ocioso':''}" draggable="true" data-rid="${q.id}">
         <div class="eq-top"><span class="eq-nm">${q.gerencia||q.nome||'Equipe'}</span>
         <span>${ocioso?`<span class="ocioso-tag">${q.ociosos} ocioso${q.ociosos!==1?'s':''}</span>`:''}</span></div>
