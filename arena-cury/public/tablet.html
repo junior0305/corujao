@@ -150,6 +150,10 @@
   .presitem.on{background:#06283f;border-color:var(--cyan)}
   .presck{font-family:var(--star);font-size:12px;color:var(--dim)}
   .presitem.on .presck{color:var(--cyan)}
+  /* abandonar batalha (discreto) */
+  .abandon-wrap{margin-top:28px;padding-top:18px;border-top:1px solid #1a305055;text-align:center}
+  .abandon{font-family:var(--body);font-weight:700;font-size:13px;color:var(--no);background:transparent;border:1px solid #ff5b6e55;border-radius:11px;padding:12px 20px;cursor:pointer;opacity:.8}
+  .abandon:active{opacity:1;background:#ff5b6e15}
 </style>
 </head>
 <body>
@@ -416,6 +420,8 @@ function arenaHTML(){
   else h+=pontosAdversarios.map(p=>`<div class="pcard"><img class="foto" src="${p.foto}" data-zoom="${p.foto}"/>
     <div class="info"><div class="nm">${p.equipe}</div><div class="ty ${p.tipo}">${p.tipo==='doc'?'🏆 Documentação':'🎯 Visita'}</div><div class="meta">${p.hora}</div></div>
     ${p.contestado?`<span class="contested-tag">contestado ✓</span>`:`<button class="contest" data-contest="${p.id}">⚑ Contestar</button>`}</div>`).join("");
+  // botão discreto de abandonar (ação séria, com confirmação)
+  h+=`<div class="abandon-wrap"><button class="abandon" id="abandonBtn">🏳 Abandonar batalha</button></div>`;
   return h;
 }
 function bindArena(){
@@ -439,6 +445,20 @@ function bindArena(){
     if(desclass){toast(`2ª FALTA! ${team().ger} DESCLASSIFICADO do duelo. Vitória do oponente.`,true);inBattle=false;tab="equipe";}
     else toast(`FALTA confirmada — −1 ponto. Na TV: "FALTA".`);
     render();});
+  const ab=document.getElementById("abandonBtn");if(ab)ab.onclick=abandonarBatalha;
+}
+async function abandonarBatalha(){
+  const nOpp=dueloPlacar.filter(p=>p.equipe_id!=team().id).length;
+  const msg = nOpp<=1
+    ? "Abandonar a batalha? Você entrega a VITÓRIA ao adversário."
+    : "Abandonar a batalha? Seu boneco cai e você sai do duelo (os demais continuam).";
+  if(!confirm(msg))return;
+  if(API_ON&&meuDueloId&&team().id){
+    try{ await ArenaAPI.desistirDuelo(meuDueloId,team().id); }catch(e){}
+  }
+  inBattle=false;tab="equipe";dueloPlacar=[];meuDueloId=null;pontosAdversarios=[];contestacoesRecebidas=[];
+  toast("Você abandonou a batalha. Continua ativo no sistema.");
+  render();
 }
 let ONLINE=[{ger:"Ger. Pulsar",sup:"Sup. Centauro",corretores:["Rafa","Duda","Tiago"]},{ger:"Ger. Vega",sup:"Sup. Andrômeda",corretores:["Carol","João","Lia"]}];
 // carrega equipes ONLINE do banco (exceto a minha) para listar como oponentes

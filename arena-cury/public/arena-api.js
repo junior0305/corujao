@@ -53,6 +53,7 @@ const ArenaAPI = (() => {
     responderDuelo: (duelo_id, aceita) => post('duelos.php', { acao: 'responder' }, { duelo_id, aceita }),
     desafioParaMim: (equipe_id) => get('duelos.php', { acao: 'para_mim', equipe_id }),
     meuDuelo: (equipe_id) => get('duelos.php', { acao: 'meu_duelo', equipe_id }),
+    desistirDuelo: (duelo_id, equipe_id) => post('duelos.php', { acao: 'desistir' }, { duelo_id, equipe_id }),
     entrarDuelo: (duelo_id, equipe_id) => post('duelos.php', { acao: 'entrar' }, { duelo_id, equipe_id }),
     duelosAtivos: () => get('duelos.php', { acao: 'ativos' }),
     encerrarDuelo: (duelo_id, vencedor_equipe_id) => post('duelos.php', { acao: 'encerrar' }, { duelo_id, vencedor_equipe_id }),
