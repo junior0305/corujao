@@ -121,6 +121,23 @@
   .zoom.on{display:flex}.zoom img{max-width:100%;max-height:100%;border-radius:12px}
   .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;background:#08152e;border:1px solid var(--ok);border-radius:12px;padding:14px 22px;font-weight:700;color:var(--ok);opacity:0;transition:all .3s;pointer-events:none;text-align:center;max-width:90vw}
   .toast.on{opacity:1;transform:translateX(-50%) translateY(-6px)}.toast.bad{border-color:var(--no);color:var(--no)}
+  /* mini-telão da batalha */
+  .battlebar{background:linear-gradient(135deg,#2a0e08,#1a0a14);border:1px solid var(--fire);border-radius:16px;padding:14px 16px;margin-bottom:16px;box-shadow:0 0 26px #ff5b1f33;position:relative;overflow:hidden}
+  .battlebar::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 40%,#ff5b1f22 50%,transparent 60%);background-size:280% 100%;animation:csweep 3s linear infinite;pointer-events:none}
+  .bb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;position:relative;z-index:2}
+  .bb-tag{font-family:var(--star);font-weight:900;font-size:12px;letter-spacing:.1em;color:var(--fire)}
+  .bb-rule{font-family:var(--star);font-size:10px;letter-spacing:.1em;color:var(--gold)}
+  .bb-grid{display:flex;align-items:center;justify-content:center;gap:6px;position:relative;z-index:2;flex-wrap:wrap}
+  .bb-team{flex:1;min-width:80px;text-align:center;background:#0a1f44aa;border:1px solid #1a5fc455;border-radius:12px;padding:10px 8px;position:relative}
+  .bb-team.mine{border-color:var(--cyan);background:#06283faa}
+  .bb-team.lead{border-color:var(--gold);box-shadow:0 0 16px #ffcf4d44}
+  .bb-crown{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:18px}
+  .bb-score{font-family:var(--num);font-weight:700;font-size:42px;line-height:1;color:#fff}
+  .bb-team.mine .bb-score{color:var(--cyan)}
+  .bb-team.lead .bb-score{color:var(--gold)}
+  .bb-name{font-family:var(--star);font-weight:700;font-size:11px;letter-spacing:.04em;color:var(--dim);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bb-team.mine .bb-name{color:var(--cyan)}
+  .bb-vs{font-family:var(--star);font-weight:900;font-size:18px;color:var(--fire);flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -197,12 +214,29 @@ function bindShell(){
     tab=b.dataset.tab;render();});
 }
 let filter="";
+function placarBatalhaHTML(){
+  if(!inBattle||!dueloPlacar.length) return "";
+  const myId=team().id;
+  // ordena por pontos desc; líder em destaque
+  const arr=[...dueloPlacar].sort((a,b)=>(b.pontos||0)-(a.pontos||0));
+  const lider=arr.length?arr[0]:null;
+  const regraTxt = dueloRegra==='meta'?`META ${dueloRegraValor} visitas` : (dueloRegra==='tempo'?`TEMPO ${dueloRegraValor} min`:'');
+  return `<div class="battlebar">
+    <div class="bb-head"><span class="bb-tag">🥊 BATALHA AO VIVO</span><span class="bb-rule">${regraTxt}</span></div>
+    <div class="bb-grid">${arr.map(p=>{
+      const mine=p.equipe_id==myId;const isLead=lider&&p.equipe_id===lider.equipe_id&&(p.pontos||0)>0;
+      return `<div class="bb-team ${mine?'mine':''} ${isLead?'lead':''}">
+        ${isLead?'<div class="bb-crown">👑</div>':''}
+        <div class="bb-score">${p.pontos||0}</div>
+        <div class="bb-name">${mine?'VOCÊ':p.gerencia}</div></div>`;
+    }).join('<div class="bb-vs">×</div>')}</div></div>`;
+}
 function equipeHTML(){
   const t=team();const list=t.corretores.filter(n=>n.toLowerCase().includes(filter.toLowerCase()));
   const challengeBtn = inBattle
     ? `<button class="challenge-btn locked" style="margin-bottom:16px">🥊 VOCÊ JÁ ESTÁ NA ARENA — FOCO NA LUTA! <span>termine a batalha atual para desafiar de novo</span></button>`
     : `<button class="challenge-btn" id="challengeBtn" style="margin-bottom:16px">⚔ DESAFIAR <span>chame alguém para a arena</span></button>`;
-  return `${challengeBtn}
+  return `${placarBatalhaHTML()}${challengeBtn}
   <div class="quick"><input id="qn" placeholder="Cadastro rápido — apelido"/><button id="qadd">+ Add</button></div>
   <input class="search" id="search" placeholder="🔍 Buscar corretor…" value="${filter}"/>
   <div class="grid">${list.map(n=>{const sc=scores[keyOf(n)]||{v:0,d:0};
@@ -240,6 +274,12 @@ function updM(){
 async function registrarPonto(){
   const k=keyOf(mNome);const s=scores[k]||{v:0,d:0};if(mTipo==="visita")s.v++;else s.d++;scores[k]=s;
   document.getElementById("modal").classList.remove("on");
+  const valor=mTipo==="doc"?3:1;
+  // atualiza o placar da batalha na hora (otimista)
+  if(inBattle&&dueloPlacar.length){
+    const meu=dueloPlacar.find(p=>p.equipe_id==team().id);
+    if(meu)meu.pontos=(parseInt(meu.pontos)||0)+valor;
+  }
   // grava no banco (se conectado)
   if(API_ON){
     const t=team();
@@ -377,20 +417,33 @@ function entrarEmDuelo(oppName){
 function entrarEmDueloReal(duelo){
   inBattle=true;tab="arena";meuDueloId=duelo.id;
   contestacoesRecebidas=[];faltas={};pontosAdversarios=[];
+  dueloPlacar=duelo.participantes||[];dueloRegra=duelo.regra;dueloRegraValor=duelo.regra_valor;
   const oppNames=(duelo.participantes||[]).filter(p=>p.equipe_id!==team().id).map(p=>p.gerencia).join(", ");
   carregarArenaDoBanco();
-  toast((oppNames||"Oponente")+" no duelo! 🥊 — veja a aba Arena");render();
+  toast((oppNames||"Oponente")+" no duelo! 🥊 — placar no topo");render();
 }
+
+let dueloPlacar=[],dueloRegra=null,dueloRegraValor=null;
 
 // busca os pontos dos adversários e as contestações recebidas do banco
 async function carregarArenaDoBanco(){
   if(!API_ON||!meuDueloId||!team().id)return;
   try{
+    // atualiza o placar da batalha (participantes + pontos do duelo)
+    const md=await ArenaAPI.meuDuelo(team().id);
+    if(md&&md.ok&&md.duelo){
+      dueloPlacar=md.duelo.participantes||dueloPlacar;
+      dueloRegra=md.duelo.regra;dueloRegraValor=md.duelo.regra_valor;
+      if(md.duelo.status==='encerrado'){ // duelo acabou
+        inBattle=false;tab="equipe";dueloPlacar=[];
+        toast("Duelo encerrado!");render();return;
+      }
+    }
     const pr=await ArenaAPI.pontosDuelo(meuDueloId,team().id);
     if(pr&&pr.ok) pontosAdversarios=(pr.pontos||[]).map(p=>({id:p.id,equipe:p.equipe,tipo:p.tipo==='documentacao'?'doc':'visita',foto:p.foto,hora:(p.criado_em||'').slice(11,16),contestado:p.contestado==1}));
     const cr=await ArenaAPI.contestacoesRecebidas(meuDueloId,team().id);
     if(cr&&cr.ok) contestacoesRecebidas=(cr.recebidas||[]).map(c=>({id:c.id,equipe:c.contestante,tipo:c.tipo==='documentacao'?'doc':'visita',foto:c.foto,hora:(c.criado_em||'').slice(11,16)}));
-    if(tab==="arena")render();
+    render();
   }catch(e){}
 }
 
