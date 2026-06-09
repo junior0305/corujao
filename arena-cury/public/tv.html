@@ -78,7 +78,29 @@
   .leader .who .name{font-family:var(--star);font-weight:900;font-size:clamp(24px,3.6vw,52px);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .leader .pts{font-family:var(--num);font-weight:700;font-size:clamp(40px,6vw,86px);color:var(--cyan);line-height:.8;text-shadow:0 0 30px #00daff99;position:relative}
   .leader .pts small{font-family:var(--body);font-size:.2em;color:var(--dim);letter-spacing:.2em;display:block;text-align:right}
-  .board{flex:1;display:flex;flex-direction:column;gap:clamp(7px,1.1vh,12px);min-height:0}
+  .board{flex:1;display:flex;flex-direction:column;gap:clamp(7px,1.1vh,12px);min-height:0;overflow-y:auto;scrollbar-width:thin}
+  .board::-webkit-scrollbar{width:6px}.board::-webkit-scrollbar-thumb{background:#1a5fc466;border-radius:3px}
+  /* densidade: quanto mais equipes, mais compactas as linhas */
+  .board.dens1{gap:6px}
+  .board.dens1 .row{padding:7px 16px}
+  .board.dens1 .row .rank{font-size:clamp(20px,2.6vw,34px)}
+  .board.dens1 .row .name b{font-size:clamp(14px,1.6vw,22px)}
+  .board.dens1 .row .score{font-size:clamp(22px,2.8vw,38px)}
+  .board.dens2{gap:5px}
+  .board.dens2 .row{padding:5px 14px;border-radius:10px}
+  .board.dens2 .row .rank{font-size:clamp(17px,2vw,26px);width:clamp(28px,3vw,42px)}
+  .board.dens2 .row .name b{font-size:clamp(13px,1.4vw,18px)}
+  .board.dens2 .row .name span{font-size:10px}
+  .board.dens2 .row .chips{transform:scale(.85)}
+  .board.dens2 .row .score{font-size:clamp(18px,2.2vw,30px);width:clamp(46px,5vw,72px)}
+  .board.dens3{gap:4px}
+  .board.dens3 .row{padding:4px 12px;border-radius:9px}
+  .board.dens3 .row .rank{font-size:clamp(15px,1.7vw,22px);width:clamp(24px,2.4vw,34px)}
+  .board.dens3 .row .name b{font-size:clamp(12px,1.2vw,16px)}
+  .board.dens3 .row .name span{display:none}
+  .board.dens3 .row .chips{display:none}
+  .board.dens3 .row .bar{flex:0 0 clamp(80px,18%,200px)}
+  .board.dens3 .row .score{font-size:clamp(16px,1.9vw,26px);width:clamp(40px,4.5vw,62px)}
   .row{display:flex;align-items:center;gap:clamp(12px,1.4vw,20px);background:linear-gradient(90deg,#0a1f44cc,#001030aa);border:1px solid #1a5fc455;border-radius:14px;padding:clamp(8px,1.2vh,14px) clamp(14px,1.6vw,22px);position:relative;overflow:hidden;transition:transform .5s cubic-bezier(.2,1,.3,1)}
   .row.first{border-color:#00daff66;background:linear-gradient(90deg,#1a5fc41f,#001030aa)}
   .row .rank{font-family:var(--num);font-weight:700;font-size:clamp(26px,3.4vw,48px);width:clamp(34px,4vw,60px);text-align:center;color:var(--dim)}
@@ -194,7 +216,7 @@
     background:radial-gradient(ellipse 80% 70% at 50% 40%,#04162e 0%,#020c1f 50%,#01060f 82%)}
   #duel.on{display:block}
   /* ===== RINGUE ÚNICO — BATALHA COM ATÉ 5 COMPETIDORES ===== */
-  #arena{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;padding:clamp(64px,8vh,100px) clamp(14px,2vw,40px) clamp(16px,3vh,40px)}
+  #arena{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;padding:clamp(96px,13vh,150px) clamp(14px,2vw,40px) clamp(16px,3vh,40px)}
   #arenaBar{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
   #arenaBar .mode{font-family:var(--body);font-size:clamp(10px,1.1vw,15px);color:var(--gold);letter-spacing:.12em}
   #arenaBar .clock{font-family:var(--num);font-weight:700;font-size:clamp(22px,3vw,44px);color:#fff;text-shadow:0 0 16px var(--fire);min-width:2.2em;text-align:center}
@@ -216,6 +238,39 @@
   .acomp .imp{position:absolute;top:24%;left:50%;transform:translate(-50%,-50%);z-index:5;font-size:clamp(22px,3.5vw,56px);opacity:0;pointer-events:none}
   .acomp .imp.go{animation:aimpact .5s ease-out}
   @keyframes aimpact{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(12deg)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+
+  /* ===== MODO 1×1 (2 competidores): cantos opostos + VS, soco atravessa ===== */
+  #fighters.duo{align-items:center;justify-content:space-between;padding:0 4vw 8vh;gap:0}
+  #fighters.duo .acomp{max-width:34%;flex:0 0 34%}
+  #fighters.duo .acomp .boxer{max-width:clamp(120px,17vw,240px)}
+  #fighters.duo .acomp .score{font-size:clamp(40px,7vw,104px)}
+  #fighters.duo .acomp .nm{font-size:clamp(16px,2.4vw,40px)}
+  /* o competidor da direita fica espelhado (encara o da esquerda) */
+  #fighters.duo .acomp:last-child .boxer svg{transform:scaleX(-1)}
+  /* soco no 1×1: o atacante avança em direção ao centro */
+  #fighters.duo .acomp.atkL .boxer{animation:punchAcross_L .55s cubic-bezier(.3,1.7,.5,1)}
+  #fighters.duo .acomp.atkR .boxer{animation:punchAcross_R .55s cubic-bezier(.3,1.7,.5,1)}
+  @keyframes punchAcross_L{0%{transform:translateX(0)}35%{transform:translateX(70%) rotate(5deg) scale(1.05)}100%{transform:translateX(0)}}
+  @keyframes punchAcross_R{0%{transform:scaleX(-1) translateX(0)}35%{transform:scaleX(-1) translateX(70%) rotate(5deg) scale(1.05)}100%{transform:scaleX(-1) translateX(0)}}
+  /* o VS central no modo duo */
+  #duoVS{position:absolute;top:46%;left:50%;transform:translate(-50%,-50%);z-index:6;font-family:var(--star);font-weight:900;font-size:clamp(40px,8vw,120px);color:#fff;text-shadow:0 0 36px var(--fire),0 0 80px #1a5fc4;pointer-events:none;display:none}
+  #fighters.duo ~ #duoVS{display:block}
+
+  /* ===== FEEDBACK DE PONTO (vale nos dois modos) ===== */
+  /* flash de cor no card ao marcar */
+  .acomp .pointflash{position:absolute;inset:-6% -4%;border-radius:18px;z-index:1;opacity:0;pointer-events:none;background:radial-gradient(circle at 50% 60%,var(--cflash) 0%,transparent 70%)}
+  .acomp .pointflash.go{animation:pflash .6s ease-out}
+  @keyframes pflash{0%{opacity:0}25%{opacity:.85}100%{opacity:0}}
+  /* card ganha brilho pulsante curto */
+  .acomp.scored{animation:cardglow .6s ease-out}
+  @keyframes cardglow{0%{filter:drop-shadow(0 0 0 transparent)}40%{filter:drop-shadow(0 0 22px var(--cflash))}100%{filter:drop-shadow(0 0 0 transparent)}}
+  /* faíscas que saem do número */
+  .acomp .sparks{position:absolute;left:50%;top:18%;width:0;height:0;z-index:6;pointer-events:none}
+  .spark{position:absolute;width:9px;height:9px;border-radius:2px;animation:sparkfly .7s ease-out forwards}
+  @keyframes sparkfly{to{transform:translate(var(--sx),var(--sy)) rotate(420deg);opacity:0}}
+  /* tremor leve dos OUTROS quando o líder marca */
+  .acomp.tremble{animation:tremble .4s ease-out}
+  @keyframes tremble{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}50%{transform:translateX(3px)}75%{transform:translateX(-2px)}}
   /* boxer states */
   .acomp .boxer.idle{animation:abreathe 2.6s ease-in-out infinite}
   @keyframes abreathe{50%{transform:translateY(-4px) scale(1.01)}}
@@ -254,9 +309,9 @@
   #duel .ropes i:nth-child(1){bottom:26vh}#duel .ropes i:nth-child(2){bottom:18vh}#duel .ropes i:nth-child(3){bottom:9vh}
   .duelflash{position:absolute;inset:0;z-index:5;background:#fff;animation:duelflash .5s ease-out forwards}
   @keyframes duelflash{0%{opacity:1}100%{opacity:0}}
-  .duelhead{position:absolute;top:5vh;left:0;right:0;text-align:center;z-index:8}
-  .duelhead .vs-eye{font-family:var(--star);letter-spacing:.6em;color:#ffb020;font-size:clamp(12px,1.4vw,18px);font-weight:700;animation:fadeDown .6s .1s both}
-  .duelhead .vs-title{font-family:var(--star);font-weight:900;font-size:clamp(26px,5.4vw,70px);
+  .duelhead{position:absolute;top:2.2vh;left:0;right:0;text-align:center;z-index:8;pointer-events:none}
+  .duelhead .vs-eye{font-family:var(--star);letter-spacing:.6em;color:#ffb020;font-size:clamp(10px,1.2vw,15px);font-weight:700;animation:fadeDown .6s .1s both}
+  .duelhead .vs-title{font-family:var(--star);font-weight:900;font-size:clamp(20px,3.4vw,44px);
     background:linear-gradient(90deg,#ffb020,#fff,#00a6ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
     text-shadow:0 0 60px #00a6ff66;animation:fadeDown .6s .2s both}
   @keyframes fadeDown{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
@@ -398,6 +453,7 @@
       <span id="joinBadge"><span class="d"></span> ENTRADA ABERTA</span>
     </div>
     <div id="fighters"></div>
+    <div id="duoVS">VS</div>
     <div id="joinReq"></div>
     <div id="arenaResult"></div>
   </div>
@@ -563,11 +619,19 @@ function makeEmbers(id,n){const c=document.getElementById(id);if(!c)return;c.inn
     e.style.width=e.style.height=(4+Math.random()*6)+"px";c.appendChild(e);}}
 function score(t){return t.vis*1+t.doc*3;}
 function render(){const sorted=[...teams].sort((a,b)=>score(b)-score(a));const max=Math.max(1,...sorted.map(score));const L=sorted[0];
+  const board=document.getElementById("board");
   if(!L){document.getElementById("lName").textContent="—";animateNum(document.getElementById("lPts"),0);
-    document.getElementById("board").innerHTML='<div style="text-align:center;color:var(--dim);font-family:var(--star);letter-spacing:.2em;padding:40px 0">AGUARDANDO EQUIPES NA ARENA…</div>';return;}
+    board.className="board";
+    board.innerHTML='<div style="text-align:center;color:var(--dim);font-family:var(--star);letter-spacing:.2em;padding:40px 0">AGUARDANDO EQUIPES NA ARENA…</div>';return;}
   document.getElementById("lName").textContent=L.name;animateNum(document.getElementById("lPts"),score(L));
-  const board=document.getElementById("board");board.innerHTML="";
-  sorted.slice(0,6).forEach((t,i)=>{const row=document.createElement("div");row.className="row"+(i===0?" first":i===1?" p2":i===2?" p3":"");
+  board.innerHTML="";
+  // densidade adaptativa conforme o nº de equipes presentes
+  const n=sorted.length;
+  let dens="";
+  if(n>18) dens=" dens3"; else if(n>12) dens=" dens2"; else if(n>8) dens=" dens1";
+  board.className="board"+dens;
+  // mostra TODAS as equipes presentes (não só 6)
+  sorted.forEach((t,i)=>{const row=document.createElement("div");row.className="row"+(i===0?" first":i===1?" p2":i===2?" p3":"");
     row.innerHTML=`<div class="rank">${i+1}</div><div class="name"><b>${t.name}</b><span>${t.sub}</span></div><div class="chips"><div class="chip vis"><b>${t.vis}</b><span>visitas</span></div><div class="chip doc"><b>${t.doc}</b><span>docs</span></div></div><div class="bar"><i style="width:${score(t)/max*100}%"></i></div><div class="score">${score(t)}</div>`;
     board.appendChild(row);});}
 function animateNum(el,to){const from=parseInt(el.textContent)||0;if(from===to){el.textContent=to;return;}const dur=600,t0=performance.now();
@@ -721,41 +785,101 @@ function showJoinRequest(name){
 function renderFighters(animateLast){
   if(!battle) return;
   const wrap=document.getElementById("fighters");
+  const duo = battle.comps.length===2;     // 2 competidores = layout 1×1 nos cantos
+  wrap.className = duo ? "duo" : "";
   const top=Math.max(0,...battle.comps.map(c=>c.pts));
   wrap.innerHTML="";
   battle.comps.forEach((c,i)=>{
     const isLeader = top>0 && c.pts===top;
+    const cflash = colorHex(c.color);
     const el=document.createElement("div");
     el.className="acomp"+(isLeader?" leader":"")+(animateLast&&i===battle.comps.length-1?" enter":"");
     el.id="ac_"+c.uid;
-    el.style.setProperty("--cglow", "#00daff66");
+    el.style.setProperty("--cglow", cflash+"66");
+    el.style.setProperty("--cflash", cflash);
     el.innerHTML=`
+      <div class="pointflash" id="pf_${c.uid}"></div>
       <div class="score" id="sc_${c.uid}">${c.pts}</div>
       <div class="nm">${c.name}</div>
       <div class="sub">${c.sub||""}</div>
       <div class="boxer idle" id="bx_${c.uid}">${buildFighter(c.color,c.uid)}</div>
-      <div class="imp" id="im_${c.uid}">💥</div>`;
+      <div class="imp" id="im_${c.uid}">💥</div>
+      <div class="sparks" id="sp_${c.uid}"></div>`;
     wrap.appendChild(el);
   });
   refreshJoinBadge();
+}
+// cor da paleta Cury em hex (para flash/faíscas)
+function colorHex(key){
+  const map={azul:"#1a5fc4",branco:"#cfd9e6",azulclaro:"#4db8ff",ciano:"#00daff",cinza:"#9aa8bd"};
+  return map[key]||"#00daff";
+}
+function spawnSparks(uid,cor){
+  const host=document.getElementById("sp_"+uid); if(!host) return;
+  for(let i=0;i<14;i++){
+    const s=document.createElement("div");s.className="spark";s.style.background=cor;
+    const ang=Math.random()*Math.PI*2,dist=50+Math.random()*90;
+    s.style.setProperty("--sx",Math.cos(ang)*dist+"px");
+    s.style.setProperty("--sy",(Math.sin(ang)*dist-20)+"px");
+    s.style.animationDelay=(Math.random()*.08)+"s";
+    host.appendChild(s);setTimeout(()=>s.remove(),750);
+  }
 }
 
 // ponto para um competidor (por eid)
 function battlePoint(eid,tipo){
   if(!battle||battle.ended) return;
-  const c=battle.comps.find(x=>String(x.eid)===String(eid));
-  if(!c) return;
+  const idx=battle.comps.findIndex(x=>String(x.eid)===String(eid));
+  if(idx<0) return;
+  const c=battle.comps[idx];
   const strong=tipo==="documentacao";const inc=strong?3:1;
   c.pts+=inc;
+  const duo = battle.comps.length===2;
+  const card=document.getElementById("ac_"+c.uid);
   const bx=document.getElementById("bx_"+c.uid);
-  const im=document.getElementById("im_"+c.uid);
-  if(bx){bx.classList.add("punch");setTimeout(()=>bx.classList.remove("punch"),550);}
-  setTimeout(()=>{if(im){im.classList.add("go");setTimeout(()=>im.classList.remove("go"),550);}punchSnd(strong);},220);
   const sc=document.getElementById("sc_"+c.uid);
+  const cflash=colorHex(c.color);
+
+  if(duo){
+    // ---- modo 1×1: atacante avança e o OUTRO apanha ----
+    const isLeft = idx===0;
+    if(card) card.classList.add(isLeft?"atkL":"atkR");
+    const op=battle.comps[isLeft?1:0];
+    const opBx=document.getElementById("bx_"+op.uid);
+    const opIm=document.getElementById("im_"+op.uid);
+    setTimeout(()=>{
+      if(opBx){opBx.classList.add("hit");setTimeout(()=>opBx.classList.remove("hit"),450);}
+      if(opIm){opIm.classList.add("go");setTimeout(()=>opIm.classList.remove("go"),550);}
+      punchSnd(strong);
+    },230);
+    setTimeout(()=>{if(card)card.classList.remove("atkL","atkR");},600);
+  } else {
+    // ---- modo 3+: golpe + flash de cor + faíscas + tremor dos outros ----
+    if(bx){bx.classList.add("punch");setTimeout(()=>bx.classList.remove("punch"),520);}
+    const pf=document.getElementById("pf_"+c.uid);
+    if(pf){pf.classList.add("go");setTimeout(()=>pf.classList.remove("go"),600);}
+    if(card){card.classList.add("scored");setTimeout(()=>card.classList.remove("scored"),600);}
+    setTimeout(()=>{spawnSparks(c.uid,cflash);punchSnd(strong);},200);
+    // os outros tremem de leve
+    battle.comps.forEach(o=>{ if(o.uid!==c.uid){const oc=document.getElementById("ac_"+o.uid);
+      if(oc){oc.classList.add("tremble");setTimeout(()=>oc.classList.remove("tremble"),400);}}});
+  }
+  // placar pula
   if(sc){sc.textContent=c.pts;sc.classList.add("bump");setTimeout(()=>sc.classList.remove("bump"),250);}
-  // recalcula liderança/janela e fim por meta
-  renderFighters();
-  if(battle.mode!=="tempo" && c.pts>=battle.meta) endBattle();
+  // atualiza liderança (sem re-render completo, para não cortar a animação)
+  marcarLider();
+  if(battle.mode!=="tempo" && c.pts>=battle.meta) setTimeout(()=>endBattle(),650);
+}
+// atualiza só a classe de líder e o número, sem recriar os elementos
+function marcarLider(){
+  if(!battle) return;
+  const top=Math.max(0,...battle.comps.map(c=>c.pts));
+  battle.comps.forEach(c=>{
+    const card=document.getElementById("ac_"+c.uid);
+    const sc=document.getElementById("sc_"+c.uid);
+    if(sc) sc.textContent=c.pts;
+    if(card) card.classList.toggle("leader", top>0 && c.pts===top);
+  });
 }
 
 function startBattleClock(){
