@@ -193,55 +193,57 @@
   #duel{position:fixed;inset:0;z-index:60;display:none;overflow:hidden;
     background:radial-gradient(ellipse 80% 70% at 50% 40%,#04162e 0%,#020c1f 50%,#01060f 82%)}
   #duel.on{display:block}
-  /* ===== GRADE DE DUELOS (1 a 5 simultâneos) ===== */
-  #duelGrid{position:absolute;inset:0;z-index:7;display:grid;gap:8px;padding:clamp(70px,9vh,110px) 10px 10px;grid-template-columns:1fr;grid-template-rows:1fr}
-  #duelGrid.n2{grid-template-columns:1fr 1fr}
-  #duelGrid.n3,#duelGrid.n4{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr}
-  #duelGrid.n3 .dcard:nth-child(3){grid-column:1 / span 2}
-  #duelGrid.n5,#duelGrid.n6{grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr}
-  .dcard{position:relative;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;
-    background:radial-gradient(ellipse 90% 70% at 50% 36%,#04162e 0%,#020c1f 55%,#01060f 86%);
-    border:1px solid #00a6ff33;box-shadow:inset 0 0 50px #00a6ff10}
-  .dcard .dchead{position:relative;z-index:3;text-align:center;padding:8px 6px 0}
-  .dcard .dceye{font-family:var(--star);font-size:clamp(7px,.9vw,11px);letter-spacing:.25em;color:var(--gold)}
-  .dcard .dcmode{font-family:var(--body);font-size:clamp(8px,.9vw,12px);color:var(--dim);letter-spacing:.08em;margin-top:1px}
-  .dcarena{position:relative;z-index:3;flex:1;display:flex;align-items:center;justify-content:center;gap:2%;padding:0 3%}
-  .dccorner{flex:1;text-align:center;max-width:38%;position:relative}
-  .dccorner .nm{font-family:var(--star);font-weight:900;font-size:clamp(12px,1.7vw,26px);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .dccorner.A .nm{color:#00daff} .dccorner.B .nm{color:#ff7a8f}
-  .dccorner .sub{font-size:clamp(8px,.85vw,12px);color:var(--dim);letter-spacing:.05em;margin-top:1px}
-  .dcboxer{width:100%;max-width:clamp(80px,13vw,180px);margin:5px auto 0;position:relative}
-  .dcboxer svg{width:100%;height:auto;display:block;filter:drop-shadow(0 0 12px #00a6ff55)}
-  .dccorner.B .dcboxer svg{transform:scaleX(-1)}
-  .dcboxer.idle{animation:dbreathe 2.6s ease-in-out infinite}
-  @keyframes dbreathe{50%{transform:translateY(-4px) scale(1.01)}}
-  .dccorner.A .dcboxer.punch{animation:dpunchA .5s cubic-bezier(.3,1.6,.5,1)}
-  .dccorner.B .dcboxer.punch{animation:dpunchB .5s cubic-bezier(.3,1.6,.5,1)}
-  @keyframes dpunchA{0%{transform:translateX(0)}35%{transform:translateX(55%) rotate(4deg)}100%{transform:translateX(0)}}
-  @keyframes dpunchB{0%{transform:scaleX(-1) translateX(0)}35%{transform:scaleX(-1) translateX(55%) rotate(4deg)}100%{transform:scaleX(-1) translateX(0)}}
-  .dcboxer.hit{animation:dhit .45s ease-out}
-  @keyframes dhit{0%{transform:translateX(0)}20%{transform:translateX(12px) rotate(-6deg)}40%{transform:translateX(-7px) rotate(4deg)}100%{transform:translateX(0)}}
-  .dccorner.B .dcboxer.hit{animation:dhitB .45s ease-out}
-  @keyframes dhitB{0%{transform:scaleX(-1) translateX(0)}20%{transform:scaleX(-1) translateX(12px) rotate(6deg)}40%{transform:scaleX(-1) translateX(-7px)}100%{transform:scaleX(-1) translateX(0)}}
-  .dcboxer.ko{animation:dko .9s ease-in forwards}
-  @keyframes dko{to{transform:translateY(38%) rotate(80deg);opacity:.5}}
-  .dccorner.B .dcboxer.ko{animation:dkoB .9s ease-in forwards}
-  @keyframes dkoB{to{transform:scaleX(-1) translateY(38%) rotate(80deg);opacity:.5}}
-  .dcimp{position:absolute;top:28%;left:50%;transform:translate(-50%,-50%);z-index:5;font-size:clamp(22px,3.5vw,52px);opacity:0;pointer-events:none}
-  .dcimp.go{animation:dimpact .5s ease-out}
-  @keyframes dimpact{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(12deg)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
-  .dcscore{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:4%;padding:2px 0 10px;font-family:var(--num);font-weight:700}
-  .dcscore .v{font-size:clamp(30px,6vw,80px);line-height:.8;min-width:1.3em;text-align:center;transition:transform .15s}
-  .dcscore .v.A{color:#00daff;text-shadow:0 0 18px #00daff66} .dcscore .v.B{color:#ff7a8f;text-shadow:0 0 18px #ff3b4e66}
-  .dcscore .v.bump{transform:scale(1.35)}
-  .dcscore .x{font-family:var(--star);font-size:clamp(12px,1.7vw,26px);color:var(--dim)}
-  .dcmeta{position:relative;z-index:3;text-align:center;font-family:var(--body);font-size:clamp(8px,.9vw,12px);color:var(--gold);letter-spacing:.12em;padding-bottom:8px}
-  .dcresult{position:absolute;inset:0;z-index:8;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(2,6,15,.8);backdrop-filter:blur(3px)}
-  .dcresult.on{display:flex;animation:fadeUp .3s both}
-  .dcresult .belt{font-size:clamp(30px,5vw,70px);margin-bottom:4px}
-  .dcresult .big{font-family:var(--star);font-weight:900;font-size:clamp(24px,5vw,72px);color:var(--gold);text-shadow:0 0 30px var(--gold),0 0 60px #00a6ff;animation:slamHard .55s cubic-bezier(.2,2.2,.3,1) both}
-  .dcresult .big.tie{color:var(--gold)}
-  .dcresult .who{font-family:var(--star);font-weight:900;font-size:clamp(14px,2.4vw,40px);color:#fff;margin-top:4px}
+  /* ===== RINGUE ÚNICO — BATALHA COM ATÉ 5 COMPETIDORES ===== */
+  #arena{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;padding:clamp(64px,8vh,100px) clamp(14px,2vw,40px) clamp(16px,3vh,40px)}
+  #arenaBar{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
+  #arenaBar .mode{font-family:var(--body);font-size:clamp(10px,1.1vw,15px);color:var(--gold);letter-spacing:.12em}
+  #arenaBar .clock{font-family:var(--num);font-weight:700;font-size:clamp(22px,3vw,44px);color:#fff;text-shadow:0 0 16px var(--fire);min-width:2.2em;text-align:center}
+  #arenaBar .clock.danger{color:#ff3b4e;animation:beat .5s infinite}
+  /* janela de entrada aberta? badge piscando */
+  #joinBadge{display:none;align-items:center;gap:8px;font-family:var(--star);font-size:clamp(9px,1vw,13px);letter-spacing:.12em;color:#1fd18a;border:1px solid #1fd18a66;border-radius:99px;padding:5px 12px;animation:joinpulse 1.3s ease-in-out infinite}
+  #joinBadge.on{display:inline-flex}
+  #joinBadge .d{width:8px;height:8px;border-radius:50%;background:#1fd18a;box-shadow:0 0 8px #1fd18a}
+  @keyframes joinpulse{50%{opacity:.5}}
+  /* fila de competidores */
+  #fighters{position:relative;z-index:3;flex:1;display:flex;align-items:flex-end;justify-content:center;gap:clamp(6px,1.4vw,28px);min-height:0}
+  .acomp{flex:1;max-width:clamp(120px,19vw,300px);text-align:center;position:relative;transition:max-width .4s,opacity .4s;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+  .acomp .nm{font-family:var(--star);font-weight:900;font-size:clamp(11px,1.5vw,26px);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acomp .sub{font-size:clamp(8px,.85vw,12px);color:var(--dim);letter-spacing:.05em;margin-top:2px}
+  .acomp .score{font-family:var(--num);font-weight:700;font-size:clamp(30px,5vw,76px);line-height:.85;color:#fff;text-shadow:0 0 18px var(--cglow);transition:transform .15s}
+  .acomp .score.bump{transform:scale(1.4)}
+  .acomp .boxer{width:100%;max-width:clamp(80px,12vw,180px);margin:6px auto 0;position:relative}
+  .acomp .boxer svg{width:100%;height:auto;display:block}
+  .acomp .imp{position:absolute;top:24%;left:50%;transform:translate(-50%,-50%);z-index:5;font-size:clamp(22px,3.5vw,56px);opacity:0;pointer-events:none}
+  .acomp .imp.go{animation:aimpact .5s ease-out}
+  @keyframes aimpact{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(12deg)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
+  /* boxer states */
+  .acomp .boxer.idle{animation:abreathe 2.6s ease-in-out infinite}
+  @keyframes abreathe{50%{transform:translateY(-4px) scale(1.01)}}
+  .acomp .boxer.punch{animation:apunch .5s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes apunch{0%{transform:translateY(0)}35%{transform:translateY(-14%) scale(1.08) rotate(-3deg)}100%{transform:translateY(0)}}
+  .acomp .boxer.hit{animation:ahit .45s ease-out}
+  @keyframes ahit{0%{transform:translateX(0)}20%{transform:translateX(12px) rotate(-6deg)}40%{transform:translateX(-7px) rotate(4deg)}100%{transform:translateX(0)}}
+  .acomp .boxer.ko{animation:ako .9s ease-in forwards}
+  @keyframes ako{to{transform:translateY(34%) rotate(78deg);opacity:.45}}
+  .acomp.leader .score{color:var(--gold);text-shadow:0 0 24px var(--gold)}
+  .acomp.leader .nm{color:var(--gold)}
+  /* entrada de um novo competidor */
+  .acomp.enter{animation:acompEnter .7s cubic-bezier(.2,1.3,.3,1) both}
+  @keyframes acompEnter{0%{opacity:0;transform:translateY(60px) scale(.6)}100%{opacity:1;transform:translateY(0) scale(1)}}
+  /* solicitação de entrada (explode na tela) */
+  #joinReq{position:absolute;inset:0;z-index:14;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:radial-gradient(ellipse at center,rgba(10,40,90,.9),rgba(2,6,15,.96))}
+  #joinReq.on{display:flex;animation:fadeUp .3s both}
+  #joinReq .flash{position:absolute;inset:0;background:var(--cyan);mix-blend-mode:screen;animation:aflash2 .7s ease-out}
+  @keyframes aflash2{0%{opacity:0}15%{opacity:.4}100%{opacity:0}}
+  #joinReq .warn{position:relative;z-index:2;font-family:var(--star);font-size:clamp(12px,1.6vw,20px);letter-spacing:.35em;color:var(--gold)}
+  #joinReq .big{position:relative;z-index:2;font-family:var(--star);font-weight:900;font-size:clamp(30px,7vw,90px);color:#fff;text-shadow:0 0 40px var(--cyan);margin:8px 0}
+  #joinReq .who{position:relative;z-index:2;font-family:var(--star);font-weight:700;font-size:clamp(18px,3vw,40px);color:var(--cyan)}
+  #arenaResult{position:absolute;inset:0;z-index:12;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:rgba(2,6,15,.85);backdrop-filter:blur(4px)}
+  #arenaResult.on{display:flex;animation:fadeUp .3s both}
+  #arenaResult .belt{font-size:clamp(44px,8vw,120px);margin-bottom:6px;animation:bob 2s ease-in-out infinite}
+  #arenaResult .big{font-family:var(--star);font-weight:900;font-size:clamp(36px,8vw,130px);color:var(--gold);text-shadow:0 0 40px var(--gold),0 0 90px var(--fire);animation:slamHard .55s cubic-bezier(.2,2.2,.3,1) both}
+  #arenaResult .big.tie{color:var(--fire2)}
+  #arenaResult .who{font-family:var(--star);font-weight:900;font-size:clamp(20px,4vw,56px);color:#fff;margin-top:8px}
   #duel .spot{position:absolute;top:-20%;width:42vw;height:160vh;z-index:1;mix-blend-mode:screen;background:linear-gradient(to bottom,#ffb02055,transparent 70%);filter:blur(8px);transform-origin:top center}
   #duel .spot.l{left:2%;transform:rotate(16deg);animation:swayL 5s ease-in-out infinite}
   #duel .spot.r{right:2%;transform:rotate(-16deg);animation:swayR 5s ease-in-out infinite}
@@ -388,8 +390,17 @@
   <div class="spot l"></div><div class="spot r"></div>
   <div class="embers" id="emb2"></div>
   <div class="ropes"><i></i><i></i><i></i></div>
-  <div class="duelhead"><div class="vs-eye">⚔ ARENA AO VIVO ⚔</div><div class="vs-title" id="duelTitle">DUELOS</div></div>
-  <div id="duelGrid" class="n1"></div>
+  <div class="duelhead"><div class="vs-eye">⚔ BATALHA AO VIVO ⚔</div><div class="vs-title" id="duelTitle">ARENA</div></div>
+  <div id="arena">
+    <div id="arenaBar">
+      <span class="mode" id="arenaMode">—</span>
+      <span class="clock" id="arenaClock" style="display:none">--</span>
+      <span id="joinBadge"><span class="d"></span> ENTRADA ABERTA</span>
+    </div>
+    <div id="fighters"></div>
+    <div id="joinReq"></div>
+    <div id="arenaResult"></div>
+  </div>
 </div>
 </div>
 
@@ -397,15 +408,15 @@
   <b>PAINEL DE SIMULAÇÃO</b>
   <button class="b-vis" onclick="simScore('visita')">🎯 Visita +1</button>
   <button class="b-doc" onclick="simScore('documentacao')">🏆 Documentação +3</button>
-  <button class="b-duel" onclick="simDuelo()">🥊 Abrir duelo teste</button>
-  <button class="b-duel" onclick="simDuelo2()" style="background:#0a3a8a">🥊🥊 +1 duelo (paralelo)</button>
+  <button class="b-duel" onclick="simBattle()">🥊 Abrir batalha (2)</button>
+  <button class="b-duel" onclick="simJoin()" style="background:#0a3a8a">➕ Entrar (3º/4º/5º)</button>
   <button class="b-mute" id="muteBtn" onclick="toggleMute()">🔊 Som ligado</button>
-  <span style="flex-basis:100%;text-align:center;font-family:var(--star);font-size:9px;letter-spacing:.2em;color:#6f8bb0">DUELO AO VIVO (após abrir)</span>
-  <button class="b-vis" onclick="simPt('A','visita')">◀ A visita</button>
-  <button class="b-vis" onclick="simPt('B','visita')">B visita ▶</button>
-  <button class="b-doc" onclick="simPt('A','documentacao')">◀ A DOC</button>
-  <button class="b-doc" onclick="simPt('B','documentacao')">B DOC ▶</button>
-  <button class="b-duel" onclick="closeDuel()" style="background:#444">✕ Fechar duelos</button>
+  <span style="flex-basis:100%;text-align:center;font-family:var(--star);font-size:9px;letter-spacing:.2em;color:#6f8bb0">PONTOS NA BATALHA</span>
+  <button class="b-vis" onclick="simPt(0,'visita')">C1 visita</button>
+  <button class="b-vis" onclick="simPt(1,'visita')">C2 visita</button>
+  <button class="b-doc" onclick="simPt(0,'documentacao')">C1 DOC</button>
+  <button class="b-doc" onclick="simPt(2,'visita')">C3 visita</button>
+  <button class="b-duel" onclick="closeBattle()" style="background:#444">✕ Fechar batalha</button>
 </div>
 
 <script>
@@ -562,11 +573,17 @@ function render(){const sorted=[...teams].sort((a,b)=>score(b)-score(a));const m
 function animateNum(el,to){const from=parseInt(el.textContent)||0;if(from===to){el.textContent=to;return;}const dur=600,t0=performance.now();
   (function step(now){const k=Math.min(1,(now-t0)/dur);el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(step);})(t0);}
 function simScore(tipo){ensureAudio();const nome=teams.length?teams[Math.floor(Math.random()*teams.length)].name:"Equipe Teste";celebrate(tipo==="documentacao"?"documentacao":"visita",nome);}
-// simulação local da grade (para teste manual sem banco)
-function simDuelo(){ensureAudio();openDuel({id:"sim1",a:"Equipe Órion",b:"Equipe Pulsar",mode:"meta",meta:10});}
-function simDuelo2(){ensureAudio();openDuel({id:"sim2",a:"Equipe Vega",b:"Equipe Cometa",mode:"meta",meta:10});}
-function simPt(side,tipo){const alvo=duels[0];if(!alvo){simDuelo();return;}simPtOn(alvo.id,side,tipo);}
-function simPtOn(id,side,tipo){duelPoint(id,side,tipo);}
+// simulação local da batalha (teste manual sem banco)
+let _simJoinSeq=0;
+function simBattle(){ensureAudio();openBattle({id:"sim",mode:"meta",meta:10,a:{eid:"e1",name:"Equipe Órion",sub:"Sup. Centauro"},b:{eid:"e2",name:"Equipe Pulsar",sub:"Sup. Andrômeda"}});}
+function simJoin(){ensureAudio();if(!battle){simBattle();return;}
+  const extras=[{eid:"e3",name:"Equipe Vega",sub:"Sup. Lyra"},{eid:"e4",name:"Equipe Cometa",sub:"Sup. Órion"},{eid:"e5",name:"Equipe Áquila",sub:"Sup. Centauro"}];
+  const x=extras[_simJoinSeq%extras.length];_simJoinSeq++;
+  const ok=joinBattle({eid:x.eid,name:x.name,sub:x.sub});
+  if(!ok) toastMini("Entrada fechada (passou de 20% ou já há 5)");
+}
+function simPt(idx,tipo){if(!battle){simBattle();return;}const c=battle.comps[idx];if(!c){toastMini("Competidor "+(idx+1)+" não está na batalha");return;}battlePoint(c.eid,tipo);}
+function toastMini(msg){console.log(msg);}
 function celebrate(tipo,name){const isDoc=tipo==="documentacao";const color=isDoc?"#ffcf4d":"#00daff";
   const fl=document.createElement("div");fl.className="flash";fl.style.background=color;document.body.appendChild(fl);setTimeout(()=>fl.remove(),1000);
   const wrap=document.getElementById("wrap");wrap.classList.remove("shake");void wrap.offsetWidth;wrap.classList.add("shake");
@@ -618,110 +635,191 @@ function staredown(info){
     document.getElementById("accepted").classList.add("show");
   },3000);
   // depois abre o duelo na grade
-  setTimeout(()=>{s.classList.remove("on");openDuel(info);},5000);
+  setTimeout(()=>{s.classList.remove("on");openBattle({id:info.id,mode:info.mode,meta:info.meta,dur:info.dur,
+    a:{eid:info.aeid,name:info.a,sub:info.asub},b:{eid:info.beid,name:info.b,sub:info.bsub}});},5000);
 }
-// ===== MOTOR DE DUELOS EM GRADE (1 a 5 simultâneos, indexados por duelo_id) =====
-// Cada duelo: {id, a, b, sa, sb, va, vb, meta, mode, ended, colors}
-let duels=[];            // duelos ativos na tela
-let duelOpen=false;      // a camada #duel está visível?
+// ===== MOTOR DA BATALHA — UM RINGUE, ATÉ 5 COMPETIDORES =====
+// battle = {id, mode:'meta'|'tempo', meta, dur, startTs, ended, comps:[{eid,name,sub,pts,color,uid}]}
+let battle=null;
+let battleClock=null;
+const MAX_COMPS=5;
+const JOIN_WINDOW=0.20; // 20% — limite para 3º/4º/5º entrarem
 
-function duelById(id){ return duels.find(d=>String(d.id)===String(id)); }
-
-function showDuelLayer(on){
+function arenaVisible(on){
   const layer=document.getElementById("duel");
-  if(on && !duelOpen){ layer.classList.add("on"); duelOpen=true; makeEmbers("emb2",46); }
-  if(!on && duelOpen){ layer.classList.remove("on"); duelOpen=false; }
+  if(on) layer.classList.add("on"); else layer.classList.remove("on");
 }
 
-function renderDuelGrid(){
-  const grid=document.getElementById("duelGrid");
-  const n=duels.length;
-  document.getElementById("duelTitle").textContent = n===0 ? "DUELOS" : (n===1 ? (duels[0].a+" × "+duels[0].b) : n+" DUELOS AO VIVO");
-  grid.className="n"+Math.min(n,6);
-  grid.innerHTML="";
-  duels.forEach((d,i)=>{
-    const metaTxt = d.mode==="tempo" ? (d.meta+" min — quem fizer mais") : ("primeiro a "+d.meta);
-    const el=document.createElement("div");el.className="dcard";el.id="dc"+d.id;
-    el.innerHTML=`
-      <div class="dchead"><div class="dceye">⚔ DUELO AO VIVO ⚔</div><div class="dcmode">${metaTxt}</div></div>
-      <div class="dcarena">
-        <div class="dccorner A">
-          <div class="nm">${d.a}</div><div class="sub">${d.sa||""}</div>
-          <div class="dcboxer idle" id="bx${d.id}A">${buildFighter(d.colors[0],"A"+d.id)}</div>
-          <div class="dcimp" id="imA${d.id}">💥</div>
-        </div>
-        <div class="dccorner B">
-          <div class="nm">${d.b}</div><div class="sub">${d.sb||""}</div>
-          <div class="dcboxer idle" id="bx${d.id}B">${buildFighter(d.colors[1],"B"+d.id)}</div>
-          <div class="dcimp" id="imB${d.id}">💥</div>
-        </div>
-      </div>
-      <div class="dcscore"><span class="v A" id="sa${d.id}">${d.va}</span><span class="x">×</span><span class="v B" id="sb${d.id}">${d.vb}</span></div>
-      <div class="dcmeta">${d.mode==="tempo"?"POR TEMPO":"PRIMEIRO A "+d.meta}</div>
-      <div class="dcresult" id="res${d.id}"></div>`;
-    grid.appendChild(el);
-  });
+// progresso da batalha (0..1): por tempo = decorrido/dur; por meta = maiorPlacar/meta
+function battleProgress(){
+  if(!battle) return 1;
+  if(battle.mode==="tempo"){
+    const el=(Date.now()-battle.startTs)/1000;
+    return Math.min(1, el/Math.max(1,battle.dur));
+  }
+  const top=Math.max(0,...battle.comps.map(c=>c.pts));
+  return Math.min(1, top/Math.max(1,battle.meta));
+}
+// janela de entrada aberta? (até 20% e ainda há vaga)
+function joinOpen(){
+  if(!battle||battle.ended) return false;
+  if(battle.comps.length>=MAX_COMPS) return false;
+  return battleProgress() <= JOIN_WINDOW;
+}
+function refreshJoinBadge(){
+  const b=document.getElementById("joinBadge");
+  if(joinOpen()) b.classList.add("on"); else b.classList.remove("on");
 }
 
-// abre/registra um novo duelo vindo do banco
-function openDuel(info){
-  // info: {id, a, b, sa, sb, meta, mode}
-  if(duelById(info.id)) return;           // já existe
-  const[ck1,ck2]=pickDuelColors();
-  duels.push({id:info.id,a:info.a,b:info.b,sa:info.sa||"",sb:info.sb||"",
-    va:0,vb:0,meta:info.meta||10,mode:info.mode||"meta",ended:false,colors:[ck1,ck2]});
-  showDuelLayer(true);
-  renderDuelGrid();
-  // abertura: gongo + whoosh + brilho
-  const card=document.getElementById("dc"+info.id);
-  if(card){const ring=document.createElement("div");ring.className="gongring";card.appendChild(ring);setTimeout(()=>ring.remove(),1700);}
+// abre uma nova batalha com os 2 primeiros (desafiante × desafiado)
+function openBattle(info){
+  // info: {id, mode, meta|dur, a:{eid,name,sub}, b:{eid,name,sub}}
+  if(battle && !battle.ended && String(battle.id)===String(info.id)) return;
+  const cols=pickBattleColors(2);
+  battle={
+    id:info.id, mode:info.mode||"meta",
+    meta:+(info.meta||10), dur:+(info.dur||0),
+    startTs:Date.now(), ended:false,
+    comps:[
+      {eid:info.a.eid,name:info.a.name,sub:info.a.sub||"",pts:0,color:cols[0],uid:"c0_"+info.id},
+      {eid:info.b.eid,name:info.b.name,sub:info.b.sub||"",pts:0,color:cols[1],uid:"c1_"+info.id},
+    ]
+  };
+  arenaVisible(true);
+  document.getElementById("arenaMode").textContent =
+    battle.mode==="tempo" ? ("POR TEMPO · "+Math.round(battle.dur/60)+" min") : ("PRIMEIRO A "+battle.meta);
+  document.getElementById("arenaResult").classList.remove("on");
+  renderFighters();
+  startBattleClock();
   whoosh();bell();
 }
 
-// ponto num duelo específico: side 'L'(=A) ou 'R'(=B)
-function duelPoint(id,side,tipo){
-  const d=duelById(id); if(!d||d.ended)return;
-  const A = side==="L"||side==="A";
+// adiciona 3º/4º/5º competidor (se a janela permitir) — placar ZERO
+function joinBattle(info){
+  // info: {id?, eid, name, sub}
+  if(!battle||battle.ended) return false;
+  if(!joinOpen()){ return false; } // passou de 20% ou já tem 5
+  if(battle.comps.some(c=>String(c.eid)===String(info.eid))) return false;
+  const cols=pickBattleColors(battle.comps.length+1);
+  const color=cols[battle.comps.length];
+  battle.comps.push({eid:info.eid,name:info.name,sub:info.sub||"",pts:0,color:color,uid:"c"+battle.comps.length+"_"+battle.id});
+  // explode a solicitação na tela
+  showJoinRequest(info.name);
+  renderFighters(true);
+  refreshJoinBadge();
+  return true;
+}
+
+function showJoinRequest(name){
+  const jr=document.getElementById("joinReq");
+  jr.innerHTML=`<div class="flash"></div><div class="warn">⚡ NOVO DESAFIANTE ⚡</div><div class="big">ENTROU NA ARENA!</div><div class="who">${name}</div>`;
+  jr.classList.add("on");bell();
+  setTimeout(()=>speakPhrase("Novo desafiante"),300);
+  setTimeout(()=>jr.classList.remove("on"),2200);
+}
+
+function renderFighters(animateLast){
+  if(!battle) return;
+  const wrap=document.getElementById("fighters");
+  const top=Math.max(0,...battle.comps.map(c=>c.pts));
+  wrap.innerHTML="";
+  battle.comps.forEach((c,i)=>{
+    const isLeader = top>0 && c.pts===top;
+    const el=document.createElement("div");
+    el.className="acomp"+(isLeader?" leader":"")+(animateLast&&i===battle.comps.length-1?" enter":"");
+    el.id="ac_"+c.uid;
+    el.style.setProperty("--cglow", "#00daff66");
+    el.innerHTML=`
+      <div class="score" id="sc_${c.uid}">${c.pts}</div>
+      <div class="nm">${c.name}</div>
+      <div class="sub">${c.sub||""}</div>
+      <div class="boxer idle" id="bx_${c.uid}">${buildFighter(c.color,c.uid)}</div>
+      <div class="imp" id="im_${c.uid}">💥</div>`;
+    wrap.appendChild(el);
+  });
+  refreshJoinBadge();
+}
+
+// ponto para um competidor (por eid)
+function battlePoint(eid,tipo){
+  if(!battle||battle.ended) return;
+  const c=battle.comps.find(x=>String(x.eid)===String(eid));
+  if(!c) return;
   const strong=tipo==="documentacao";const inc=strong?3:1;
-  if(A)d.va+=inc;else d.vb+=inc;
-  const att=document.getElementById("bx"+id+(A?"A":"B"));
-  const def=document.getElementById("bx"+id+(A?"B":"A"));
-  const imp=document.getElementById("im"+(A?"B":"A")+id);
-  if(att){att.classList.add("punch");setTimeout(()=>att.classList.remove("punch"),650);}
-  setTimeout(()=>{if(def){def.classList.add("hit");setTimeout(()=>def.classList.remove("hit"),650);} if(imp){imp.classList.add("go");setTimeout(()=>imp.classList.remove("go"),550);} punchSnd(strong);},250);
-  const sv=document.getElementById((A?"sa":"sb")+id);
-  if(sv){sv.textContent=A?d.va:d.vb;sv.classList.add("bump");setTimeout(()=>sv.classList.remove("bump"),250);}
-  if(d.mode!=="tempo" && (d.va>=d.meta||d.vb>=d.meta)) duelKO(id);
+  c.pts+=inc;
+  const bx=document.getElementById("bx_"+c.uid);
+  const im=document.getElementById("im_"+c.uid);
+  if(bx){bx.classList.add("punch");setTimeout(()=>bx.classList.remove("punch"),550);}
+  setTimeout(()=>{if(im){im.classList.add("go");setTimeout(()=>im.classList.remove("go"),550);}punchSnd(strong);},220);
+  const sc=document.getElementById("sc_"+c.uid);
+  if(sc){sc.textContent=c.pts;sc.classList.add("bump");setTimeout(()=>sc.classList.remove("bump"),250);}
+  // recalcula liderança/janela e fim por meta
+  renderFighters();
+  if(battle.mode!=="tempo" && c.pts>=battle.meta) endBattle();
 }
 
-// nocaute de um duelo específico (meta batida, tempo, ou vindo do banco)
-function duelKO(id,forcedWinnerSide){
-  const d=duelById(id); if(!d||d.ended)return;d.ended=true;
-  const r=document.getElementById("res"+id);
-  const tie = forcedWinnerSide ? false : (d.va===d.vb);
-  if(tie){
-    ["A","B"].forEach(s=>{const e=document.getElementById("bx"+id+s);if(e)e.classList.add("ko");});
-    punchSnd(true);
-    setTimeout(()=>{bell();if(r){r.innerHTML='<div class="belt">🤝</div><div class="big tie">EMPATE</div><div class="who">Sem vencedor</div>';r.classList.add("on");}},900);
+function startBattleClock(){
+  clearInterval(battleClock);
+  const clk=document.getElementById("arenaClock");
+  if(battle.mode!=="tempo"){ clk.style.display="none"; refreshJoinBadge(); 
+    battleClock=setInterval(refreshJoinBadge,1000); return; }
+  clk.style.display="";
+  const tick=()=>{
+    const left=Math.max(0, battle.dur-(Date.now()-battle.startTs)/1000);
+    const m=String(Math.floor(left/60)).padStart(2,"0"),s=String(Math.floor(left%60)).padStart(2,"0");
+    clk.textContent=m+":"+s; clk.classList.toggle("danger",left<=10);
+    refreshJoinBadge();
+    if(left<=0){clearInterval(battleClock);endBattle();}
+  };
+  tick(); battleClock=setInterval(tick,1000);
+}
+
+// encerra a batalha: maior placar vence; empate no topo = empate
+function endBattle(forcedWinnerEid){
+  if(!battle||battle.ended) return; battle.ended=true;
+  clearInterval(battleClock);
+  document.getElementById("joinBadge").classList.remove("on");
+  const top=Math.max(0,...battle.comps.map(c=>c.pts));
+  const leaders=battle.comps.filter(c=>c.pts===top);
+  const r=document.getElementById("arenaResult");
+  let winner=null;
+  if(forcedWinnerEid) winner=battle.comps.find(c=>String(c.eid)===String(forcedWinnerEid));
+  else if(leaders.length===1) winner=leaders[0];
+  // derruba os perdedores
+  battle.comps.forEach(c=>{ if(!winner||c.eid!==winner.eid){const e=document.getElementById("bx_"+c.uid);if(e)e.classList.add("ko");} });
+  if(winner){
+    const wb=document.getElementById("bx_"+winner.uid); if(wb)wb.classList.add("punch");
+    setTimeout(()=>vapoSound(),170);
+    setTimeout(()=>{bell();r.innerHTML='<div class="belt">🏆</div><div class="big">NOCAUTE!</div><div class="who">'+winner.name+' venceu</div>';r.classList.add("on");},900);
   }else{
-    const winA = forcedWinnerSide ? (forcedWinnerSide==="A"||forcedWinnerSide==="L") : (d.va>d.vb);
-    const winName=winA?d.a:d.b;
-    const winBox=document.getElementById("bx"+id+(winA?"A":"B"));
-    const loseBox=document.getElementById("bx"+id+(winA?"B":"A"));
-    if(winBox)winBox.classList.add("punch");
-    setTimeout(()=>{if(loseBox){loseBox.classList.remove("hit");loseBox.classList.add("ko");}vapoSound();},170);
-    setTimeout(()=>{bell();if(r){r.innerHTML='<div class="belt">🏆</div><div class="big">NOCAUTE!</div><div class="who">'+winName+' venceu</div>';r.classList.add("on");}},900);
+    punchSnd(true);
+    setTimeout(()=>{bell();r.innerHTML='<div class="belt">🤝</div><div class="big tie">EMPATE</div><div class="who">Sem vencedor</div>';r.classList.add("on");},900);
   }
-  // remove o duelo da grade depois de exibir o resultado
-  setTimeout(()=>closeDuel(id),6000);
+  setTimeout(()=>closeBattle(),6500);
 }
 
-// encerra e remove um duelo (ou todos, se sem id)
-function closeDuel(id){
-  if(id==null){ duels=[]; showDuelLayer(false); renderDuelGrid(); return; }
-  duels=duels.filter(d=>String(d.id)!==String(id));
-  if(duels.length===0) showDuelLayer(false);
-  else renderDuelGrid();
+// um competidor desiste; se sobrar 1, ele vence
+function leaveBattle(eid){
+  if(!battle||battle.ended) return;
+  battle.comps=battle.comps.filter(c=>String(c.eid)!==String(eid));
+  if(battle.comps.length<=1){ endBattle(battle.comps[0]?battle.comps[0].eid:null); return; }
+  renderFighters();
+}
+
+function closeBattle(){
+  battle=null; clearInterval(battleClock);
+  document.getElementById("arenaResult").classList.remove("on");
+  document.getElementById("joinReq").classList.remove("on");
+  arenaVisible(false);
+}
+
+// sorteia N cores distintas da paleta Cury
+function pickBattleColors(n){
+  const pool=[...PALETTE_KEYS];
+  const out=[];
+  for(let i=0;i<n;i++){ if(pool.length===0)pool.push(...PALETTE_KEYS);
+    const k=Math.floor(Math.random()*pool.length); out.push(pool.splice(k,1)[0]); }
+  return out;
 }
 let secs=14*60+58;
 setInterval(()=>{if(secs>0)secs--;const m=String(Math.floor(secs/60)).padStart(2,"0"),s=String(secs%60).padStart(2,"0");document.getElementById("clock").textContent=m+":"+s;document.getElementById("timer").classList.toggle("warn",secs<60);},1000);
@@ -760,19 +858,20 @@ function aplicarEvento(ev){
   const tipo=(ev.tipo||"").toLowerCase();
   const p=ev.payload||{};
   const ger=p.gerencia||p.equipe||p.name||"";
+  const eid=p.equipe_id||p.eid;
   const did=p.duelo_id||p.id;
 
   // ---- pontuação ----
   if(tipo==="visita"||tipo==="documentacao"){
     ensureAudio();
-    // se o ponto foi dentro de um duelo ativo, soca no card certo
-    if(did && duelById(did)){
-      const d=duelById(did);
-      const side = (ger && ger===d.b) ? "B" : "A"; // identifica o lado pela gerência
-      duelPoint(did, side, tipo);
-    } else {
-      celebrate(tipo==="documentacao"?"documentacao":"visita", ger||"Equipe");
+    // se há batalha ativa e o ponto é de um competidor dela, soca no ringue
+    let alvo=null;
+    if(battle && !battle.ended){
+      alvo = battle.comps.find(c=>String(c.eid)===String(eid)) ||
+             battle.comps.find(c=>c.name===ger);
     }
+    if(alvo) battlePoint(alvo.eid,tipo);
+    else celebrate(tipo==="documentacao"?"documentacao":"visita", ger||"Equipe");
     carregarPlacar();
     return;
   }
@@ -780,14 +879,20 @@ function aplicarEvento(ev){
   // ---- desafio lançado (aguardando aceite) ----
   if(tipo==="desafio"){
     const info={id:did, a:p.desafiante||"Equipe A", b:p.desafiado||"Equipe B",
-      mode:(p.regra==="tempo"?"tempo":"meta"), meta:+(p.regra_valor||10), outcome:"pending"};
+      aeid:p.desafiante_id||p.desafiante_eid, beid:p.desafiado_id||p.desafiado_eid,
+      asub:p.desafiante_sup||"", bsub:p.desafiado_sup||"",
+      mode:(p.regra==="tempo"?"tempo":"meta"),
+      meta:+(p.regra_valor||10), dur:(p.regra==="tempo"?(+(p.regra_valor||10))*60:0),
+      outcome:"pending"};
     if(did) pendingDuels[did]=info;
     launchChallenge(info);
     return;
   }
-  // ---- aceite → encarada + abre duelo na grade ----
+  // ---- aceite → encarada → abre a batalha ----
   if(tipo==="aceite"||tipo==="desafio_aceito"){
-    const info=(did&&pendingDuels[did]) ? pendingDuels[did] : {id:did,a:p.desafiante||p.a||"Equipe A",b:p.desafiado||p.b||"Equipe B",mode:"meta",meta:10};
+    const info=(did&&pendingDuels[did]) ? pendingDuels[did]
+      : {id:did,a:p.desafiante||p.a||"Equipe A",b:p.desafiado||p.b||"Equipe B",
+         aeid:p.desafiante_id,beid:p.desafiado_id,mode:"meta",meta:10};
     document.getElementById("chal").classList.remove("on");
     staredown(info);
     return;
@@ -801,28 +906,26 @@ function aplicarEvento(ev){
     const info=(did&&pendingDuels[did])||{a:p.desafiante||"",b:p.desafiado||"Equipe"};
     finishChallenge("expira",info); return;
   }
-  // ---- entrada de 3º/4º/5º competidor (futuro) ----
-  if(tipo==="entrar"||tipo==="entrada"){
-    // por ora abre como um novo duelo paralelo se vier com par
-    if(p.desafiante&&p.desafiado) openDuel({id:did,a:p.desafiante,b:p.desafiado,mode:(p.regra==="tempo"?"tempo":"meta"),meta:+(p.regra_valor||10)});
+  // ---- entrada de 3º/4º/5º na MESMA batalha (janela de 20%, validada no backend) ----
+  if(tipo==="entra_duelo"||tipo==="entrar"||tipo==="entrada"){
+    if(!battle||battle.ended) return;
+    const nome=p.gerencia||p.equipe||p.name||"Novo desafiante";
+    joinBattle({eid:eid||("x"+Date.now()),name:nome,sub:p.superintendencia||p.sup||""});
     return;
   }
   // ---- nocaute / encerramento ----
   if(tipo==="nocaute"||tipo==="ko"){
-    if(did && duelById(did)){
-      // determina vencedor por nome se vier
-      let side=null;
-      const d=duelById(did);
-      if(p.vencedor_gerencia){ side = p.vencedor_gerencia===d.b ? "B":"A"; }
-      duelKO(did, side);
+    if(battle && !battle.ended){
+      const venc=p.vencedor_equipe_id||p.vencedor_eid;
+      endBattle(venc||null);
     }
     carregarPlacar();
     return;
   }
   // ---- desistência ----
   if(tipo==="desistencia"){
-    // se restou só um, o banco normalmente emite 'nocaute'; aqui só atualiza
-    carregarPlacar();
+    if(battle && !battle.ended && eid) leaveBattle(eid);
+    else carregarPlacar();
     return;
   }
 }
