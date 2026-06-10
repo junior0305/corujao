@@ -531,7 +531,7 @@ const CURY_ASTRO="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAjUAAAHbCAYAAAAz
 // dados vêm 100% do banco (placar.php) — sem exemplos
 let teams=[];
 let actx=null,muted=false;
-function ensureAudio(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
+function ensureAudio(){if(!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}if(actx&&actx.state==="suspended"){try{actx.resume();}catch(e){}}}
 function beep(freqs,type="triangle",dur=.3,gap=.09,vol=.25){if(muted)return;ensureAudio();if(!actx)return;
   freqs.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=f;o.connect(g);g.connect(actx.destination);
     const t0=actx.currentTime+i*gap;g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(vol,t0+.02);g.gain.exponentialRampToValueAtTime(.0001,t0+dur);o.start(t0);o.stop(t0+dur);});}
@@ -564,6 +564,12 @@ function bell(){playBuf("bell",1);}
 function explosionReal(){playBuf("explo",1);}
 function docSound(){playBuf("doc",1);}
 function vapoSound(){playBuf("vapo",1);} // bordão "É VAPO" do diretor geral no nocaute
+// som do soco (sintetizado): thump grave + estalo de ruído. strong = documentação (mais forte)
+function punchSnd(strong){if(muted)return;ensureAudio();if(!actx)return;const t0=actx.currentTime;
+  const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.setValueAtTime(strong?180:140,t0);o.frequency.exponentialRampToValueAtTime(40,t0+.18);
+  o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(strong?.6:.4,t0+.01);g.gain.exponentialRampToValueAtTime(.0001,t0+.22);o.start(t0);o.stop(t0+.24);
+  const b=actx.createBuffer(1,actx.sampleRate*.1,actx.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+  const ns=actx.createBufferSource();ns.buffer=b;const ng=actx.createGain();ns.connect(ng);ng.connect(actx.destination);ng.gain.value=strong?.5:.3;ns.start(t0);}
 function gong(){bell();} // gongo de início de luta = mesmo sino
 function whoosh(){if(muted)return;ensureAudio();if(!actx)return;const o=actx.createOscillator(),g=actx.createGain();o.type="sawtooth";o.connect(g);g.connect(actx.destination);
   const t0=actx.currentTime;o.frequency.setValueAtTime(120,t0);o.frequency.exponentialRampToValueAtTime(900,t0+.4);g.gain.setValueAtTime(.0001,t0);g.gain.exponentialRampToValueAtTime(.2,t0+.05);g.gain.exponentialRampToValueAtTime(.0001,t0+.5);o.start(t0);o.stop(t0+.5);}
@@ -1031,7 +1037,7 @@ function unlock(){
   loadSnd("bell",BELL_SND);loadSnd("explo",EXPLO_SND);loadSnd("doc",DOC_SND);loadSnd("vapo",VAPO_SND);
   document.getElementById("hint").style.display="none";
 }
-window.addEventListener("pointerdown",unlock,{once:true});
+["pointerdown","touchstart","click","keydown"].forEach(ev=>window.addEventListener(ev,unlock,{once:true}));
 if(window.speechSynthesis)speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
 render();
 
