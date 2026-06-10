@@ -64,8 +64,11 @@ function limparFotosAntigas($throttleSeg = 1800) {
   if (is_file($marker) && (time() - @filemtime($marker)) < $throttleSeg) return;
   @touch($marker); // marca antes de rodar p/ evitar corrida entre requisições simultâneas
   try {
+    // 1) apaga fotos com +24h (mantém o ponto e o placar)
     db()->query("UPDATE pontos SET foto=NULL
                  WHERE foto IS NOT NULL AND criado_em < (NOW() - INTERVAL 24 HOUR)");
+    // 2) poda a fila de eventos antiga (a TV só lê eventos novos) — mantém a tabela enxuta
+    db()->query("DELETE FROM eventos WHERE criado_em < (NOW() - INTERVAL 2 DAY)");
   } catch (Exception $e) { /* manutenção é silenciosa: não pode quebrar a API */ }
 }
 

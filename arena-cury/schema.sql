@@ -139,3 +139,15 @@ CREATE TABLE IF NOT EXISTS presencas (
   FOREIGN KEY (corretor_id) REFERENCES corretores(id) ON DELETE CASCADE,
   FOREIGN KEY (equipe_id) REFERENCES equipes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================
+-- Índices de performance. Re-rodar o instalar.php é seguro:
+-- "Duplicate key name" é ignorado. Aceleram placar, presenças,
+-- duelos ativos e a limpeza periódica.
+-- ============================================================
+CREATE INDEX idx_pontos_equipe_status ON pontos (equipe_id, status);
+CREATE INDEX idx_pontos_criado        ON pontos (criado_em);
+CREATE INDEX idx_pontos_duelo         ON pontos (duelo_id);
+CREATE INDEX idx_presencas_dia        ON presencas (dia);
+CREATE INDEX idx_duelos_status        ON duelos (status);
+CREATE INDEX idx_eventos_criado       ON eventos (criado_em);
