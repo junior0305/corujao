@@ -859,12 +859,15 @@ function duelScreenEnd(forcedWinnerEid){
   const r=document.getElementById("duelResult");
   const astL=document.getElementById("duelAstroL"), astR=document.getElementById("duelAstroR");
   if(win===null){
-    if(astL)astL.classList.add("ko"); if(astR)astR.classList.add("ko"); punchSnd(true);
+    if(astL)astL.classList.add("ko"); if(astR)astR.classList.add("ko");
+    explosionReal(); punchSnd(true);
     setTimeout(()=>{bell();r.innerHTML='<div class="belt">🤝</div><div class="big tie">EMPATE</div><div class="who">Sem vencedor</div>';r.classList.add("on");},900);
   }else{
     const winAst=win===0?astL:astR, loseAst=win===0?astR:astL, winName=win===0?A.name:B.name;
     if(winAst)winAst.classList.add("punch");
+    explosionReal();                         // som de explosão no nocaute
     setTimeout(()=>{if(loseAst){loseAst.classList.remove("hit");loseAst.classList.add("ko");}punchSnd(true);},170);
+    setTimeout(()=>vapoSound(),520);         // bordão "É VAPO" do diretor
     setTimeout(()=>{bell();r.innerHTML='<div class="belt">🏆</div><div class="big">NOCAUTE!</div><div class="who">'+(winName||"")+' venceu</div>';r.classList.add("on");},900);
   }
 }
@@ -992,6 +995,7 @@ function endBattle(forcedWinnerEid){
   battle.comps.forEach(c=>{ if(!winner||c.eid!==winner.eid){const e=document.getElementById("bx_"+c.uid);if(e)e.classList.add("ko");} });
   if(winner){
     const wb=document.getElementById("bx_"+winner.uid); if(wb)wb.classList.add("punch");
+    explosionReal();                         // som de explosão no nocaute
     setTimeout(()=>vapoSound(),170);
     setTimeout(()=>{bell();r.innerHTML='<div class="belt">🏆</div><div class="big">NOCAUTE!</div><div class="who">'+winner.name+' venceu</div>';r.classList.add("on");},900);
   }else{
