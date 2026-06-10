@@ -1042,6 +1042,18 @@ function unlock(){
   document.getElementById("hint").style.display="none";
 }
 ["pointerdown","touchstart","click","keydown"].forEach(ev=>window.addEventListener(ev,unlock,{once:true}));
+// blindagem do áudio: religa o som se o navegador suspender (aba/janela volta ao foco, ou a cada 8s).
+// Resolve o "estava bom e parou": navegadores suspendem o AudioContext quando a TV perde foco
+// ou fica muito tempo aberta. Aqui ele acorda sozinho (após o 1º clique que libera o áudio).
+function manterAudioVivo(){
+  try{
+    if(actx && actx.state==="suspended") actx.resume();
+    if(window.speechSynthesis && speechSynthesis.paused) speechSynthesis.resume();
+  }catch(e){}
+}
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") manterAudioVivo(); });
+window.addEventListener("focus",manterAudioVivo);
+setInterval(manterAudioVivo,8000);
 if(window.speechSynthesis)speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
 render();
 
