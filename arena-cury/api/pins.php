@@ -46,4 +46,14 @@ if ($acao === 'verificar') {
   ok(['valido' => pinValido($pin, $eid)]);
 }
 
+// resolve um PIN para a equipe correspondente (PIN é único por equipe hoje).
+// É assim que o tablet "descobre" a equipe pelo PIN e cai direto na tela do gerente.
+if ($acao === 'resolver') {
+  $d = body(); $pin = trim((string)($d['pin'] ?? ''));
+  if ($pin === '') { ok(['equipe' => null]); }
+  $st = db()->prepare("SELECT id, diretoria, superintendencia, gerencia FROM equipes WHERE pin=? AND pin_dia=CURDATE() LIMIT 1");
+  $st->execute([$pin]);
+  ok(['equipe' => $st->fetch() ?: null]);
+}
+
 fail('Ação desconhecida: '.$acao, 404);

@@ -98,6 +98,7 @@ const ArenaAPI = (() => {
     gerarPin: (equipe_id) => post('pins.php', { acao: 'gerar' }, { equipe_id }),
     verPin: (equipe_id) => get('pins.php', { acao: 'ver', equipe_id }),
     verificarPin: (equipe_id, pin) => post('pins.php', { acao: 'verificar' }, { equipe_id, pin }),
+    resolverPin: (pin) => post('pins.php', { acao: 'resolver' }, { pin }),
     exigirPin: (ligado) => post('acesso.php', { acao: 'exigir_pin' }, { ligado }),
     encerrarDia: () => post('acesso.php', { acao: 'encerrar_dia' }, {}),
     verificarCodigo: (codigo) => post('acesso.php', { acao: 'verificar' }, { codigo }),

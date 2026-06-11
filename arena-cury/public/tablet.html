@@ -193,6 +193,7 @@ let BASE=[
 let scores={}, sel={dir:null,sup:null,ger:null}, active=false, tab="equipe";
 let presentes=[]; // ids dos corretores presentes hoje (quando API_ON); em modo local, nomes
 let inBattle=false, faltas={};
+let PIN_REQUERIDO=false; // ligado pela recepção: ao abrir, pede o PIN e cai direto na equipe
 let batalhasAbertas=[]; // batalhas em andamento com janela de entrada aberta
 let pontosAdversarios=[], contestacoesRecebidas=[];
 function ph(t,c){return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='"+c+"'/><text x='100' y='100' font-family='sans-serif' font-size='16' fill='#fff' text-anchor='middle'>"+t+"</text></svg>")));}
@@ -206,7 +207,10 @@ const agora=()=>new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-
 
 function render(){
   const v=document.getElementById("view");
-  if(!active){v.innerHTML=logonHTML();bindLogon();return;}
+  if(!active){
+    if(PIN_REQUERIDO){v.innerHTML=pinHTML();bindPin();return;}
+    v.innerHTML=logonHTML();bindLogon();return;
+  }
   v.innerHTML=shellHTML();bindShell();
   const p=document.getElementById("pane");
   if(tab==="equipe"){p.innerHTML=equipeHTML();bindEquipe();}
@@ -235,6 +239,29 @@ async function garantirCodigo(){
   try{ const v=await ArenaAPI.verificarPin(t.id,pin); if(v&&v.valido){ ArenaAPI.setCodigoLocal(pin); return true; } }catch(e){}
   toast("PIN inválido ou expirado. Peça seu PIN na recepção.",true);
   return false;
+}
+// tela de PIN (quando a recepção liga a exigência): o PIN já identifica a equipe
+function pinHTML(){
+  return `<div class="eyebrow">ARENA CURY</div><h2>Digite seu PIN</h2>
+  <p class="lead">Peça o PIN da sua equipe na recepção. Ele já abre a sua tela.</p>
+  <input class="search" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="PIN da equipe" style="font-size:26px;text-align:center;letter-spacing:.35em;margin-bottom:14px"/>
+  <button class="activate" id="pinBtn">Entrar</button>`;
+}
+function bindPin(){
+  const go=async()=>{
+    const pin=(document.getElementById("pinInput").value||"").trim();
+    if(!pin) return;
+    let eq=null; try{ const r=await ArenaAPI.resolverPin(pin); if(r&&r.ok) eq=r.equipe; }catch(e){}
+    if(!eq){ toast("PIN inválido ou expirado. Peça na recepção.",true); return; }
+    // cai direto na equipe dona do PIN
+    sel.dir=eq.diretoria; sel.sup=eq.superintendencia; sel.ger=eq.gerencia;
+    ArenaAPI.setCodigoLocal(pin); active=true;
+    const t=team();
+    if(API_ON&&t&&t.id){ try{ await ArenaAPI.setOnline(t.id,true); }catch(e){} await carregarPresencas(); }
+    salvarEstado(); render(); toast((eq.gerencia||"Equipe")+" ativada! 🚀");
+  };
+  const b=document.getElementById("pinBtn"); if(b) b.onclick=go;
+  const i=document.getElementById("pinInput"); if(i){ try{i.focus();}catch(e){} i.onkeydown=e=>{ if(e.key==="Enter") go(); }; }
 }
 function bindLogon(){
   document.querySelectorAll(".opt[data-k]").forEach(b=>b.onclick=()=>{const k=b.dataset.k,val=b.dataset.v;
@@ -288,7 +315,7 @@ function shellHTML(){
   </div><div class="pane on" id="pane"></div>`;
 }
 function bindShell(){
-  document.getElementById("logout").onclick=()=>{limparEstado();active=false;sel={dir:null,sup:null,ger:null};tab="equipe";inBattle=false;dueloPlacar=[];meuDueloId=null;render();};
+  document.getElementById("logout").onclick=()=>{limparEstado();ArenaAPI.setCodigoLocal("");active=false;sel={dir:null,sup:null,ger:null};tab="equipe";inBattle=false;dueloPlacar=[];meuDueloId=null;render();};
   document.querySelectorAll(".tab[data-tab]").forEach(b=>b.onclick=()=>{
     if(b.dataset.tab==="arena"&&!inBattle){toast("A aba Arena abre quando você está em um duelo");return;}
     tab=b.dataset.tab;render();});
@@ -735,6 +762,9 @@ async function bootstrap(){
     }
   }catch(e){ /* sem banco: modo local com dados de exemplo */ }
 
+  // a recepção ligou a exigência de PIN? (se sim, abre pedindo o PIN)
+  if(API_ON){ try{ const s=await ArenaAPI.statusAcesso(); PIN_REQUERIDO=!!(s&&s.exigir_pin); }catch(e){} }
+
   // modo local (sem banco): marca todos presentes para facilitar teste visual
   if(!API_ON){ presentes=[]; BASE.forEach(b=>b.corretores.forEach(n=>presentes.push(n))); }
 
@@ -743,17 +773,23 @@ async function bootstrap(){
   if(salvo&&salvo.ger){
     const existe=BASE.find(b=>b.dir===salvo.dir&&b.sup===salvo.sup&&b.ger===salvo.ger);
     if(existe){
-      sel.dir=salvo.dir;sel.sup=salvo.sup;sel.ger=salvo.ger;active=true;
-      // marca online de novo e verifica se está em batalha
-      if(API_ON&&existe.id){
-        try{ await ArenaAPI.setOnline(existe.id,true); }catch(e){}
-        await carregarPresencas();
-        try{
-          const r=await ArenaAPI.meuDuelo(existe.id);
-          if(r&&r.ok&&r.duelo&&r.duelo.status==='ativo'){
-            entrarEmDueloReal(r.duelo); // restaura a batalha e o placar
-          }
-        }catch(e){}
+      // com PIN ligado, só restaura se o PIN guardado ainda for válido p/ esta equipe hoje
+      let podeRestaurar=true;
+      if(PIN_REQUERIDO){
+        podeRestaurar=false;
+        const pinSalvo=ArenaAPI.getCodigoLocal();
+        if(pinSalvo){ try{ const v=await ArenaAPI.verificarPin(existe.id,pinSalvo); podeRestaurar=!!(v&&v.valido); }catch(e){} }
+      }
+      if(podeRestaurar){
+        sel.dir=salvo.dir;sel.sup=salvo.sup;sel.ger=salvo.ger;active=true;
+        if(API_ON&&existe.id){
+          try{ await ArenaAPI.setOnline(existe.id,true); }catch(e){}
+          await carregarPresencas();
+          try{
+            const r=await ArenaAPI.meuDuelo(existe.id);
+            if(r&&r.ok&&r.duelo&&r.duelo.status==='ativo') entrarEmDueloReal(r.duelo);
+          }catch(e){}
+        }
       }
     }
   }
