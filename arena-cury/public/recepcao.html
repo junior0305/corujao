@@ -321,7 +321,9 @@ async function renderRodada(){
     </div>
     <div class="card"><h2 style="font-size:16px">🔒 Código do dia (tablet)</h2>
       <p class="lead" style="margin:8px 0 12px">Sem código, o tablet fica aberto a qualquer um. Com código, só quem souber consegue <b>ativar equipe, marcar ponto e desafiar</b> — evita gente de fora brincando. Status: <span id="codStatus" class="statusbadge st-parada">—</span></p>
-      <div class="field"><label>Novo código (ex.: CURY-1234)</label><input id="codNovo" placeholder="deixe vazio para DESLIGAR o bloqueio"/></div>
+      <div class="field"><label>Novo código (6 caracteres)</label>
+        <div class="row"><input id="codNovo" style="flex:1;min-width:120px" placeholder="ex.: A7K2P9 — ou vazio p/ DESLIGAR"/><button class="btn btn-ghost" id="gerarCod" type="button">🎲 Gerar</button></div>
+      </div>
       <div class="field" id="codAtualWrap" style="display:none"><label>Código atual (necessário para trocar/desligar)</label><input id="codAtual" placeholder="o código em uso agora"/></div>
       <button class="btn btn-cyan" id="salvarCod">Salvar código</button>
     </div>`;
@@ -352,6 +354,13 @@ async function renderRodada(){
     if(badge){ badge.textContent=ativo?"ATIVO":"DESLIGADO"; badge.className="statusbadge "+(ativo?"st-ativa":"st-parada"); }
     const wrap=document.getElementById("codAtualWrap"); if(wrap) wrap.style.display=ativo?"":"none";
   })();
+  const gc=document.getElementById("gerarCod");
+  if(gc) gc.onclick=()=>{
+    // alfabeto sem caracteres ambíguos (sem O/0, I/1, L) p/ facilitar ler e digitar
+    const ab="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let c="";
+    for(let i=0;i<6;i++) c+=ab[Math.floor(Math.random()*ab.length)];
+    document.getElementById("codNovo").value=c;
+  };
   document.getElementById("salvarCod").onclick=async()=>{
     const novo=(document.getElementById("codNovo").value||"").trim();
     const ca=document.getElementById("codAtual");
