@@ -453,8 +453,8 @@ function openMarcar(n){
   mNome=n;mTipo=null;mFoto=null;const m=document.getElementById("modal");
   m.innerHTML=`<div class="sheet"><div class="lab">MARCAR PONTO</div><div class="who">${n}</div>
     <div class="types"><div class="ty2 visita" id="tyV">🎯 Visita<small>+1</small></div><div class="ty2 doc" id="tyD">🏆 Documentação<small>+3</small></div></div>
-    <input type="file" accept="image/*" capture="environment" id="file" style="display:none"/>
-    <button class="photo" id="photoBtn">📷 Tirar foto do comprovante</button>
+    <input type="file" accept="image/*" id="file" style="display:none"/>
+    <button class="photo" id="photoBtn">📷 Comprovante — tirar foto ou anexar</button>
     <div class="reqphoto">⚠ Foto obrigatória — o ponto vale na hora e os adversários poderão conferir</div>
     <div class="acts"><button class="cancel" id="mCancel">Cancelar</button><button class="send" id="mSend" disabled>Registrar ponto</button></div></div>`;
   m.classList.add("on");
