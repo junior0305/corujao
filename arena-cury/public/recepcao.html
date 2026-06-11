@@ -302,6 +302,8 @@ async function renderPins(){
   const p=document.getElementById("pane-pins");
   if(!API_ON){ p.innerHTML=`<h2>PIN dos Gerentes</h2><p class="empty">Conecte ao banco.</p>`; return; }
   if(!equipes.length){ try{ const r=await ArenaAPI.listarEquipes(); equipes=(r&&r.equipes)?r.equipes:[]; }catch(e){} }
+  let st=null; try{ st=await ArenaAPI.statusAcesso(); }catch(e){}
+  const pinOn=!!(st&&st.exigir_pin);
   const uniq=a=>[...new Set(a)];
   const dirs=uniq(equipes.map(e=>e.diretoria));
   const sups=pinSel.dir?uniq(equipes.filter(e=>e.diretoria===pinSel.dir).map(e=>e.superintendencia)):[];
@@ -310,12 +312,24 @@ async function renderPins(){
   const gerPills=gers.map(e=>`<span class="pill" data-k="ger" data-v="${e.id}">${e.gerencia}</span>`).join("");
   p.innerHTML=`<h2>PIN dos Gerentes</h2>
     <p class="lead">Confira o nome do gerente, gere o PIN do dia e mostre a ele. O PIN vale só hoje; o gerente usa no tablet para ativar a equipe dele. Esqueceu? É só selecionar de novo e ver.</p>
+    <div class="card" style="border-color:${pinOn?'#1fd18a55':'#ff5b6e55'}">
+      <div class="row" style="justify-content:space-between;align-items:center;gap:12px">
+        <div>Exigência de PIN no tablet: <span class="statusbadge ${pinOn?'st-ativa':'st-parada'}">${pinOn?'LIGADA':'DESLIGADA'}</span>
+        <div class="lead" style="margin:4px 0 0">${pinOn?'Os gerentes precisam do PIN para entrar no tablet.':'⚠ O tablet está ABERTO. Gere os PINs e clique em "Ligar" para exigir o PIN.'}</div></div>
+        <button class="btn ${pinOn?'btn-no':'btn-ok'}" id="togglePin" type="button" style="white-space:nowrap">${pinOn?'Desligar':'Ligar exigência de PIN'}</button>
+      </div>
+    </div>
     <div class="card">
       <div class="field"><label>1 · Diretoria</label><div class="row">${pills(dirs,pinSel.dir,"dir")||'<span class="empty">sem equipes</span>'}</div></div>
       <div class="field" ${pinSel.dir?'':'style="opacity:.4;pointer-events:none"'}><label>2 · Superintendência</label><div class="row">${pills(sups,pinSel.sup,"sup")}</div></div>
       <div class="field" ${pinSel.sup?'':'style="opacity:.4;pointer-events:none"'}><label>3 · Gerente</label><div class="row" id="pinGers">${gerPills}</div></div>
       <div id="pinResultado" style="margin-top:6px"></div>
     </div>`;
+  const tp=document.getElementById("togglePin");
+  if(tp) tp.onclick=async()=>{
+    if(pinOn && !confirm("Desligar a exigência de PIN? O tablet volta a abrir sem PIN."))return;
+    try{ const r=await ArenaAPI.exigirPin(!pinOn); if(r&&r.ok){ toast(!pinOn?"PIN agora é exigido no tablet ✓":"Exigência de PIN desligada"); renderPins(); } else toast("Falha",true); }catch(e){ toast("Falha",true); }
+  };
   p.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
     const k=b.dataset.k,v=b.dataset.v;
     if(k==="dir"){pinSel.dir=v;pinSel.sup=null;renderPins();return;}
