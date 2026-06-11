@@ -81,17 +81,43 @@ function redeLiberada() {
   return $r ? trim((string)$r['rede_liberada']) : '';
 }
 
-// porteiro das ações do tablet: exige (1) o código do dia e (2) estar na rede liberada.
-// As duas camadas são INDEPENDENTES e ambas DESLIGADAS por padrão (vazias).
+// ------------------------------------------------------------
+// PIN por equipe (gerado na recepção, válido só HOJE).
+// pinValido: confere se o PIN é o da equipe (se equipe_id vier) e do dia de hoje.
+// ------------------------------------------------------------
+function pinValido($pin, $equipe_id = null) {
+  $pin = trim((string)$pin);
+  if ($pin === '') return false;
+  try {
+    if ($equipe_id) {
+      $st = db()->prepare("SELECT 1 FROM equipes WHERE id=? AND pin=? AND pin_dia=CURDATE() LIMIT 1");
+      $st->execute([(int)$equipe_id, $pin]);
+    } else {
+      $st = db()->prepare("SELECT 1 FROM equipes WHERE pin=? AND pin_dia=CURDATE() LIMIT 1");
+      $st->execute([$pin]);
+    }
+    return (bool)$st->fetch();
+  } catch (Exception $e) { return false; } // coluna pin ainda não existe => trata como desligado
+}
+
+// flag em config: exigir_pin (0/1). Desligado por padrão (seguro).
+function exigirPinLigado() {
+  try { $r = db()->query("SELECT exigir_pin FROM config WHERE id=1")->fetch(); }
+  catch (Exception $e) { return false; }
+  return $r ? ((int)$r['exigir_pin'] === 1) : false;
+}
+
+// porteiro das ações do tablet: exige (1) o PIN da equipe (se ligado) e (2) estar na rede liberada.
+// As duas camadas são INDEPENDENTES e ambas DESLIGADAS por padrão.
 function exigirCodigo() {
-  // (1) código do dia
-  $cfg = codigoConfigurado();
-  if ($cfg !== '') {
+  // (1) PIN por equipe
+  if (exigirPinLigado()) {
     $d = body();
-    $informado = isset($d['codigo']) ? trim((string)$d['codigo']) : '';
-    if ($informado === '' || !hash_equals($cfg, $informado)) {
+    $pin = isset($d['codigo']) ? trim((string)$d['codigo']) : '';
+    $eid = isset($d['equipe_id']) ? (int)$d['equipe_id'] : null;
+    if (!pinValido($pin, $eid)) {
       http_response_code(403);
-      echo json_encode(['ok'=>false, 'erro'=>'Código de acesso inválido. Peça o código do dia na recepção.', 'codigo_invalido'=>true]);
+      echo json_encode(['ok'=>false, 'erro'=>'PIN inválido ou expirado. Peça seu PIN na recepção.', 'codigo_invalido'=>true]);
       exit;
     }
   }
@@ -106,6 +132,35 @@ function exigirCodigo() {
       exit;
     }
   }
+}
+
+// ------------------------------------------------------------
+// Sessão do dia (zeragem automática). O placar/online/duelos valem só da
+// sessão atual. Na virada do dia, zera o estado VIVO (histórico preservado).
+// ------------------------------------------------------------
+function encerrarDia() {
+  // zera o estado vivo e abre nova sessão. NÃO apaga pontos (ficam para o BI).
+  try {
+    db()->exec("UPDATE duelos SET status='encerrado', encerrado_em=NOW() WHERE status IN ('aguardando','ativo')");
+    db()->exec("UPDATE equipes SET online=0");
+    db()->exec("DELETE FROM presencas");
+    db()->exec("UPDATE config SET sessao_inicio = NOW() WHERE id=1");
+  } catch (Exception $e) {}
+}
+function garantirSessaoDoDia() {
+  try {
+    $r = db()->query("SELECT (sessao_inicio IS NULL) AS vazio, (DATE(sessao_inicio) < CURDATE()) AS virou FROM config WHERE id=1")->fetch();
+  } catch (Exception $e) {
+    // coluna ainda não existe: cria uma vez (a próxima chamada já funciona). Sem ALTER no caminho quente.
+    try { db()->exec("ALTER TABLE config ADD COLUMN sessao_inicio TIMESTAMP NULL"); } catch (Exception $e2) {}
+    return;
+  }
+  if (!$r) return;
+  if ((int)$r['vazio'] === 1) { // 1ª vez: começa hoje 00:00 (preserva pontos de hoje)
+    db()->exec("UPDATE config SET sessao_inicio = CONCAT(CURDATE(),' 00:00:00') WHERE id=1");
+    return;
+  }
+  if ((int)$r['virou'] === 1) encerrarDia(); // sessão é de ontem (ou antes) => vira o dia
 }
 
 function ok($data = []) { echo json_encode(['ok' => true] + $data); exit; }

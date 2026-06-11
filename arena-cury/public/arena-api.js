@@ -94,6 +94,12 @@ const ArenaAPI = (() => {
     // código do dia (anti-brincadeira no tablet)
     statusAcesso: () => get('acesso.php', { acao: 'status' }),
     meuIp: () => get('acesso.php', { acao: 'meu_ip' }),
+    // PIN por equipe
+    gerarPin: (equipe_id) => post('pins.php', { acao: 'gerar' }, { equipe_id }),
+    verPin: (equipe_id) => get('pins.php', { acao: 'ver', equipe_id }),
+    verificarPin: (equipe_id, pin) => post('pins.php', { acao: 'verificar' }, { equipe_id, pin }),
+    exigirPin: (ligado) => post('acesso.php', { acao: 'exigir_pin' }, { ligado }),
+    encerrarDia: () => post('acesso.php', { acao: 'encerrar_dia' }, {}),
     verificarCodigo: (codigo) => post('acesso.php', { acao: 'verificar' }, { codigo }),
     definirCodigo: (codigo, atual) => post('acesso.php', { acao: 'definir' }, { codigo, atual }),
     definirRede: (ips, atual) => post('acesso.php', { acao: 'definir_rede' }, { ips, atual }),

@@ -76,12 +76,14 @@
   <div class="tabs">
     <button class="tab on" data-tab="mapa">🗺 Mapa de Mesas</button>
     <button class="tab" data-tab="equipes">👥 Equipes</button>
+    <button class="tab" data-tab="pins">🎟 PIN dos Gerentes</button>
     <button class="tab" data-tab="usuarios">🔑 Acessos</button>
     <button class="tab" data-tab="rodada">⚙ Regras & Rodada</button>
     <button class="tab" data-tab="reservas">📅 Reservas</button>
   </div>
   <div class="pane on" id="pane-mapa"></div>
   <div class="pane" id="pane-equipes"></div>
+  <div class="pane" id="pane-pins"></div>
   <div class="pane" id="pane-usuarios"></div>
   <div class="pane" id="pane-rodada"></div>
   <div class="pane" id="pane-reservas"></div>
@@ -100,6 +102,7 @@ function tab(name){
   document.getElementById("pane-"+name).classList.add("on");
   if(name==="mapa")carregarMapa();
   if(name==="equipes")renderEquipes();
+  if(name==="pins")renderPins();
   if(name==="usuarios")renderUsuarios();
   if(name==="rodada")renderRodada();
   if(name==="reservas")renderReservas();
@@ -293,6 +296,52 @@ async function carregarUsuarios(){
   l.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{const s=prompt("Nova senha (mín. 4):");if(!s)return;try{await ArenaAPI.resetarUsuario(b.dataset.reset,s);toast("Senha alterada");}catch(e){}});
 }
 
+// ===== PIN DOS GERENTES (check-in) =====
+let pinSel={dir:null,sup:null};
+async function renderPins(){
+  const p=document.getElementById("pane-pins");
+  if(!API_ON){ p.innerHTML=`<h2>PIN dos Gerentes</h2><p class="empty">Conecte ao banco.</p>`; return; }
+  if(!equipes.length){ try{ const r=await ArenaAPI.listarEquipes(); equipes=(r&&r.equipes)?r.equipes:[]; }catch(e){} }
+  const uniq=a=>[...new Set(a)];
+  const dirs=uniq(equipes.map(e=>e.diretoria));
+  const sups=pinSel.dir?uniq(equipes.filter(e=>e.diretoria===pinSel.dir).map(e=>e.superintendencia)):[];
+  const gers=(pinSel.dir&&pinSel.sup)?equipes.filter(e=>e.diretoria===pinSel.dir&&e.superintendencia===pinSel.sup):[];
+  const pills=(arr,cur,k)=>arr.map(x=>`<span class="pill ${String(cur)===String(x)?'sel':''}" data-k="${k}" data-v="${x}">${x}</span>`).join("");
+  const gerPills=gers.map(e=>`<span class="pill" data-k="ger" data-v="${e.id}">${e.gerencia}</span>`).join("");
+  p.innerHTML=`<h2>PIN dos Gerentes</h2>
+    <p class="lead">Confira o nome do gerente, gere o PIN do dia e mostre a ele. O PIN vale só hoje; o gerente usa no tablet para ativar a equipe dele. Esqueceu? É só selecionar de novo e ver.</p>
+    <div class="card">
+      <div class="field"><label>1 · Diretoria</label><div class="row">${pills(dirs,pinSel.dir,"dir")||'<span class="empty">sem equipes</span>'}</div></div>
+      <div class="field" ${pinSel.dir?'':'style="opacity:.4;pointer-events:none"'}><label>2 · Superintendência</label><div class="row">${pills(sups,pinSel.sup,"sup")}</div></div>
+      <div class="field" ${pinSel.sup?'':'style="opacity:.4;pointer-events:none"'}><label>3 · Gerente</label><div class="row" id="pinGers">${gerPills}</div></div>
+      <div id="pinResultado" style="margin-top:6px"></div>
+    </div>`;
+  p.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k,v=b.dataset.v;
+    if(k==="dir"){pinSel.dir=v;pinSel.sup=null;renderPins();return;}
+    if(k==="sup"){pinSel.sup=v;renderPins();return;}
+    if(k==="ger"){ selecionarGerente(+v); }
+  });
+}
+async function selecionarGerente(eid){
+  const eq=equipes.find(e=>+e.id===+eid); if(!eq) return;
+  document.querySelectorAll("#pinGers .pill").forEach(b=>b.classList.toggle("sel",+b.dataset.v===+eid));
+  const box=document.getElementById("pinResultado");
+  box.innerHTML=`<p class="lead">Carregando PIN de <b>${eq.gerencia}</b>…</p>`;
+  let pin=null; try{ const r=await ArenaAPI.verPin(eid); if(r&&r.ok) pin=r.pin; }catch(e){}
+  box.innerHTML=`<div style="background:#08152e;border:1px solid #1a5fc466;border-radius:14px;padding:16px;margin-top:8px;text-align:center">
+      <div class="lead" style="margin:0">${eq.diretoria} · ${eq.superintendencia}</div>
+      <div style="font-weight:900;font-size:18px;margin:4px 0">${eq.gerencia}</div>
+      <div id="pinBig" style="font-family:monospace;font-weight:900;font-size:48px;letter-spacing:.15em;color:#00daff;margin:8px 0">${pin?pin:'— — — —'}</div>
+      <div class="lead" style="margin:0 0 12px">${pin?'PIN de hoje — mostre ao gerente':'Sem PIN para hoje ainda'}</div>
+      <button class="btn btn-cyan" id="btnGerarPin">${pin?'Gerar novo PIN':'Gerar PIN'}</button>
+    </div>`;
+  document.getElementById("btnGerarPin").onclick=async()=>{
+    if(!confirm("Gerar um PIN novo para "+eq.gerencia+"?"+(pin?" O PIN anterior deixará de valer.":"")))return;
+    try{ const r=await ArenaAPI.gerarPin(eid); if(r&&r.ok&&r.pin){ toast("PIN de "+eq.gerencia+": "+r.pin); selecionarGerente(eid); } else toast("Falha ao gerar PIN",true); }catch(e){ toast("Falha ao gerar PIN",true); }
+  };
+}
+
 // ===== REGRAS & RODADA =====
 async function renderRodada(){
   if(API_ON){try{const r=await ArenaAPI.lerConfig();if(r&&r.ok)cfg=r.config;}catch(e){}}
@@ -319,25 +368,25 @@ async function renderRodada(){
         <button class="btn btn-no" id="btnEncerrar">Encerrar</button>
       </div>
     </div>
-    <div class="card"><h2 style="font-size:16px">🔒 Código do dia (tablet)</h2>
-      <p class="lead" style="margin:8px 0 12px">Sem código, o tablet fica aberto a qualquer um. Com código, só quem souber consegue <b>ativar equipe, marcar ponto e desafiar</b> — evita gente de fora brincando. Status: <span id="codStatus" class="statusbadge st-parada">—</span></p>
-      <div class="field"><label>Novo código (6 caracteres)</label>
-        <div class="row"><input id="codNovo" style="flex:1;min-width:120px" placeholder="ex.: A7K2P9 — ou vazio p/ DESLIGAR"/><button class="btn btn-ghost" id="gerarCod" type="button">🎲 Gerar</button></div>
-      </div>
-      <div class="field" id="codAtualWrap" style="display:none"><label>Código atual (necessário para trocar/desligar)</label><input id="codAtual" placeholder="o código em uso agora"/></div>
-      <button class="btn btn-cyan" id="salvarCod">Salvar código</button>
+    <div class="card"><h2 style="font-size:16px">🔒 Acesso do tablet (PIN)</h2>
+      <p class="lead" style="margin:8px 0 12px">Com o PIN ligado, o gerente só ativa a equipe digitando o <b>PIN dela</b> (gerado na aba "🎟 PIN dos Gerentes"). Status: <span id="pinStatus" class="statusbadge st-parada">—</span></p>
+      <div class="row"><button class="btn btn-ok" id="ligarPin" type="button">Ligar exigência de PIN</button><button class="btn btn-ghost" id="desligarPin" type="button">Desligar</button></div>
       <div style="margin-top:16px;border-top:1px solid #1a3050;padding-top:14px">
-        <h2 style="font-size:15px;margin-bottom:6px">📡 Blindagem por rede (opcional)</h2>
-        <p class="lead" style="margin:0 0 10px">Só celulares na rede liberada podem agir. A recepção e a TV no cabo seguem funcionando mesmo fora dela. Status: <span id="redeStatus" class="statusbadge st-parada">—</span></p>
-        <button class="btn btn-ghost" id="verRede" type="button">Ver o IP deste aparelho</button>
-        <p class="lead" id="redeInfo" style="margin:8px 0"></p>
-        <div class="field"><label>IPs liberados (separe por vírgula; vazio = aberto)</label><input id="redeIps" placeholder="ex.: 177.92.86.118"/></div>
-        <div class="row">
-          <button class="btn btn-ghost" id="usarMeuIp" type="button">Usar o IP deste aparelho</button>
-          <button class="btn btn-cyan" id="salvarRede">Salvar rede</button>
-        </div>
-        <p class="lead" style="margin-top:8px;font-size:12px">⚠ Configure num <b>celular no wi-fi do salão</b> (toque "Usar o IP deste aparelho"). Se houver código do dia, informe-o no campo "Código atual" acima.</p>
+        <h2 style="font-size:15px;margin-bottom:6px">🔚 Encerrar o dia</h2>
+        <p class="lead" style="margin:0 0 10px">Zera o placar do dia, tira todos da sala e encerra duelos abertos (o <b>histórico é preservado</b>). O sistema já faz isso sozinho na virada do dia — use o botão só para zerar <b>agora</b>.</p>
+        <button class="btn btn-no" id="encerrarDia" type="button">Encerrar o dia agora</button>
       </div>
+    </div>
+    <div class="card"><h2 style="font-size:15px;margin-bottom:6px">📡 Blindagem por rede (opcional)</h2>
+      <p class="lead" style="margin:0 0 10px">Só celulares na rede liberada podem agir. A recepção e a TV no cabo seguem funcionando mesmo fora dela. Status: <span id="redeStatus" class="statusbadge st-parada">—</span></p>
+      <button class="btn btn-ghost" id="verRede" type="button">Ver o IP deste aparelho</button>
+      <p class="lead" id="redeInfo" style="margin:8px 0"></p>
+      <div class="field"><label>IPs liberados (separe por vírgula; vazio = aberto)</label><input id="redeIps" placeholder="ex.: 177.92.86.118"/></div>
+      <div class="row">
+        <button class="btn btn-ghost" id="usarMeuIp" type="button">Usar o IP deste aparelho</button>
+        <button class="btn btn-cyan" id="salvarRede">Salvar rede</button>
+      </div>
+      <p class="lead" style="margin-top:8px;font-size:12px">⚠ Configure num <b>celular no wi-fi do salão</b> (toque "Usar o IP deste aparelho").</p>
     </div>`;
   let modo=cfg.rodada_modo==='meta'?'meta':'tempo';
   const renderAtalhos=()=>{
@@ -358,13 +407,12 @@ async function renderRodada(){
     try{await ArenaAPI.startSala(modo,val);toast("Sala iniciada! 🚀");renderRodada();}catch(e){toast("Falha",true);}};
   document.getElementById("btnPausar").onclick=async()=>{try{await ArenaAPI.rodada('pausada');toast("Pausada");renderRodada();}catch(e){}};
   document.getElementById("btnEncerrar").onclick=async()=>{if(!confirm("Encerrar a rodada?"))return;try{await ArenaAPI.rodada('encerrada');toast("Encerrada");renderRodada();}catch(e){}};
-  // ===== código do dia (tablet) =====
+  // ===== acesso do tablet (PIN) + rede =====
   (async()=>{
     let s=null; try{ s=await ArenaAPI.statusAcesso(); }catch(e){}
-    const ativo=!!(s&&s.ativo);
-    const badge=document.getElementById("codStatus");
-    if(badge){ badge.textContent=ativo?"ATIVO":"DESLIGADO"; badge.className="statusbadge "+(ativo?"st-ativa":"st-parada"); }
-    const wrap=document.getElementById("codAtualWrap"); if(wrap) wrap.style.display=ativo?"":"none";
+    const pinOn=!!(s&&s.exigir_pin);
+    const pb=document.getElementById("pinStatus");
+    if(pb){ pb.textContent=pinOn?"LIGADO":"DESLIGADO"; pb.className="statusbadge "+(pinOn?"st-ativa":"st-parada"); }
     const rAtiva=!!(s&&s.rede_ativa);
     const rb=document.getElementById("redeStatus");
     if(rb){ rb.textContent=rAtiva?("LIBERADA → "+(s.rede||"")):"ABERTA"; rb.className="statusbadge "+(rAtiva?"st-ativa":"st-parada"); }
@@ -375,9 +423,8 @@ async function renderRodada(){
   const sr=document.getElementById("salvarRede");
   if(sr) sr.onclick=async()=>{
     const ips=(document.getElementById("redeIps").value||"").trim();
-    const ca=document.getElementById("codAtual"); const atual=ca?(ca.value||"").trim():"";
     if(ips && !confirm("Liberar SÓ a rede: "+ips+" ?\nCelulares fora dela ficarão bloqueados.")) return;
-    try{ const r=await ArenaAPI.definirRede(ips,atual);
+    try{ const r=await ArenaAPI.definirRede(ips,"");
       if(r&&r.ok){ toast(ips?("Rede liberada: "+ips):"Bloqueio de rede desligado"); renderRodada(); }
       else toast((r&&r.erro)||"Falha ao salvar rede",true);
     }catch(e){ toast("Falha ao salvar rede",true); }
@@ -389,23 +436,12 @@ async function renderRodada(){
       info.innerHTML = (r&&r.ok&&r.ip) ? ("O servidor vê este aparelho como: <b>"+r.ip+"</b>") : "Não consegui detectar o IP.";
     }catch(e){ info.textContent="Falha ao consultar."; }
   };
-  const gc=document.getElementById("gerarCod");
-  if(gc) gc.onclick=()=>{
-    // alfabeto sem caracteres ambíguos (sem O/0, I/1, L) p/ facilitar ler e digitar
-    const ab="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; let c="";
-    for(let i=0;i<6;i++) c+=ab[Math.floor(Math.random()*ab.length)];
-    document.getElementById("codNovo").value=c;
-  };
-  document.getElementById("salvarCod").onclick=async()=>{
-    const novo=(document.getElementById("codNovo").value||"").trim();
-    const ca=document.getElementById("codAtual");
-    const atual=ca?(ca.value||"").trim():"";
-    try{
-      const r=await ArenaAPI.definirCodigo(novo,atual);
-      if(r&&r.ok){ toast(novo?("Código do dia: "+novo+" ✓"):"Bloqueio desligado"); renderRodada(); }
-      else toast((r&&r.erro)||"Falha ao salvar código",true);
-    }catch(e){ toast("Falha ao salvar código",true); }
-  };
+  const lp=document.getElementById("ligarPin");
+  if(lp) lp.onclick=async()=>{ try{ const r=await ArenaAPI.exigirPin(true); if(r&&r.ok){ toast("PIN agora é exigido no tablet ✓"); renderRodada(); } }catch(e){ toast("Falha",true); } };
+  const dp=document.getElementById("desligarPin");
+  if(dp) dp.onclick=async()=>{ if(!confirm("Desligar a exigência de PIN? O tablet voltará a abrir sem PIN."))return; try{ const r=await ArenaAPI.exigirPin(false); if(r&&r.ok){ toast("Exigência de PIN desligada"); renderRodada(); } }catch(e){ toast("Falha",true); } };
+  const ed=document.getElementById("encerrarDia");
+  if(ed) ed.onclick=async()=>{ if(!confirm("Encerrar o dia AGORA?\nZera o placar do dia, tira todos da sala e encerra duelos. O histórico é preservado."))return; try{ const r=await ArenaAPI.encerrarDia(); if(r&&r.ok) toast("Dia encerrado. Pronto para a próxima partida ✓"); }catch(e){ toast("Falha ao encerrar",true); } };
 }
 
 // ===== RESERVAS =====

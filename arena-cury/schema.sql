@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS equipes (
   superintendencia VARCHAR(120) NOT NULL,
   gerencia      VARCHAR(120) NOT NULL,
   online        TINYINT(1) NOT NULL DEFAULT 0,
+  pin           VARCHAR(10) NOT NULL DEFAULT '',      -- PIN do dia (gerado na recepção)
+  pin_dia       DATE NULL,                            -- dia de validade do PIN
   criado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uniq_equipe (diretoria, superintendencia, gerencia)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -92,8 +94,10 @@ CREATE TABLE IF NOT EXISTS config (
   rodada_min    INT NOT NULL DEFAULT 120,            -- 0 = sem limite
   rodada_status ENUM('parada','ativa','pausada','encerrada') NOT NULL DEFAULT 'parada',
   rodada_inicio TIMESTAMP NULL,
-  codigo_acesso VARCHAR(40) NOT NULL DEFAULT '',      -- código do dia do tablet ('' = aberto)
+  codigo_acesso VARCHAR(40) NOT NULL DEFAULT '',      -- (legado) código do dia único
   rede_liberada VARCHAR(255) NOT NULL DEFAULT '',     -- IPs liberados p/ o tablet ('' = qualquer rede)
+  exigir_pin    TINYINT NOT NULL DEFAULT 0,           -- 1 = exige PIN por equipe no tablet
+  sessao_inicio TIMESTAMP NULL,                       -- início da sessão do dia (placar conta a partir daqui)
   CHECK (id = 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

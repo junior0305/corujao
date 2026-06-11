@@ -17,12 +17,27 @@ $acao = $_GET['acao'] ?? 'status';
 // cria as colunas sob demanda (mesma técnica do config.php), tolerando "já existe"
 try { db()->exec("ALTER TABLE config ADD COLUMN codigo_acesso VARCHAR(40) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
 try { db()->exec("ALTER TABLE config ADD COLUMN rede_liberada VARCHAR(255) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
+try { db()->exec("ALTER TABLE config ADD COLUMN exigir_pin TINYINT NOT NULL DEFAULT 0"); } catch (Exception $e) {}
 
 $atual = codigoConfigurado();
 
 if ($acao === 'status') {
   $rede = redeLiberada();
-  ok(['ativo' => $atual !== '', 'rede_ativa' => $rede !== '', 'rede' => $rede]);
+  ok(['ativo' => $atual !== '', 'rede_ativa' => $rede !== '', 'rede' => $rede, 'exigir_pin' => exigirPinLigado()]);
+}
+
+if ($acao === 'exigir_pin') {
+  // liga/desliga a exigência do PIN por equipe
+  $d = body();
+  $on = !empty($d['ligado']) ? 1 : 0;
+  db()->prepare("UPDATE config SET exigir_pin=? WHERE id=1")->execute([$on]);
+  ok(['exigir_pin' => $on === 1]);
+}
+
+if ($acao === 'encerrar_dia') {
+  // zera o estado vivo agora (online, duelos, presenças) e abre nova sessão. Histórico preservado.
+  encerrarDia();
+  ok(['encerrado' => true]);
 }
 
 if ($acao === 'definir_rede') {

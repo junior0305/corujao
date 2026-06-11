@@ -226,13 +226,14 @@ function logonHTML(){
 async function garantirCodigo(){
   if(!API_ON) return true;
   let st; try{ st=await ArenaAPI.statusAcesso(); }catch(e){ return true; } // se a checagem cair, não trava
-  if(!st||!st.ativo) return true; // bloqueio desligado
+  if(!st||!st.exigir_pin) return true; // PIN desligado
+  const t=team(); if(!t||!t.id) return true;
   const guardado=ArenaAPI.getCodigoLocal();
-  if(guardado){ try{ const v=await ArenaAPI.verificarCodigo(guardado); if(v&&v.valido) return true; }catch(e){} }
-  const cod=(prompt("🔒 Código do dia (peça na recepção):")||"").trim();
-  if(!cod) return false;
-  try{ const v=await ArenaAPI.verificarCodigo(cod); if(v&&v.valido){ ArenaAPI.setCodigoLocal(cod); return true; } }catch(e){}
-  toast("Código incorreto. Peça o código do dia na recepção.",true);
+  if(guardado){ try{ const v=await ArenaAPI.verificarPin(t.id,guardado); if(v&&v.valido) return true; }catch(e){} }
+  const pin=(prompt("🔒 Digite o PIN da sua equipe (peça na recepção):")||"").trim();
+  if(!pin) return false;
+  try{ const v=await ArenaAPI.verificarPin(t.id,pin); if(v&&v.valido){ ArenaAPI.setCodigoLocal(pin); return true; } }catch(e){}
+  toast("PIN inválido ou expirado. Peça seu PIN na recepção.",true);
   return false;
 }
 function bindLogon(){
