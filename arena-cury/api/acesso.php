@@ -23,6 +23,15 @@ if ($acao === 'status') {
   ok(['ativo' => $atual !== '']);
 }
 
+// diagnóstico de rede: qual IP o servidor enxerga deste aparelho (p/ futura blindagem por rede)
+if ($acao === 'meu_ip') {
+  ok([
+    'ip'     => ipCliente(),
+    'xff'    => $_SERVER['HTTP_X_FORWARDED_FOR'] ?? null,
+    'remote' => $_SERVER['REMOTE_ADDR'] ?? null,
+  ]);
+}
+
 if ($acao === 'verificar') {
   $d = body();
   $cod = trim((string)($d['codigo'] ?? ''));

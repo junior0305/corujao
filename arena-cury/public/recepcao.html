@@ -326,6 +326,11 @@ async function renderRodada(){
       </div>
       <div class="field" id="codAtualWrap" style="display:none"><label>Código atual (necessário para trocar/desligar)</label><input id="codAtual" placeholder="o código em uso agora"/></div>
       <button class="btn btn-cyan" id="salvarCod">Salvar código</button>
+      <div style="margin-top:14px;border-top:1px solid #1a3050;padding-top:12px">
+        <p class="lead" style="margin:0 0 8px">Blindagem por rede (em teste): confira que IP o servidor enxerga deste aparelho.</p>
+        <button class="btn btn-ghost" id="verRede" type="button">📡 Ver minha rede (IP)</button>
+        <p class="lead" id="redeInfo" style="margin-top:8px"></p>
+      </div>
     </div>`;
   let modo=cfg.rodada_modo==='meta'?'meta':'tempo';
   const renderAtalhos=()=>{
@@ -354,6 +359,13 @@ async function renderRodada(){
     if(badge){ badge.textContent=ativo?"ATIVO":"DESLIGADO"; badge.className="statusbadge "+(ativo?"st-ativa":"st-parada"); }
     const wrap=document.getElementById("codAtualWrap"); if(wrap) wrap.style.display=ativo?"":"none";
   })();
+  const vr=document.getElementById("verRede");
+  if(vr) vr.onclick=async()=>{
+    const info=document.getElementById("redeInfo"); info.textContent="Consultando…";
+    try{ const r=await ArenaAPI.meuIp();
+      info.innerHTML = (r&&r.ok&&r.ip) ? ("O servidor vê este aparelho como: <b>"+r.ip+"</b>") : "Não consegui detectar o IP.";
+    }catch(e){ info.textContent="Falha ao consultar."; }
+  };
   const gc=document.getElementById("gerarCod");
   if(gc) gc.onclick=()=>{
     // alfabeto sem caracteres ambíguos (sem O/0, I/1, L) p/ facilitar ler e digitar

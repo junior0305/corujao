@@ -61,6 +61,19 @@ function codigoConfigurado() {
   return $r ? trim((string)$r['codigo_acesso']) : '';
 }
 
+// IP real do cliente. Atrás do Traefik, o IP do celular vem no X-Forwarded-For;
+// o ÚLTIMO valor é o que o Traefik adicionou (confiável, não falsificável). Sem proxy,
+// cai no REMOTE_ADDR. (Por enquanto só para DIAGNÓSTICO — "Ver minha rede".)
+function ipCliente() {
+  $xff = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+  if ($xff !== '') {
+    $partes = array_map('trim', explode(',', $xff));
+    $ip = end($partes);
+    if ($ip !== '') return $ip;
+  }
+  return $_SERVER['REMOTE_ADDR'] ?? '';
+}
+
 // exige o código do dia nas ações do tablet. Chamar no início da ação protegida.
 function exigirCodigo() {
   $cfg = codigoConfigurado();
