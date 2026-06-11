@@ -326,10 +326,17 @@ async function renderRodada(){
       </div>
       <div class="field" id="codAtualWrap" style="display:none"><label>Código atual (necessário para trocar/desligar)</label><input id="codAtual" placeholder="o código em uso agora"/></div>
       <button class="btn btn-cyan" id="salvarCod">Salvar código</button>
-      <div style="margin-top:14px;border-top:1px solid #1a3050;padding-top:12px">
-        <p class="lead" style="margin:0 0 8px">Blindagem por rede (em teste): confira que IP o servidor enxerga deste aparelho.</p>
-        <button class="btn btn-ghost" id="verRede" type="button">📡 Ver minha rede (IP)</button>
-        <p class="lead" id="redeInfo" style="margin-top:8px"></p>
+      <div style="margin-top:16px;border-top:1px solid #1a3050;padding-top:14px">
+        <h2 style="font-size:15px;margin-bottom:6px">📡 Blindagem por rede (opcional)</h2>
+        <p class="lead" style="margin:0 0 10px">Só celulares na rede liberada podem agir. A recepção e a TV no cabo seguem funcionando mesmo fora dela. Status: <span id="redeStatus" class="statusbadge st-parada">—</span></p>
+        <button class="btn btn-ghost" id="verRede" type="button">Ver o IP deste aparelho</button>
+        <p class="lead" id="redeInfo" style="margin:8px 0"></p>
+        <div class="field"><label>IPs liberados (separe por vírgula; vazio = aberto)</label><input id="redeIps" placeholder="ex.: 177.92.86.118"/></div>
+        <div class="row">
+          <button class="btn btn-ghost" id="usarMeuIp" type="button">Usar o IP deste aparelho</button>
+          <button class="btn btn-cyan" id="salvarRede">Salvar rede</button>
+        </div>
+        <p class="lead" style="margin-top:8px;font-size:12px">⚠ Configure num <b>celular no wi-fi do salão</b> (toque "Usar o IP deste aparelho"). Se houver código do dia, informe-o no campo "Código atual" acima.</p>
       </div>
     </div>`;
   let modo=cfg.rodada_modo==='meta'?'meta':'tempo';
@@ -353,12 +360,28 @@ async function renderRodada(){
   document.getElementById("btnEncerrar").onclick=async()=>{if(!confirm("Encerrar a rodada?"))return;try{await ArenaAPI.rodada('encerrada');toast("Encerrada");renderRodada();}catch(e){}};
   // ===== código do dia (tablet) =====
   (async()=>{
-    let ativo=false;
-    try{ const s=await ArenaAPI.statusAcesso(); ativo=!!(s&&s.ativo); }catch(e){}
+    let s=null; try{ s=await ArenaAPI.statusAcesso(); }catch(e){}
+    const ativo=!!(s&&s.ativo);
     const badge=document.getElementById("codStatus");
     if(badge){ badge.textContent=ativo?"ATIVO":"DESLIGADO"; badge.className="statusbadge "+(ativo?"st-ativa":"st-parada"); }
     const wrap=document.getElementById("codAtualWrap"); if(wrap) wrap.style.display=ativo?"":"none";
+    const rAtiva=!!(s&&s.rede_ativa);
+    const rb=document.getElementById("redeStatus");
+    if(rb){ rb.textContent=rAtiva?("LIBERADA → "+(s.rede||"")):"ABERTA"; rb.className="statusbadge "+(rAtiva?"st-ativa":"st-parada"); }
+    const ri=document.getElementById("redeIps"); if(ri && s && s.rede) ri.value=s.rede;
   })();
+  const umi=document.getElementById("usarMeuIp");
+  if(umi) umi.onclick=async()=>{ try{ const r=await ArenaAPI.meuIp(); if(r&&r.ok&&r.ip) document.getElementById("redeIps").value=r.ip; }catch(e){} };
+  const sr=document.getElementById("salvarRede");
+  if(sr) sr.onclick=async()=>{
+    const ips=(document.getElementById("redeIps").value||"").trim();
+    const ca=document.getElementById("codAtual"); const atual=ca?(ca.value||"").trim():"";
+    if(ips && !confirm("Liberar SÓ a rede: "+ips+" ?\nCelulares fora dela ficarão bloqueados.")) return;
+    try{ const r=await ArenaAPI.definirRede(ips,atual);
+      if(r&&r.ok){ toast(ips?("Rede liberada: "+ips):"Bloqueio de rede desligado"); renderRodada(); }
+      else toast((r&&r.erro)||"Falha ao salvar rede",true);
+    }catch(e){ toast("Falha ao salvar rede",true); }
+  };
   const vr=document.getElementById("verRede");
   if(vr) vr.onclick=async()=>{
     const info=document.getElementById("redeInfo"); info.textContent="Consultando…";

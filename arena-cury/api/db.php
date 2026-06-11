@@ -74,16 +74,37 @@ function ipCliente() {
   return $_SERVER['REMOTE_ADDR'] ?? '';
 }
 
-// exige o código do dia nas ações do tablet. Chamar no início da ação protegida.
+// IPs liberados (lista separada por vírgula). Vazio => bloqueio de rede desligado.
+function redeLiberada() {
+  try { $r = db()->query("SELECT rede_liberada FROM config WHERE id=1")->fetch(); }
+  catch (Exception $e) { return ''; }
+  return $r ? trim((string)$r['rede_liberada']) : '';
+}
+
+// porteiro das ações do tablet: exige (1) o código do dia e (2) estar na rede liberada.
+// As duas camadas são INDEPENDENTES e ambas DESLIGADAS por padrão (vazias).
 function exigirCodigo() {
+  // (1) código do dia
   $cfg = codigoConfigurado();
-  if ($cfg === '') return; // bloqueio desligado
-  $d = body();
-  $informado = isset($d['codigo']) ? trim((string)$d['codigo']) : '';
-  if ($informado === '' || !hash_equals($cfg, $informado)) {
-    http_response_code(403);
-    echo json_encode(['ok'=>false, 'erro'=>'Código de acesso inválido. Peça o código do dia na recepção.', 'codigo_invalido'=>true]);
-    exit;
+  if ($cfg !== '') {
+    $d = body();
+    $informado = isset($d['codigo']) ? trim((string)$d['codigo']) : '';
+    if ($informado === '' || !hash_equals($cfg, $informado)) {
+      http_response_code(403);
+      echo json_encode(['ok'=>false, 'erro'=>'Código de acesso inválido. Peça o código do dia na recepção.', 'codigo_invalido'=>true]);
+      exit;
+    }
+  }
+  // (2) rede liberada (só celulares na rede do salão)
+  $rede = redeLiberada();
+  if ($rede !== '') {
+    $ip = ipCliente();
+    $lista = array_filter(array_map('trim', explode(',', $rede)));
+    if (!in_array($ip, $lista, true)) {
+      http_response_code(403);
+      echo json_encode(['ok'=>false, 'erro'=>'Fora da rede liberada. Conecte-se ao wi-fi do salão.', 'rede_invalida'=>true]);
+      exit;
+    }
   }
 }
 

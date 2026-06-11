@@ -14,13 +14,27 @@
 require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? 'status';
 
-// cria a coluna sob demanda (mesma técnica do config.php), tolerando "já existe"
+// cria as colunas sob demanda (mesma técnica do config.php), tolerando "já existe"
 try { db()->exec("ALTER TABLE config ADD COLUMN codigo_acesso VARCHAR(40) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
+try { db()->exec("ALTER TABLE config ADD COLUMN rede_liberada VARCHAR(255) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
 
 $atual = codigoConfigurado();
 
 if ($acao === 'status') {
-  ok(['ativo' => $atual !== '']);
+  $rede = redeLiberada();
+  ok(['ativo' => $atual !== '', 'rede_ativa' => $rede !== '', 'rede' => $rede]);
+}
+
+if ($acao === 'definir_rede') {
+  // define os IPs liberados ('' = desliga). Se há código, exige o atual para mudar.
+  $d = body();
+  $ips  = trim((string)($d['ips'] ?? ''));
+  $conf = trim((string)($d['atual'] ?? ''));
+  if ($atual !== '' && !hash_equals($atual, $conf)) {
+    fail('Para mudar a rede liberada é preciso informar o código atual.', 403);
+  }
+  db()->prepare("UPDATE config SET rede_liberada=? WHERE id=1")->execute([$ips]);
+  ok(['rede' => $ips, 'rede_ativa' => $ips !== '']);
 }
 
 // diagnóstico de rede: qual IP o servidor enxerga deste aparelho (p/ futura blindagem por rede)

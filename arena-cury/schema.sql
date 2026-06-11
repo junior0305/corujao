@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS config (
   rodada_status ENUM('parada','ativa','pausada','encerrada') NOT NULL DEFAULT 'parada',
   rodada_inicio TIMESTAMP NULL,
   codigo_acesso VARCHAR(40) NOT NULL DEFAULT '',      -- código do dia do tablet ('' = aberto)
+  rede_liberada VARCHAR(255) NOT NULL DEFAULT '',     -- IPs liberados p/ o tablet ('' = qualquer rede)
   CHECK (id = 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

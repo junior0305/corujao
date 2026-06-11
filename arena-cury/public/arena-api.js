@@ -96,6 +96,7 @@ const ArenaAPI = (() => {
     meuIp: () => get('acesso.php', { acao: 'meu_ip' }),
     verificarCodigo: (codigo) => post('acesso.php', { acao: 'verificar' }, { codigo }),
     definirCodigo: (codigo, atual) => post('acesso.php', { acao: 'definir' }, { codigo, atual }),
+    definirRede: (ips, atual) => post('acesso.php', { acao: 'definir_rede' }, { ips, atual }),
     setCodigoLocal: (c) => { try { c ? localStorage.setItem('arena_codigo', c) : localStorage.removeItem('arena_codigo'); } catch (e) {} },
     getCodigoLocal: () => codigoLocal(),
 
