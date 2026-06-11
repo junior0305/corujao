@@ -16,6 +16,7 @@ if ($acao === 'hoje') {
 
 // marca presença de um corretor hoje
 if ($acao === 'marcar') {
+  exigirCodigo();
   $d = body(); $cid = (int)($d['corretor_id'] ?? 0); $eid = (int)($d['equipe_id'] ?? 0);
   if (!$cid || !$eid) fail('Dados inválidos');
   db()->prepare("INSERT IGNORE INTO presencas (corretor_id, equipe_id, dia) VALUES (?,?,?)")->execute([$cid,$eid,$hoje]);
@@ -24,6 +25,7 @@ if ($acao === 'marcar') {
 
 // desmarca presença de um corretor hoje
 if ($acao === 'desmarcar') {
+  exigirCodigo();
   $d = body(); $cid = (int)($d['corretor_id'] ?? 0);
   if (!$cid) fail('Dados inválidos');
   db()->prepare("DELETE FROM presencas WHERE corretor_id=? AND dia=?")->execute([$cid,$hoje]);

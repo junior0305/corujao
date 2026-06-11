@@ -36,11 +36,42 @@ function db() {
   return $pdo;
 }
 
-// lê o corpo JSON de um POST
+// lê o corpo JSON de um POST (com cache — pode ser chamado mais de uma vez por requisição)
 function body() {
-  $raw = file_get_contents('php://input');
-  $data = json_decode($raw, true);
-  return is_array($data) ? $data : [];
+  static $data = null;
+  if ($data === null) {
+    $raw = file_get_contents('php://input');
+    $d = json_decode($raw, true);
+    $data = is_array($d) ? $d : [];
+  }
+  return $data;
+}
+
+// ------------------------------------------------------------
+// Código de acesso do dia (anti-"brincadeira" no tablet).
+// Fica em config.codigo_acesso. SEGURO POR PADRÃO: se estiver vazio,
+// o bloqueio está DESLIGADO e tudo funciona como antes.
+// ------------------------------------------------------------
+function codigoConfigurado() {
+  // só um SELECT rápido (caminho quente). Se a coluna ainda não existe (ninguém
+  // definiu código), o catch devolve '' => bloqueio desligado (seguro por padrão).
+  // A coluna é criada no acesso.php (chamado pela recepção/tablet).
+  try { $r = db()->query("SELECT codigo_acesso FROM config WHERE id=1")->fetch(); }
+  catch (Exception $e) { return ''; }
+  return $r ? trim((string)$r['codigo_acesso']) : '';
+}
+
+// exige o código do dia nas ações do tablet. Chamar no início da ação protegida.
+function exigirCodigo() {
+  $cfg = codigoConfigurado();
+  if ($cfg === '') return; // bloqueio desligado
+  $d = body();
+  $informado = isset($d['codigo']) ? trim((string)$d['codigo']) : '';
+  if ($informado === '' || !hash_equals($cfg, $informado)) {
+    http_response_code(403);
+    echo json_encode(['ok'=>false, 'erro'=>'Código de acesso inválido. Peça o código do dia na recepção.', 'codigo_invalido'=>true]);
+    exit;
+  }
 }
 
 function ok($data = []) { echo json_encode(['ok' => true] + $data); exit; }

@@ -22,6 +22,7 @@ if ($acao === 'pontos_duelo') {
 
 // equipe contesta um ponto
 if ($acao === 'contestar') {
+  exigirCodigo();
   $d = body(); $pid = (int)($d['ponto_id'] ?? 0); $por = (int)($d['equipe_id'] ?? 0);
   if (!$pid || !$por) fail('Dados inválidos');
   db()->prepare('INSERT INTO contestacoes (ponto_id, contestante_equipe_id, status) VALUES (?,?,"aberta")')->execute([$pid,$por]);

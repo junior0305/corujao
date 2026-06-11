@@ -38,6 +38,7 @@ if ($acao === 'criar') {
 }
 
 if ($acao === 'add_corretor') {
+  exigirCodigo();
   $d = body();
   $eid = (int)($d['equipe_id'] ?? 0); $nome = trim($d['nome'] ?? '');
   if (!$eid || $nome==='') fail('Informe equipe e nome');
@@ -68,6 +69,7 @@ if ($acao === 'reset') {
 }
 
 if ($acao === 'online') {
+  exigirCodigo();
   // ativa/desativa equipe na arena (logon do tablet)
   $d = body(); $eid = (int)($d['equipe_id'] ?? 0); $on = !empty($d['online']) ? 1 : 0;
   if (!$eid) fail('Informe a equipe');

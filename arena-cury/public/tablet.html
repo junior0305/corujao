@@ -221,10 +221,25 @@ function logonHTML(){
   <div class="step ${sel.sup?'':'off'}"><div class="lbl">3 · VOCÊ (GERENTE)</div><div class="opts">${sel.sup?o(gers(),sel.ger,"ger"):''}</div></div>
   <button class="activate" id="actBtn" ${sel.ger?'':'disabled'}>⚡ Ativar equipe na arena</button>`;
 }
+// garante o "código do dia" antes de ativar (anti-brincadeira). Se não houver código
+// definido na recepção, libera direto. Guarda o código no navegador depois de validado.
+async function garantirCodigo(){
+  if(!API_ON) return true;
+  let st; try{ st=await ArenaAPI.statusAcesso(); }catch(e){ return true; } // se a checagem cair, não trava
+  if(!st||!st.ativo) return true; // bloqueio desligado
+  const guardado=ArenaAPI.getCodigoLocal();
+  if(guardado){ try{ const v=await ArenaAPI.verificarCodigo(guardado); if(v&&v.valido) return true; }catch(e){} }
+  const cod=(prompt("🔒 Código do dia (peça na recepção):")||"").trim();
+  if(!cod) return false;
+  try{ const v=await ArenaAPI.verificarCodigo(cod); if(v&&v.valido){ ArenaAPI.setCodigoLocal(cod); return true; } }catch(e){}
+  toast("Código incorreto. Peça o código do dia na recepção.",true);
+  return false;
+}
 function bindLogon(){
   document.querySelectorAll(".opt[data-k]").forEach(b=>b.onclick=()=>{const k=b.dataset.k,val=b.dataset.v;
     if(k==="dir"){sel.dir=val;sel.sup=null;sel.ger=null;}if(k==="sup"){sel.sup=val;sel.ger=null;}if(k==="ger")sel.ger=val;render();});
   const a=document.getElementById("actBtn");if(a)a.onclick=async()=>{
+    if(!(await garantirCodigo())) return; // pede o código do dia antes de ativar
     active=true;
     const t=team();
     if(API_ON&&t.id){ try{ await ArenaAPI.setOnline(t.id,true); }catch(e){} await carregarPresencas(); }

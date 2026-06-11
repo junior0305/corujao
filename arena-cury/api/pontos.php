@@ -12,6 +12,7 @@ function valorDoTipo($tipo) {
 }
 
 if ($acao === 'marcar') {
+  exigirCodigo(); // exige o código do dia (anti-brincadeira); desligado se não houver código
   // gerente marca visita/doc com foto -> entra como PENDENTE
   $d = body();
   $eid = (int)($d['equipe_id'] ?? 0);

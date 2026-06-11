@@ -318,6 +318,12 @@ async function renderRodada(){
         <button class="btn btn-ghost" id="btnPausar">Pausar</button>
         <button class="btn btn-no" id="btnEncerrar">Encerrar</button>
       </div>
+    </div>
+    <div class="card"><h2 style="font-size:16px">🔒 Código do dia (tablet)</h2>
+      <p class="lead" style="margin:8px 0 12px">Sem código, o tablet fica aberto a qualquer um. Com código, só quem souber consegue <b>ativar equipe, marcar ponto e desafiar</b> — evita gente de fora brincando. Status: <span id="codStatus" class="statusbadge st-parada">—</span></p>
+      <div class="field"><label>Novo código (ex.: CURY-1234)</label><input id="codNovo" placeholder="deixe vazio para DESLIGAR o bloqueio"/></div>
+      <div class="field" id="codAtualWrap" style="display:none"><label>Código atual (necessário para trocar/desligar)</label><input id="codAtual" placeholder="o código em uso agora"/></div>
+      <button class="btn btn-cyan" id="salvarCod">Salvar código</button>
     </div>`;
   let modo=cfg.rodada_modo==='meta'?'meta':'tempo';
   const renderAtalhos=()=>{
@@ -338,6 +344,24 @@ async function renderRodada(){
     try{await ArenaAPI.startSala(modo,val);toast("Sala iniciada! 🚀");renderRodada();}catch(e){toast("Falha",true);}};
   document.getElementById("btnPausar").onclick=async()=>{try{await ArenaAPI.rodada('pausada');toast("Pausada");renderRodada();}catch(e){}};
   document.getElementById("btnEncerrar").onclick=async()=>{if(!confirm("Encerrar a rodada?"))return;try{await ArenaAPI.rodada('encerrada');toast("Encerrada");renderRodada();}catch(e){}};
+  // ===== código do dia (tablet) =====
+  (async()=>{
+    let ativo=false;
+    try{ const s=await ArenaAPI.statusAcesso(); ativo=!!(s&&s.ativo); }catch(e){}
+    const badge=document.getElementById("codStatus");
+    if(badge){ badge.textContent=ativo?"ATIVO":"DESLIGADO"; badge.className="statusbadge "+(ativo?"st-ativa":"st-parada"); }
+    const wrap=document.getElementById("codAtualWrap"); if(wrap) wrap.style.display=ativo?"":"none";
+  })();
+  document.getElementById("salvarCod").onclick=async()=>{
+    const novo=(document.getElementById("codNovo").value||"").trim();
+    const ca=document.getElementById("codAtual");
+    const atual=ca?(ca.value||"").trim():"";
+    try{
+      const r=await ArenaAPI.definirCodigo(novo,atual);
+      if(r&&r.ok){ toast(novo?("Código do dia: "+novo+" ✓"):"Bloqueio desligado"); renderRodada(); }
+      else toast((r&&r.erro)||"Falha ao salvar código",true);
+    }catch(e){ toast("Falha ao salvar código",true); }
+  };
 }
 
 // ===== RESERVAS =====

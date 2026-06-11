@@ -11,12 +11,18 @@ const ArenaAPI = (() => {
     const r = await fetch(`${base}/${arquivo}${qs ? '?' + qs : ''}`);
     return r.json();
   }
+  // código do dia guardado no navegador (só o tablet guarda; recepção/TV não)
+  function codigoLocal() { try { return localStorage.getItem('arena_codigo') || ''; } catch (e) { return ''; } }
+
   async function post(arquivo, params, corpo = {}) {
     const qs = new URLSearchParams(params).toString();
+    // injeta o código do dia nas escritas (sem sobrescrever um 'codigo' já informado)
+    const cod = codigoLocal();
+    const corpoFinal = (cod && corpo.codigo === undefined) ? { ...corpo, codigo: cod } : corpo;
     const r = await fetch(`${base}/${arquivo}${qs ? '?' + qs : ''}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corpo)
+      body: JSON.stringify(corpoFinal)
     });
     return r.json();
   }
@@ -84,6 +90,13 @@ const ArenaAPI = (() => {
     contestacoesRecebidas: (duelo_id, equipe_id) => get('contestacoes.php', { acao: 'recebidas', duelo_id, equipe_id }),
     anularContestacao: (contestacao_id) => post('contestacoes.php', { acao: 'anular' }, { contestacao_id }),
     removerPonto: (contestacao_id) => post('contestacoes.php', { acao: 'remover' }, { contestacao_id }),
+
+    // código do dia (anti-brincadeira no tablet)
+    statusAcesso: () => get('acesso.php', { acao: 'status' }),
+    verificarCodigo: (codigo) => post('acesso.php', { acao: 'verificar' }, { codigo }),
+    definirCodigo: (codigo, atual) => post('acesso.php', { acao: 'definir' }, { codigo, atual }),
+    setCodigoLocal: (c) => { try { c ? localStorage.setItem('arena_codigo', c) : localStorage.removeItem('arena_codigo'); } catch (e) {} },
+    getCodigoLocal: () => codigoLocal(),
 
     // presença (check-in)
     presencaHoje: (equipe_id) => get('presencas.php', { acao: 'hoje', equipe_id }),

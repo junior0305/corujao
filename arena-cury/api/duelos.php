@@ -83,6 +83,7 @@ if ($acao === 'meu_duelo') {
 }
 
 if ($acao === 'desistir') {
+  exigirCodigo();
   // equipe abandona o duelo voluntariamente (continua online no sistema)
   $d = body(); $did=(int)($d['duelo_id']??0); $eid=(int)($d['equipe_id']??0);
   if (!$did || !$eid) fail('Dados inválidos');
@@ -105,6 +106,7 @@ if ($acao === 'desistir') {
 }
 
 if ($acao === 'criar') {
+  exigirCodigo();
   // desafiante cria; fica 'aguardando' o aceite do desafiado
   $d = body();
   $nivel = $d['nivel'] ?? 'gerencia'; $regra = $d['regra'] ?? 'meta'; $rv = (int)($d['regra_valor'] ?? 10);
@@ -128,6 +130,7 @@ if ($acao === 'criar') {
 }
 
 if ($acao === 'responder') {
+  exigirCodigo();
   // desafiado aceita ou recusa
   $d = body(); $did=(int)($d['duelo_id']??0); $aceita = !empty($d['aceita']);
   if (!$did) fail('Informe o duelo');
@@ -143,6 +146,7 @@ if ($acao === 'responder') {
 }
 
 if ($acao === 'entrar') {
+  exigirCodigo();
   // 3º ao 5º entra direto (sem aceite), DESDE QUE dentro da janela de 20% da batalha
   $d = body(); $did=(int)($d['duelo_id']??0); $eid=(int)($d['equipe_id']??0);
   if (!$did||!$eid) fail('Dados inválidos');
