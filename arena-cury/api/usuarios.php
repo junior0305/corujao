@@ -5,8 +5,9 @@
 require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? '';
 
-// papel: admin | recepcao | agendamento (cria a coluna sob demanda)
+// papel: admin | recepcao | agendamento (cria as colunas sob demanda)
 try { db()->exec("ALTER TABLE usuarios ADD COLUMN papel VARCHAR(20) NOT NULL DEFAULT 'agendamento'"); } catch (Exception $e) {}
+try { db()->exec("ALTER TABLE usuarios ADD COLUMN email VARCHAR(160) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
 
 if ($acao === 'quem') {
   // quem está logado nesta sessão (para a recepção decidir se mostra o login)
@@ -22,7 +23,7 @@ if ($acao === 'sair') {
 
 if ($acao === 'listar') {
   // nunca devolve a senha (nem o hash)
-  $rows = db()->query("SELECT id, login, nome, papel, diretoria, superintendencia, criado_em FROM usuarios ORDER BY papel, nome")->fetchAll();
+  $rows = db()->query("SELECT id, login, nome, papel, email, diretoria, superintendencia, criado_em FROM usuarios ORDER BY papel, nome")->fetchAll();
   ok(['usuarios' => $rows]);
 }
 
@@ -30,6 +31,7 @@ if ($acao === 'criar') {
   $d = body();
   $login = trim($d['login'] ?? ''); $senha = (string)($d['senha'] ?? '');
   $nome = trim($d['nome'] ?? ''); $dir = trim($d['diretoria'] ?? ''); $sup = trim($d['superintendencia'] ?? '');
+  $email = trim($d['email'] ?? '');
   $papel = in_array(($d['papel'] ?? ''), ['admin','recepcao','agendamento'], true) ? $d['papel'] : 'agendamento';
   if ($login==='' || $senha==='' || $nome==='') fail('Preencha login, senha e nome');
   if (strlen($senha) < 4) fail('A senha precisa ter ao menos 4 caracteres');
@@ -39,8 +41,8 @@ if ($acao === 'criar') {
   $c = db()->prepare('SELECT id FROM usuarios WHERE login=?'); $c->execute([$login]);
   if ($c->fetch()) fail('Esse login já existe');
   $hash = password_hash($senha, PASSWORD_DEFAULT);
-  db()->prepare('INSERT INTO usuarios (login, senha_hash, nome, papel, diretoria, superintendencia) VALUES (?,?,?,?,?,?)')
-      ->execute([$login,$hash,$nome,$papel,$dir,$sup]);
+  db()->prepare('INSERT INTO usuarios (login, senha_hash, nome, papel, email, diretoria, superintendencia) VALUES (?,?,?,?,?,?,?)')
+      ->execute([$login,$hash,$nome,$papel,$email,$dir,$sup]);
   ok(['id' => db()->lastInsertId()]);
 }
 

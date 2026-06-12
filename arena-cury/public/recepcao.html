@@ -264,6 +264,8 @@ async function renderUsuarios(){
   const p=document.getElementById("pane-usuarios");
   let st=null; try{ st=await ArenaAPI.statusAcesso(); }catch(e){}
   const loginOn=!!(st&&st.exigir_login);
+  let smtp=null; try{ smtp=await ArenaAPI.smtpGet(); }catch(e){}
+  const smtpOk=!!(smtp&&smtp.ok);
   p.innerHTML=`<h2>Acessos / Logins</h2><p class="lead">Papéis: <b>admin</b> (tudo), <b>recepção</b> (recepção e aprovação), <b>agendamento</b> (diretores/superintendentes agendam mesas).</p>
     <div class="card" style="border-color:${loginOn?'#1fd18a55':'#ff5b6e55'}">
       <div class="row" style="justify-content:space-between;align-items:center;gap:12px">
@@ -272,6 +274,22 @@ async function renderUsuarios(){
         <button class="btn ${loginOn?'btn-no':'btn-ok'}" id="toggleLogin" type="button" style="white-space:nowrap">${loginOn?'Desligar':'Ligar exigência de login'}</button>
       </div>
     </div>
+    ${smtpOk?`<div class="card">
+      <h2 style="font-size:15px;margin-bottom:6px">✉️ E-mail (redefinição de senha)</h2>
+      <p class="lead" style="margin:0 0 10px">SMTP do Gmail para enviar o link de "esqueci minha senha". Status: <span class="statusbadge ${smtp.tem_senha?'st-ativa':'st-parada'}">${smtp.tem_senha?'CONFIGURADO':'NÃO CONFIGURADO'}</span></p>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:160px"><label>Servidor (host)</label><input id="smHost" value="${smtp.host||'smtp.gmail.com'}"/></div>
+        <div class="field" style="min-width:90px"><label>Porta</label><input id="smPort" type="number" value="${smtp.port||587}"/></div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:160px"><label>E-mail (Gmail)</label><input id="smUser" value="${smtp.user||''}" placeholder="voce@gmail.com"/></div>
+        <div class="field" style="flex:1;min-width:160px"><label>Senha de app (16 letras)</label><input id="smPass" type="password" placeholder="${smtp.tem_senha?'•••• (vazio = manter)':'senha de app do Gmail'}"/></div>
+      </div>
+      <div class="row">
+        <button class="btn btn-cyan" id="smSalvar" type="button">Salvar e-mail</button>
+        <button class="btn btn-ghost" id="smTestar" type="button">Enviar teste</button>
+      </div>
+    </div>`:''}
     <div class="card">
       <div class="row">
         <div class="field" style="flex:1;min-width:160px"><label>Nome</label><input id="uNome" placeholder="ex: João Silva"/></div>
@@ -282,6 +300,7 @@ async function renderUsuarios(){
             <option value="admin">Admin</option>
           </select></div>
       </div>
+      <div class="field"><label>E-mail (para redefinir senha por link)</label><input id="uEmail" type="email" placeholder="email@exemplo.com"/></div>
       <div class="row">
         <div class="field" style="flex:1;min-width:160px"><label>Diretoria (opcional)</label><input id="uDir" placeholder="Diretoria"/></div>
         <div class="field" style="flex:1;min-width:160px"><label>Superintendência (opcional)</label><input id="uSup" placeholder="Superintendência"/></div>
@@ -304,10 +323,24 @@ async function renderUsuarios(){
   document.getElementById("uCriar").onclick=async()=>{
     const nome=document.getElementById("uNome").value.trim(), dir=document.getElementById("uDir").value.trim(),
       sup=document.getElementById("uSup").value.trim(), login=document.getElementById("uLogin").value.trim(),
-      senha=document.getElementById("uSenha").value, papel=document.getElementById("uPapel").value;
+      senha=document.getElementById("uSenha").value, papel=document.getElementById("uPapel").value,
+      email=document.getElementById("uEmail").value.trim();
     if(!nome||!login||!senha){toast("Preencha nome, login e senha",true);return;}
-    try{const r=await ArenaAPI.criarUsuario({nome,papel,diretoria:dir,superintendencia:sup,login,senha});
+    try{const r=await ArenaAPI.criarUsuario({nome,papel,email,diretoria:dir,superintendencia:sup,login,senha});
       if(r&&r.ok){toast("Acesso criado ✓");carregarUsuarios();}else{toast(r&&r.erro?r.erro:"Falha",true);}}catch(e){toast("Falha ao criar",true);}};
+  const smS=document.getElementById("smSalvar");
+  if(smS) smS.onclick=async()=>{
+    const cfg={host:document.getElementById("smHost").value.trim(),port:+document.getElementById("smPort").value||587,
+      user:document.getElementById("smUser").value.trim(),from:document.getElementById("smUser").value.trim(),
+      senha:document.getElementById("smPass").value};
+    try{ const r=await ArenaAPI.smtpSet(cfg); if(r&&r.ok){ toast("E-mail salvo ✓"); renderUsuarios(); } else toast((r&&r.erro)||"Falha",true); }catch(e){ toast("Falha ao salvar",true); }
+  };
+  const smT=document.getElementById("smTestar");
+  if(smT) smT.onclick=async()=>{
+    const para=prompt("Enviar e-mail de teste para qual endereço?"); if(!para)return;
+    toast("Enviando teste…");
+    try{ const r=await ArenaAPI.testarEmail(para.trim()); if(r&&r.ok) toast("Teste enviado! Confira a caixa ✓"); else toast((r&&r.erro)||"Falha no envio",true); }catch(e){ toast("Falha no envio",true); }
+  };
   carregarUsuarios();
 }
 async function carregarUsuarios(){
@@ -315,9 +348,10 @@ async function carregarUsuarios(){
   try{const r=await ArenaAPI.listarUsuarios();usuarios=(r&&r.ok)?(r.usuarios||[]):[];}catch(e){usuarios=[];}
   const l=document.getElementById("usersList");if(!l)return;
   l.innerHTML=`<div class="card"><table><tr><th>Nome</th><th>Papel</th><th>Login</th><th></th></tr>
-    ${usuarios.map(u=>`<tr><td>${u.nome}</td><td><b style="color:var(--cyan)">${u.papel||'agendamento'}</b></td><td>${u.login}</td>
-    <td style="text-align:right"><button class="btn btn-ghost" data-reset="${u.id}" style="padding:7px 10px;font-size:12px">nova senha</button>
+    ${usuarios.map(u=>`<tr><td>${u.nome}${u.email?`<br><span style="font-size:11px;color:var(--dim)">${u.email}</span>`:''}</td><td><b style="color:var(--cyan)">${u.papel||'agendamento'}</b></td><td>${u.login}</td>
+    <td style="text-align:right">${u.email?`<button class="btn btn-ghost" data-sendlink="${u.login}" style="padding:7px 10px;font-size:12px">enviar link</button> `:''}<button class="btn btn-ghost" data-reset="${u.id}" style="padding:7px 10px;font-size:12px">nova senha</button>
     <button class="btn btn-no" data-deluser="${u.id}" style="padding:7px 10px;font-size:12px">remover</button></td></tr>`).join("")||'<tr><td colspan="4" class="empty">Nenhum acesso criado</td></tr>'}</table></div>`;
+  l.querySelectorAll("[data-sendlink]").forEach(b=>b.onclick=async()=>{try{await ArenaAPI.solicitarReset(b.dataset.sendlink);toast("Link de redefinição enviado por e-mail ✓");}catch(e){toast("Falha",true);}});
   l.querySelectorAll("[data-deluser]").forEach(b=>b.onclick=async()=>{if(!confirm("Remover este acesso?"))return;try{await ArenaAPI.removerUsuario(b.dataset.deluser);toast("Acesso removido");carregarUsuarios();}catch(e){}});
   l.querySelectorAll("[data-reset]").forEach(b=>b.onclick=async()=>{const s=prompt("Nova senha (mín. 4):");if(!s)return;try{await ArenaAPI.resetarUsuario(b.dataset.reset,s);toast("Senha alterada");}catch(e){}});
 }
@@ -505,7 +539,10 @@ function mostrarLogin(){
       <div class="field"><label>Senha</label><input id="lgSenha" type="password" autocomplete="current-password"/></div>
       <button class="btn btn-cyan" id="lgBtn" style="width:100%">Entrar</button>
       <p class="lead" id="lgErro" style="color:#ff7a8a;margin-top:8px"></p>
+      <p style="margin-top:6px;text-align:center"><a href="#" id="lgForgot" style="color:#00daff;font-size:13px">Esqueci minha senha</a></p>
     </div></div>`);
+  const fg=document.getElementById("lgForgot");
+  if(fg) fg.onclick=async(ev)=>{ ev.preventDefault(); const ident=prompt("Digite seu login ou e-mail:"); if(!ident)return; try{ await ArenaAPI.solicitarReset(ident.trim()); }catch(e){} alert("Se houver uma conta com e-mail cadastrado, enviamos um link de redefinição. Confira sua caixa de entrada (e o spam)."); };
   const go=async()=>{
     const login=(document.getElementById("lgLogin").value||"").trim();
     const senha=document.getElementById("lgSenha").value||"";

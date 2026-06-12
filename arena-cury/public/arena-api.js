@@ -69,6 +69,12 @@ const ArenaAPI = (() => {
     quemSou: () => get('usuarios.php', { acao: 'quem' }),
     sairSessao: () => post('usuarios.php', { acao: 'sair' }, {}),
     exigirLogin: (ligado) => post('acesso.php', { acao: 'exigir_login' }, { ligado }),
+    // e-mail / redefinição de senha
+    smtpGet: () => get('email.php', { acao: 'config_get' }),
+    smtpSet: (cfg) => post('email.php', { acao: 'config_set' }, cfg),
+    testarEmail: (para) => post('email.php', { acao: 'testar' }, { para }),
+    solicitarReset: (ident) => post('email.php', { acao: 'solicitar' }, { ident }),
+    redefinirSenha: (token, senha) => post('email.php', { acao: 'redefinir' }, { token, senha }),
     listarUsuarios: () => get('usuarios.php', { acao: 'listar' }),
     criarUsuario: (u) => post('usuarios.php', { acao: 'criar' }, u),
     removerUsuario: (id) => post('usuarios.php', { acao: 'remover' }, { id }),
