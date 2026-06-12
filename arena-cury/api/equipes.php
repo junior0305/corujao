@@ -22,6 +22,7 @@ if ($acao === 'listar') {
 }
 
 if ($acao === 'criar') {
+  exigirStaff(['admin','recepcao']);
   $d = body();
   $dir = trim($d['diretoria'] ?? ''); $sup = trim($d['superintendencia'] ?? ''); $ger = trim($d['gerencia'] ?? '');
   if ($dir==='' || $sup==='' || $ger==='') fail('Preencha diretoria, superintendência e gerência');
@@ -49,6 +50,7 @@ if ($acao === 'add_corretor') {
 }
 
 if ($acao === 'remover') {
+  exigirStaff(['admin','recepcao']);
   $d = body(); $eid = (int)($d['equipe_id'] ?? 0);
   if (!$eid) fail('Informe a equipe');
   $st = db()->prepare('DELETE FROM equipes WHERE id=?'); // cascata apaga corretores e pontos
@@ -57,6 +59,7 @@ if ($acao === 'remover') {
 }
 
 if ($acao === 'reset') {
+  exigirStaff(['admin','recepcao']);
   // reset total: zera pontos, tira online, encerra duelos da equipe
   $d = body(); $eid = (int)($d['equipe_id'] ?? 0);
   if (!$eid) fail('Informe a equipe');
@@ -78,6 +81,7 @@ if ($acao === 'online') {
 }
 
 if ($acao === 'tirar_da_sala') {
+  exigirStaff(['admin','recepcao']);
   // remove a equipe do salão HOJE: tira online, apaga presenças do dia e a alocação manual
   $d = body(); $eid = (int)($d['equipe_id'] ?? 0);
   if (!$eid) fail('Informe a equipe');

@@ -166,6 +166,37 @@ function garantirSessaoDoDia() {
 function ok($data = []) { echo json_encode(['ok' => true] + $data); exit; }
 function fail($msg, $code = 400) { http_response_code($code); echo json_encode(['ok' => false, 'erro' => $msg]); exit; }
 
+// ------------------------------------------------------------
+// Login da organização (sessão PHP). Papéis: admin | recepcao | agendamento.
+// Seguro por padrão: enquanto config.exigir_login = 0, nada é exigido.
+// ------------------------------------------------------------
+function sessaoIniciar() {
+  if (session_status() !== PHP_SESSION_ACTIVE) {
+    @session_set_cookie_params(['lifetime'=>0, 'path'=>'/', 'httponly'=>true, 'samesite'=>'Lax']);
+    @session_start();
+  }
+}
+function sessaoUser() {
+  sessaoIniciar();
+  if (empty($_SESSION['uid'])) return null;
+  return ['id'=>(int)$_SESSION['uid'], 'nome'=>$_SESSION['nome'] ?? '', 'papel'=>$_SESSION['papel'] ?? ''];
+}
+function exigirLoginLigado() {
+  try { $r = db()->query("SELECT exigir_login FROM config WHERE id=1")->fetch(); }
+  catch (Exception $e) { return false; }
+  return $r ? ((int)$r['exigir_login'] === 1) : false;
+}
+// porteiro das áreas de staff. $papeis = papéis permitidos. Desligado se exigir_login=0.
+function exigirStaff($papeis = ['admin','recepcao']) {
+  if (!exigirLoginLigado()) return;
+  $u = sessaoUser();
+  if (!$u || !in_array($u['papel'], $papeis, true)) {
+    http_response_code(401);
+    echo json_encode(['ok'=>false, 'erro'=>'Faça login na recepção.', 'login_necessario'=>true]);
+    exit;
+  }
+}
+
 // registra um evento para a TV animar
 function emitir($tipo, $payload = []) {
   $st = db()->prepare('INSERT INTO eventos (tipo, payload) VALUES (?, ?)');

@@ -8,6 +8,7 @@
 // (corretores separados por ; )  — aceita também separador , ou ;
 // ============================================================
 require __DIR__.'/db.php';
+exigirStaff(['admin','recepcao']);
 
 $conteudo = '';
 if (!empty($_FILES['arquivo']['tmp_name'])) {

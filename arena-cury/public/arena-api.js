@@ -64,8 +64,11 @@ const ArenaAPI = (() => {
     renomearMesa: (mesa_id, nome) => post('mesas.php', { acao: 'renomear' }, { mesa_id, nome }),
     mapaMesas: (dia) => get('mesas.php', dia ? { acao: 'mapa', dia } : { acao: 'mapa' }),
 
-    // usuários (login do agendamento)
+    // usuários / sessão (login da organização)
     login: (login, senha) => post('usuarios.php', { acao: 'login' }, { login, senha }),
+    quemSou: () => get('usuarios.php', { acao: 'quem' }),
+    sairSessao: () => post('usuarios.php', { acao: 'sair' }, {}),
+    exigirLogin: (ligado) => post('acesso.php', { acao: 'exigir_login' }, { ligado }),
     listarUsuarios: () => get('usuarios.php', { acao: 'listar' }),
     criarUsuario: (u) => post('usuarios.php', { acao: 'criar' }, u),
     removerUsuario: (id) => post('usuarios.php', { acao: 'remover' }, { id }),

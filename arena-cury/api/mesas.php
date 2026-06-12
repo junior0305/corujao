@@ -17,6 +17,7 @@ db()->exec("CREATE TABLE IF NOT EXISTS alocacoes_presenca (
 
 // mover (ou fixar) uma equipe presente-sem-reserva para uma mesa específica
 if ($acao === 'alocar_presenca') {
+  exigirStaff(['admin','recepcao']);
   $d = body(); $eid=(int)($d['equipe_id']??0); $mesa=(int)($d['mesa_id']??0);
   $dia = $d['dia'] ?? $hoje;
   if (!$eid || !$mesa) fail('Dados inválidos');
@@ -30,6 +31,7 @@ if ($acao === 'listar') {
 }
 
 if ($acao === 'renomear') {
+  exigirStaff(['admin','recepcao']);
   $d = body(); $id=(int)($d['mesa_id']??0); $nome=trim($d['nome']??'');
   if (!$id || $nome==='') fail('Informe mesa e nome');
   db()->prepare('UPDATE mesas SET nome=? WHERE id=?')->execute([$nome,$id]);

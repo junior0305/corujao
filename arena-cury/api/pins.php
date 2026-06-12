@@ -26,6 +26,7 @@ function gerarPinUnico() {
 }
 
 if ($acao === 'gerar') {
+  exigirStaff(['admin','recepcao']);
   $d = body(); $eid = (int)($d['equipe_id'] ?? 0);
   if (!$eid) fail('Informe a equipe');
   $pin = gerarPinUnico();

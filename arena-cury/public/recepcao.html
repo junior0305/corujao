@@ -262,12 +262,29 @@ async function carregarEquipes(){
 // ===== USUÁRIOS =====
 async function renderUsuarios(){
   const p=document.getElementById("pane-usuarios");
-  p.innerHTML=`<h2>Acessos ao Agendamento</h2><p class="lead">Crie os logins dos superintendentes. Só quem tem acesso pode agendar pelo app.</p>
+  let st=null; try{ st=await ArenaAPI.statusAcesso(); }catch(e){}
+  const loginOn=!!(st&&st.exigir_login);
+  p.innerHTML=`<h2>Acessos / Logins</h2><p class="lead">Papéis: <b>admin</b> (tudo), <b>recepção</b> (recepção e aprovação), <b>agendamento</b> (diretores/superintendentes agendam mesas).</p>
+    <div class="card" style="border-color:${loginOn?'#1fd18a55':'#ff5b6e55'}">
+      <div class="row" style="justify-content:space-between;align-items:center;gap:12px">
+        <div>Exigir login na recepção: <span class="statusbadge ${loginOn?'st-ativa':'st-parada'}">${loginOn?'LIGADO':'DESLIGADO'}</span>
+        <div class="lead" style="margin:4px 0 0">${loginOn?'A recepção e a aprovação pedem login.':'⚠ A recepção está ABERTA. Crie um ADMIN e clique em Ligar.'}</div></div>
+        <button class="btn ${loginOn?'btn-no':'btn-ok'}" id="toggleLogin" type="button" style="white-space:nowrap">${loginOn?'Desligar':'Ligar exigência de login'}</button>
+      </div>
+    </div>
     <div class="card">
-      <div class="field"><label>Nome do superintendente</label><input id="uNome" placeholder="ex: João Silva"/></div>
       <div class="row">
-        <div class="field" style="flex:1;min-width:200px"><label>Diretoria</label><input id="uDir" placeholder="Diretoria"/></div>
-        <div class="field" style="flex:1;min-width:200px"><label>Superintendência</label><input id="uSup" placeholder="Superintendência"/></div>
+        <div class="field" style="flex:1;min-width:160px"><label>Nome</label><input id="uNome" placeholder="ex: João Silva"/></div>
+        <div class="field" style="flex:1;min-width:160px"><label>Papel</label>
+          <select id="uPapel" style="width:100%;background:#001030;border:1px solid #1a5fc455;border-radius:10px;padding:11px;color:var(--ink)">
+            <option value="agendamento">Agendamento (superintendente)</option>
+            <option value="recepcao">Recepção</option>
+            <option value="admin">Admin</option>
+          </select></div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:160px"><label>Diretoria (opcional)</label><input id="uDir" placeholder="Diretoria"/></div>
+        <div class="field" style="flex:1;min-width:160px"><label>Superintendência (opcional)</label><input id="uSup" placeholder="Superintendência"/></div>
       </div>
       <div class="row">
         <div class="field" style="flex:1;min-width:160px"><label>Login</label><input id="uLogin" placeholder="login"/></div>
@@ -276,11 +293,20 @@ async function renderUsuarios(){
       <button class="btn btn-ok" id="uCriar">+ Criar acesso</button>
     </div>
     <div id="usersList"></div>`;
+  const tl=document.getElementById("toggleLogin");
+  if(tl) tl.onclick=async()=>{
+    if(loginOn && !confirm("Desligar a exigência de login? A recepção volta a ficar aberta."))return;
+    try{ const r=await ArenaAPI.exigirLogin(!loginOn);
+      if(r&&r.ok){ toast(!loginOn?"Login agora é exigido na recepção ✓":"Exigência de login desligada"); renderUsuarios(); }
+      else toast((r&&r.erro)||"Falha",true);
+    }catch(e){ toast("Falha",true); }
+  };
   document.getElementById("uCriar").onclick=async()=>{
     const nome=document.getElementById("uNome").value.trim(), dir=document.getElementById("uDir").value.trim(),
-      sup=document.getElementById("uSup").value.trim(), login=document.getElementById("uLogin").value.trim(), senha=document.getElementById("uSenha").value;
+      sup=document.getElementById("uSup").value.trim(), login=document.getElementById("uLogin").value.trim(),
+      senha=document.getElementById("uSenha").value, papel=document.getElementById("uPapel").value;
     if(!nome||!login||!senha){toast("Preencha nome, login e senha",true);return;}
-    try{const r=await ArenaAPI.criarUsuario({nome,diretoria:dir,superintendencia:sup,login,senha});
+    try{const r=await ArenaAPI.criarUsuario({nome,papel,diretoria:dir,superintendencia:sup,login,senha});
       if(r&&r.ok){toast("Acesso criado ✓");carregarUsuarios();}else{toast(r&&r.erro?r.erro:"Falha",true);}}catch(e){toast("Falha ao criar",true);}};
   carregarUsuarios();
 }
@@ -288,8 +314,8 @@ async function carregarUsuarios(){
   if(!API_ON){document.getElementById("usersList").innerHTML=`<p class="empty">Conecte ao banco.</p>`;return;}
   try{const r=await ArenaAPI.listarUsuarios();usuarios=(r&&r.ok)?(r.usuarios||[]):[];}catch(e){usuarios=[];}
   const l=document.getElementById("usersList");if(!l)return;
-  l.innerHTML=`<div class="card"><table><tr><th>Nome</th><th>Login</th><th>Diretoria / Sup.</th><th></th></tr>
-    ${usuarios.map(u=>`<tr><td>${u.nome}</td><td>${u.login}</td><td>${(u.diretoria||'—')} / ${(u.superintendencia||'—')}</td>
+  l.innerHTML=`<div class="card"><table><tr><th>Nome</th><th>Papel</th><th>Login</th><th></th></tr>
+    ${usuarios.map(u=>`<tr><td>${u.nome}</td><td><b style="color:var(--cyan)">${u.papel||'agendamento'}</b></td><td>${u.login}</td>
     <td style="text-align:right"><button class="btn btn-ghost" data-reset="${u.id}" style="padding:7px 10px;font-size:12px">nova senha</button>
     <button class="btn btn-no" data-deluser="${u.id}" style="padding:7px 10px;font-size:12px">remover</button></td></tr>`).join("")||'<tr><td colspan="4" class="empty">Nenhum acesso criado</td></tr>'}</table></div>`;
   l.querySelectorAll("[data-deluser]").forEach(b=>b.onclick=async()=>{if(!confirm("Remover este acesso?"))return;try{await ArenaAPI.removerUsuario(b.dataset.deluser);toast("Acesso removido");carregarUsuarios();}catch(e){}});
@@ -470,8 +496,42 @@ async function renderReservas(){
   p.querySelectorAll("[data-delr]").forEach(b=>b.onclick=async()=>{if(!confirm("Remover reserva?"))return;try{await ArenaAPI.removerReserva(b.dataset.delr);toast("Removida");renderReservas();}catch(e){}});
 }
 
+function mostrarLogin(){
+  document.body.insertAdjacentHTML('beforeend', `<div id="loginOverlay" style="position:fixed;inset:0;z-index:200;background:#020814;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div class="card" style="max-width:380px;width:100%">
+      <h2 style="font-size:18px">🔒 Acesso da Recepção</h2>
+      <p class="lead">Entre com seu login da organização.</p>
+      <div class="field"><label>Login</label><input id="lgLogin" autocomplete="username"/></div>
+      <div class="field"><label>Senha</label><input id="lgSenha" type="password" autocomplete="current-password"/></div>
+      <button class="btn btn-cyan" id="lgBtn" style="width:100%">Entrar</button>
+      <p class="lead" id="lgErro" style="color:#ff7a8a;margin-top:8px"></p>
+    </div></div>`);
+  const go=async()=>{
+    const login=(document.getElementById("lgLogin").value||"").trim();
+    const senha=document.getElementById("lgSenha").value||"";
+    if(!login||!senha)return;
+    try{ const r=await ArenaAPI.login(login,senha);
+      if(r&&r.ok){ document.getElementById("loginOverlay").remove(); bootstrap(); }
+      else document.getElementById("lgErro").textContent=(r&&r.erro)||"Login inválido";
+    }catch(e){ document.getElementById("lgErro").textContent="Falha ao entrar"; }
+  };
+  document.getElementById("lgBtn").onclick=go;
+  document.getElementById("lgSenha").onkeydown=e=>{ if(e.key==="Enter")go(); };
+  try{document.getElementById("lgLogin").focus();}catch(e){}
+}
+function marcarUsuario(u){
+  if(!u) return;
+  let bar=document.getElementById("userBar");
+  if(!bar){ bar=document.createElement("div"); bar.id="userBar"; bar.style.cssText="position:fixed;top:8px;right:12px;z-index:120;font-size:12px;color:#9fb6d6"; document.body.appendChild(bar); }
+  bar.innerHTML=`👤 ${u.nome||u.papel} · <a href="#" id="sairLink" style="color:#00daff">sair</a>`;
+  document.getElementById("sairLink").onclick=async(e)=>{ e.preventDefault(); try{await ArenaAPI.sairSessao();}catch(e){} location.reload(); };
+}
 async function bootstrap(){
   try{const r=await ArenaAPI.listarEquipes();if(r&&r.ok){API_ON=true;}}catch(e){}
+  // login da organização (se a recepção exigir)
+  let q=null; try{ q=await ArenaAPI.quemSou(); }catch(e){}
+  if(q && q.exigir_login && !q.usuario){ mostrarLogin(); return; }
+  marcarUsuario(q && q.usuario);
   carregarMapa();
 }
 bootstrap();

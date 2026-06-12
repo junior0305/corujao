@@ -11,12 +11,14 @@ if ($acao === 'ler') {
   ok(['config' => db()->query('SELECT * FROM config WHERE id=1')->fetch()]);
 }
 if ($acao === 'salvar') {
+  exigirStaff(['admin','recepcao']);
   $d = body();
   $v = (int)($d['pts_visita'] ?? 1); $dc = (int)($d['pts_documentacao'] ?? 3); $rm = (int)($d['rodada_min'] ?? 120);
   db()->prepare('UPDATE config SET pts_visita=?, pts_documentacao=?, rodada_min=? WHERE id=1')->execute([$v,$dc,$rm]);
   ok();
 }
 if ($acao === 'rodada') {
+  exigirStaff(['admin','recepcao']);
   $d = body(); $st = $d['status'] ?? '';
   if (!in_array($st,['ativa','pausada','encerrada','parada'])) fail('status inválido');
   if ($st === 'ativa') db()->prepare("UPDATE config SET rodada_status='ativa', rodada_inicio=NOW() WHERE id=1")->execute();
@@ -26,6 +28,7 @@ if ($acao === 'rodada') {
 }
 // START da sala: define modo (meta/tempo), valor, e inicia a rodada
 if ($acao === 'start') {
+  exigirStaff(['admin','recepcao']);
   $d = body();
   $modo = ($d['modo'] ?? 'tempo') === 'meta' ? 'meta' : 'tempo';
   $valor = (int)($d['valor'] ?? 0); // minutos (tempo) ou nº de visitas (meta)

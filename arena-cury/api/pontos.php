@@ -57,6 +57,7 @@ if ($acao === 'pendentes') {
 }
 
 if ($acao === 'aprovar') {
+  exigirStaff(['admin','recepcao']);
   $d = body(); $pid = (int)($d['ponto_id'] ?? 0);
   if (!$pid) fail('Informe o ponto');
   $p = db()->prepare('SELECT * FROM pontos WHERE id=? AND status="pendente"');
@@ -82,6 +83,7 @@ if ($acao === 'aprovar') {
 }
 
 if ($acao === 'rejeitar') {
+  exigirStaff(['admin','recepcao']);
   $d = body(); $pid = (int)($d['ponto_id'] ?? 0); $motivo = trim($d['motivo'] ?? '');
   if (!$pid) fail('Informe o ponto');
   if ($motivo === '') fail('Informe o motivo da rejeição');

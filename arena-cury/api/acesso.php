@@ -18,15 +18,18 @@ $acao = $_GET['acao'] ?? 'status';
 try { db()->exec("ALTER TABLE config ADD COLUMN codigo_acesso VARCHAR(40) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
 try { db()->exec("ALTER TABLE config ADD COLUMN rede_liberada VARCHAR(255) NOT NULL DEFAULT ''"); } catch (Exception $e) {}
 try { db()->exec("ALTER TABLE config ADD COLUMN exigir_pin TINYINT NOT NULL DEFAULT 0"); } catch (Exception $e) {}
+try { db()->exec("ALTER TABLE config ADD COLUMN exigir_login TINYINT NOT NULL DEFAULT 0"); } catch (Exception $e) {}
 
 $atual = codigoConfigurado();
 
 if ($acao === 'status') {
   $rede = redeLiberada();
-  ok(['ativo' => $atual !== '', 'rede_ativa' => $rede !== '', 'rede' => $rede, 'exigir_pin' => exigirPinLigado()]);
+  ok(['ativo' => $atual !== '', 'rede_ativa' => $rede !== '', 'rede' => $rede,
+      'exigir_pin' => exigirPinLigado(), 'exigir_login' => exigirLoginLigado()]);
 }
 
 if ($acao === 'exigir_pin') {
+  exigirStaff(['admin','recepcao']);
   // liga/desliga a exigência do PIN por equipe
   $d = body();
   $on = !empty($d['ligado']) ? 1 : 0;
@@ -36,11 +39,28 @@ if ($acao === 'exigir_pin') {
 
 if ($acao === 'encerrar_dia') {
   // zera o estado vivo agora (online, duelos, presenças) e abre nova sessão. Histórico preservado.
+  exigirStaff(['admin','recepcao']);
   encerrarDia();
   ok(['encerrado' => true]);
 }
 
+if ($acao === 'exigir_login') {
+  // liga/desliga a exigência de login na recepção
+  $d = body();
+  $on = !empty($d['ligado']) ? 1 : 0;
+  if ($on) {
+    // precisa existir um ADMIN, senão tranca todo mundo do lado de fora
+    $temAdmin = false;
+    try { $temAdmin = (bool)db()->query("SELECT 1 FROM usuarios WHERE papel='admin' LIMIT 1")->fetch(); } catch (Exception $e) {}
+    if (!$temAdmin) fail('Crie um usuário ADMIN antes de exigir login.', 400);
+  }
+  if (exigirLoginLigado()) exigirStaff(['admin']); // já ligado: só admin muda
+  db()->prepare("UPDATE config SET exigir_login=? WHERE id=1")->execute([$on]);
+  ok(['exigir_login' => $on === 1]);
+}
+
 if ($acao === 'definir_rede') {
+  exigirStaff(['admin','recepcao']);
   // define os IPs liberados ('' = desliga). Se há código, exige o atual para mudar.
   $d = body();
   $ips  = trim((string)($d['ips'] ?? ''));

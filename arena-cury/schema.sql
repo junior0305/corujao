@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS config (
   codigo_acesso VARCHAR(40) NOT NULL DEFAULT '',      -- (legado) código do dia único
   rede_liberada VARCHAR(255) NOT NULL DEFAULT '',     -- IPs liberados p/ o tablet ('' = qualquer rede)
   exigir_pin    TINYINT NOT NULL DEFAULT 0,           -- 1 = exige PIN por equipe no tablet
+  exigir_login  TINYINT NOT NULL DEFAULT 0,           -- 1 = exige login na recepção/aprovação
   sessao_inicio TIMESTAMP NULL,                       -- início da sessão do dia (placar conta a partir daqui)
   CHECK (id = 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
