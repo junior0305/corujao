@@ -232,7 +232,7 @@ function bindMapa(){
 // ===== EQUIPES =====
 async function renderEquipes(){
   const p=document.getElementById("pane-equipes");
-  p.innerHTML=`<h2>Equipes</h2><p class="lead">Importe por CSV ou cadastre manualmente. Tudo grava no banco.</p>
+  p.innerHTML=`<h2>Equipes</h2><p class="lead">A planilha é a foto completa de hoje: quem não estiver nela é inativado (histórico preservado). Mostramos um resumo antes de gravar. Colunas: nome,diretoria,superintendencia,gerencia (uma pessoa por linha).</p>
     <div class="card"><div class="row">
       <input type="file" id="csvFile" accept=".csv" style="display:none"/>
       <button class="btn btn-cyan" id="upBtn">Importar CSV</button>
@@ -241,7 +241,27 @@ async function renderEquipes(){
     <div id="teamsList"></div>`;
   document.getElementById("upBtn").onclick=()=>document.getElementById("csvFile").click();
   document.getElementById("csvFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
-    r.onload=async()=>{try{const res=await ArenaAPI.importarCSV(r.result);if(res&&res.ok){toast(`${res.equipes_importadas} equipes, ${res.corretores} corretores ✓`);carregarEquipes();return;}}catch(err){}toast("Falha ao importar",true);};r.readAsText(f);};
+    r.onload=async()=>{
+      try{
+        // 1) SIMULA: mostra o que vai mudar antes de gravar
+        const sim=await ArenaAPI.importarCSV(r.result,true);
+        if(!sim||!sim.ok){toast("Falha ao ler o CSV"+(sim&&sim.erro?": "+sim.erro:""),true);return;}
+        const resumo=`A planilha tem ${sim.total_pessoas_csv} pessoas em ${sim.total_equipes_csv} equipes.\n\n`+
+          `Vai aplicar:\n`+
+          `• ${sim.criados} novo(s)\n`+
+          `• ${sim.movidos} transferido(s) de equipe\n`+
+          `• ${sim.reativados} reativado(s)\n`+
+          `• ${sim.inativados} inativado(s) (sumiram da planilha)\n`+
+          `• ${sim.equipes_novas} equipe(s) nova(s), ${sim.equipes_esvaziadas} esvaziada(s)\n`+
+          (sim.avisos&&sim.avisos.length?`\n⚠ ${sim.avisos.length} aviso(s):\n- ${sim.avisos.slice(0,5).join("\n- ")}`:``)+
+          `\n\nConfirmar e aplicar?`;
+        if(!confirm(resumo)){toast("Importação cancelada");return;}
+        // 2) APLICA de verdade
+        const res=await ArenaAPI.importarCSV(r.result,false);
+        if(res&&res.ok){toast(`✓ ${res.criados} novos, ${res.movidos} movidos, ${res.inativados} inativados`);carregarEquipes();return;}
+        toast("Falha ao aplicar",true);
+      }catch(err){toast("Falha ao importar",true);}
+    };r.readAsText(f);};
   document.getElementById("addBtn").onclick=async()=>{
     const ger=prompt("Gerência (ex: Ger. Nova)");if(!ger)return;
     const sup=prompt("Superintendência")||"—";const dir=prompt("Diretoria")||"—";

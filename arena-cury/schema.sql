@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS equipes (
   superintendencia VARCHAR(120) NOT NULL,
   gerencia      VARCHAR(120) NOT NULL,
   online        TINYINT(1) NOT NULL DEFAULT 0,
+  ativo         TINYINT(1) NOT NULL DEFAULT 1,        -- 0 = equipe esvaziada/desligada (some das telas, preserva histórico)
   pin           VARCHAR(10) NOT NULL DEFAULT '',      -- PIN do dia (gerado na recepção)
   pin_dia       DATE NULL,                            -- dia de validade do PIN
   criado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -24,6 +25,7 @@ CREATE TABLE IF NOT EXISTS corretores (
   id         INT AUTO_INCREMENT PRIMARY KEY,
   equipe_id  INT NOT NULL,
   nome       VARCHAR(120) NOT NULL,
+  ativo      TINYINT(1) NOT NULL DEFAULT 1,           -- 0 = saiu da empresa (some das telas, preserva histórico)
   criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (equipe_id) REFERENCES equipes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -158,3 +160,13 @@ CREATE INDEX idx_pontos_duelo         ON pontos (duelo_id);
 CREATE INDEX idx_presencas_dia        ON presencas (dia);
 CREATE INDEX idx_duelos_status        ON duelos (status);
 CREATE INDEX idx_eventos_criado       ON eventos (criado_em);
+
+-- ============================================================
+-- Migração: coluna "ativo" (soft delete) para bancos antigos.
+-- O instalar.php ignora "Duplicate column" ao reexecutar.
+-- Quem já está na base começa ATIVO (1).
+-- ============================================================
+ALTER TABLE corretores ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1;
+ALTER TABLE equipes    ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1;
+CREATE INDEX idx_corretores_ativo ON corretores (ativo);
+CREATE INDEX idx_equipes_ativo    ON equipes (ativo);

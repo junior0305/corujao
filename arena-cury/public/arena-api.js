@@ -37,7 +37,7 @@ const ArenaAPI = (() => {
     setOnline: (equipe_id, online) => post('equipes.php', { acao: 'online' }, { equipe_id, online }),
     tirarDaSala: (equipe_id) => post('equipes.php', { acao: 'tirar_da_sala' }, { equipe_id }),
     alocarPresenca: (equipe_id, mesa_id, dia) => post('mesas.php', { acao: 'alocar_presenca' }, { equipe_id, mesa_id, dia }),
-    importarCSV: (csv) => post('importar_csv.php', {}, { csv }),
+    importarCSV: (csv, simular=false) => post('importar_csv.php', {}, { csv, simular }),
 
     // pontos
     marcarPonto: (p) => post('pontos.php', { acao: 'marcar' }, p),

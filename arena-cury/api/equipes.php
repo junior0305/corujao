@@ -6,11 +6,18 @@
 require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? 'listar';
 
+// garante a coluna "ativo" (soft delete) mesmo em bancos antigos
+try { db()->exec("ALTER TABLE corretores ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1"); } catch (Exception $e) {}
+try { db()->exec("ALTER TABLE equipes    ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1"); } catch (Exception $e) {}
+
 if ($acao === 'listar') {
-  // todas as equipes com seus corretores e pontuação (aprovada)
-  $equipes = db()->query('SELECT * FROM equipes ORDER BY diretoria, superintendencia, gerencia')->fetchAll();
+  // por padrão só equipes/corretores ATIVOS; ?incluir_inativos=1 traz todos
+  $incInativos = !empty($_GET['incluir_inativos']);
+  $filtroEq  = $incInativos ? '' : 'WHERE ativo=1';
+  $filtroCor = $incInativos ? '' : 'AND ativo=1';
+  $equipes = db()->query("SELECT * FROM equipes $filtroEq ORDER BY diretoria, superintendencia, gerencia")->fetchAll();
   foreach ($equipes as &$e) {
-    $st = db()->prepare('SELECT id, nome FROM corretores WHERE equipe_id = ? ORDER BY nome');
+    $st = db()->prepare("SELECT id, nome FROM corretores WHERE equipe_id = ? $filtroCor ORDER BY nome");
     $st->execute([$e['id']]);
     $e['corretores'] = $st->fetchAll();
     // pontuação total aprovada da equipe
