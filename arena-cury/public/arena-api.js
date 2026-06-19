@@ -42,6 +42,7 @@ const ArenaAPI = (() => {
     // pontos
     marcarPonto: (p) => post('pontos.php', { acao: 'marcar' }, p),
     pendentes: () => get('pontos.php', { acao: 'pendentes' }),
+    pontosEquipe: (equipe_id) => get('pontos.php', { acao: 'por_equipe', equipe_id }),
     aprovar: (ponto_id) => post('pontos.php', { acao: 'aprovar' }, { ponto_id }),
     rejeitar: (ponto_id, motivo) => post('pontos.php', { acao: 'rejeitar' }, { ponto_id, motivo }),
 

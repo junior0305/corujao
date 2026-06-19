@@ -92,4 +92,20 @@ if ($acao === 'rejeitar') {
   ok();
 }
 
+if ($acao === 'por_equipe') {
+  // contagem de visitas/docs por corretor na sessão atual (p/ o tablet remontar após reload)
+  $eid = (int)($_GET['equipe_id'] ?? 0);
+  if (!$eid) fail('Informe a equipe');
+  $ini = db()->query("SELECT sessao_inicio FROM config WHERE id=1")->fetch()['sessao_inicio'] ?? null;
+  $sql = "SELECT corretor_id,
+                 SUM(tipo='visita') AS visitas,
+                 SUM(tipo='documentacao') AS docs
+          FROM pontos
+          WHERE equipe_id=? AND status='aprovado' AND criado_em >= ?
+          GROUP BY corretor_id";
+  $st = db()->prepare($sql);
+  $st->execute([$eid, $ini ?: date('Y-m-d 00:00:00')]);
+  ok(['pontos' => $st->fetchAll()]);
+}
+
 fail('Ação desconhecida: '.$acao, 404);

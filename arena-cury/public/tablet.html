@@ -276,6 +276,22 @@ function bindLogon(){
   };
 }
 // carrega presentes de hoje; se vazio, pré-marca os do último evento
+async function carregarPontos(){
+  if(!API_ON) return;
+  const t=team(); if(!t||!t.id) return;
+  try{
+    const r=await ArenaAPI.pontosEquipe(t.id);
+    if(r&&r.ok&&Array.isArray(r.pontos)){
+      const idToNome={};
+      if(t.corretoresIds) for(const nome in t.corretoresIds) idToNome[t.corretoresIds[nome]]=nome;
+      for(const row of r.pontos){
+        const nome=idToNome[row.corretor_id]; if(!nome) continue;
+        scores[keyOf(nome)]={v:parseInt(row.visitas)||0, d:parseInt(row.docs)||0};
+      }
+      render();
+    }
+  }catch(e){}
+}
 async function carregarPresencas(){
   const t=team();
   if(!API_ON||!t.id)return;
@@ -294,6 +310,7 @@ async function carregarPresencas(){
     }
     presentes=lista;
   }catch(e){}
+  await carregarPontos();
 }
 // ---- persistência do logon (sobrevive ao F5) ----
 function salvarEstado(){
