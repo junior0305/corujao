@@ -40,6 +40,8 @@
     background-image:linear-gradient(transparent 0%,#1a5fc418 100%),repeating-linear-gradient(90deg,#00daff22 0 1px,transparent 1px 60px),repeating-linear-gradient(0deg,#00daff18 0 1px,transparent 1px 60px);
     transform:perspective(420px) rotateX(62deg);transform-origin:bottom;opacity:.55;mask-image:linear-gradient(transparent,#000 70%)}
   .astro{position:fixed;z-index:3;width:clamp(150px,18vw,300px);right:1.5vw;bottom:3vh;pointer-events:none;animation:floaty 6s ease-in-out infinite;transform-origin:center;filter:drop-shadow(0 0 26px #00daff77)}
+  body.dmany .astro{width:clamp(110px,12vw,190px);right:1vw;bottom:1.5vh;opacity:.9}
+  body.dvery .astro{width:clamp(78px,9vw,135px);right:.5vw;bottom:1vh;opacity:.8}
   @keyframes floaty{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-22px) rotate(4deg)}}
   .astro.cheer{animation:cheer 1.1s ease-in-out}
   @keyframes cheer{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-40px) rotate(-12deg) scale(1.12)}50%{transform:translateY(-20px) rotate(10deg) scale(1.08)}75%{transform:translateY(-32px) rotate(-6deg)}100%{transform:translateY(0) rotate(-4deg)}}
@@ -661,13 +663,15 @@ function render(){const sorted=[...teams].sort((a,b)=>score(b)-score(a));const m
   let dens="";
   if(n>18) dens=" dens3"; else if(n>12) dens=" dens2"; else if(n>8) dens=" dens1";
   board.className="board"+dens;
+  document.body.classList.toggle("dmany", n>12);
+  document.body.classList.toggle("dvery", n>18);
   // mostra TODAS as equipes presentes (não só 6)
   sorted.forEach((t,i)=>{const row=document.createElement("div");row.className="row"+(i===0?" first":i===1?" p2":i===2?" p3":"");
     row.innerHTML=`<div class="rank">${i+1}</div><div class="name"><b>${t.name}</b><span>${t.sub}</span></div><div class="chips"><div class="chip vis"><b>${t.vis}</b><span>visitas</span></div><div class="chip doc"><b>${t.doc}</b><span>docs</span></div></div><div class="bar"><i style="width:${score(t)/max*100}%"></i></div><div class="score">${score(t)}</div>`;
     board.appendChild(row);});}
 function animateNum(el,to){const from=parseInt(el.textContent)||0;if(from===to){el.textContent=to;return;}const dur=600,t0=performance.now();
   (function step(now){const k=Math.min(1,(now-t0)/dur);el.textContent=Math.round(from+(to-from)*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(step);})(t0);}
-function simScore(tipo){ensureAudio();const nome=teams.length?teams[Math.floor(Math.random()*teams.length)].name:"Equipe Teste";let _rep=false;if(tipo!=="documentacao"){visCount[nome]=(visCount[nome]||0)+1;_rep=visCount[nome]>1;}celebrate(tipo==="documentacao"?"documentacao":"visita",nome,_rep);}
+function simScore(tipo){ensureAudio();const nome=teams.length?teams[Math.floor(Math.random()*teams.length)].name:"Equipe Teste";aplicarEvento({tipo:(tipo==="documentacao"?"documentacao":"visita"),payload:{gerencia:nome,equipe_id:"__fora__"}});}
 // simulação local da batalha (teste manual sem banco)
 let _simJoinSeq=0;
 function simBattle(){ensureAudio();openBattle({id:"sim",mode:"meta",meta:10,a:{eid:"e1",name:"Equipe Órion",sub:"Sup. Centauro"},b:{eid:"e2",name:"Equipe Pulsar",sub:"Sup. Andrômeda"}});}
@@ -677,8 +681,38 @@ function simJoin(){ensureAudio();if(!battle){simBattle();return;}
   const ok=joinBattle({eid:x.eid,name:x.name,sub:x.sub});
   if(!ok) toastMini("Entrada fechada (passou de 20% ou já há 5)");
 }
-function simPt(idx,tipo){if(!battle){simBattle();return;}const c=battle.comps[idx];if(!c){toastMini("Competidor "+(idx+1)+" não está na batalha");return;}battlePoint(c.eid,tipo);}
+function simPt(idx,tipo){if(!battle){simBattle();return;}const c=battle.comps[idx];if(!c){toastMini("Competidor "+(idx+1)+" não está na batalha");return;}aplicarEvento({tipo:(tipo==="documentacao"?"documentacao":"visita"),payload:{equipe_id:c.eid,gerencia:c.name}});}
 function toastMini(msg){console.log(msg);}
+// ===== fila de pontos + controle de tela (dashboard <-> combate) + rodizio ocioso =====
+let _filaPontos=[], _processandoPonto=false, _idleRotTimer=null, _rotShowTimer=null, _emRotacao=false;
+function batalhaAtiva(){ return !!(battle && !battle.ended); }
+function enfileirarPonto(job){ _filaPontos.push(job); pararRotacao(); processarFilaPontos(); }
+function processarFilaPontos(){
+  if(_processandoPonto) return;
+  const job=_filaPontos.shift();
+  if(!job){ if(batalhaAtiva()) agendarRotacao(); return; }
+  _processandoPonto=true;
+  if(job.alvo){            // ponto de COMBATENTE -> garante tela de combate
+    if(batalhaAtiva()) arenaVisible(true);
+    battlePoint(job.alvo.eid, job.tipo);
+    setTimeout(()=>{ _processandoPonto=false; processarFilaPontos(); }, 950);
+  }else{                   // ponto de FORA -> mostra dashboard, anima, volta
+    const voltar=batalhaAtiva();
+    if(voltar) arenaVisible(false);
+    let _rep=false; if(job.tipo==="visita"){ visCount[job.ger]=(visCount[job.ger]||0)+1; _rep=visCount[job.ger]>1; }
+    celebrate(job.tipo, job.ger, _rep);
+    setTimeout(()=>{ if(voltar && batalhaAtiva()) arenaVisible(true); _processandoPonto=false; processarFilaPontos(); }, 2800);
+  }
+}
+function agendarRotacao(){ clearTimeout(_idleRotTimer); if(!batalhaAtiva())return;
+  _idleRotTimer=setTimeout(()=>{                       // 30s sem ponto -> dashboard
+    if(!batalhaAtiva()||_processandoPonto||_filaPontos.length){ agendarRotacao(); return; }
+    _emRotacao=true; arenaVisible(false);
+    _rotShowTimer=setTimeout(()=>{ if(batalhaAtiva())arenaVisible(true); _emRotacao=false; agendarRotacao(); }, 10000); // 10s no dashboard
+  }, 30000);
+}
+function pararRotacao(){ clearTimeout(_idleRotTimer); clearTimeout(_rotShowTimer);
+  if(_emRotacao){ _emRotacao=false; if(batalhaAtiva())arenaVisible(true); } }
 let visCount={};let desafioAlt=0;let BUFFER2_OFFSET=7.5;
 let _desafioSrc=null,_desafioAudio=null;
 function playDesafioVoz(key,offset){
@@ -822,6 +856,7 @@ function openBattle(info){
   renderBattleView();
   startBattleClock();
   whoosh();bell();
+  agendarRotacao();
 }
 
 // adiciona 3º/4º/5º competidor (se a janela permitir) — placar ZERO
@@ -1064,6 +1099,7 @@ function closeBattle(){
   const dr=document.getElementById("duelResult"); if(dr) dr.classList.remove("on");
   document.getElementById("duel").classList.remove("mode-duo");
   ["duelAstroL","duelAstroR"].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove("ko","punch","hit");});
+  pararRotacao(); _filaPontos=[]; _processandoPonto=false;
   arenaVisible(false);
 }
 
@@ -1136,8 +1172,8 @@ function aplicarEvento(ev){
       alvo = battle.comps.find(c=>String(c.eid)===String(eid)) ||
              battle.comps.find(c=>c.name===ger);
     }
-    if(alvo) battlePoint(alvo.eid,tipo);
-    else { let _rep=false; if(tipo==="visita"){const _k=ger||"Equipe"; visCount[_k]=(visCount[_k]||0)+1; _rep=visCount[_k]>1;} celebrate(tipo==="documentacao"?"documentacao":"visita", ger||"Equipe", _rep); }
+    if(battle && !battle.ended){ enfileirarPonto({tipo, ger:ger||"Equipe", eid, alvo}); }
+    else { let _rep=false; if(tipo==="visita"){const _k=ger||"Equipe"; visCount[_k]=(visCount[_k]||0)+1; _rep=visCount[_k]>1;} celebrate(tipo, ger||"Equipe", _rep); }
     carregarPlacar();
     return;
   }
