@@ -43,6 +43,10 @@ const ArenaAPI = (() => {
     marcarPonto: (p) => post('pontos.php', { acao: 'marcar' }, p),
     pendentes: () => get('pontos.php', { acao: 'pendentes' }),
     pontosEquipe: (equipe_id) => get('pontos.php', { acao: 'por_equipe', equipe_id }),
+    resolverCorretor: (pin) => post('pins.php', { acao: 'resolver_corretor' }, { pin }),
+    gerarPinCorretor: (corretor_id) => post('pins.php', { acao: 'gerar_corretor' }, { corretor_id }),
+    verPinCorretor: (corretor_id) => get('pins.php', { acao: 'ver_corretor', corretor_id }),
+    revogarPinCorretor: (corretor_id) => post('pins.php', { acao: 'revogar_corretor' }, { corretor_id }),
     aprovar: (ponto_id) => post('pontos.php', { acao: 'aprovar' }, { ponto_id }),
     rejeitar: (ponto_id, motivo) => post('pontos.php', { acao: 'rejeitar' }, { ponto_id, motivo }),
 

@@ -107,6 +107,15 @@ function exigirPinLigado() {
   return $r ? ((int)$r['exigir_pin'] === 1) : false;
 }
 
+// true se o cliente está na rede liberada (ou se nenhuma rede foi configurada).
+function redeOk() {
+  $rede = redeLiberada();
+  if ($rede === '') return true;
+  $ip = ipCliente();
+  $lista = array_filter(array_map('trim', explode(',', $rede)));
+  return in_array($ip, $lista, true);
+}
+
 // porteiro das ações do tablet: exige (1) o PIN da equipe (se ligado) e (2) estar na rede liberada.
 // As duas camadas são INDEPENDENTES e ambas DESLIGADAS por padrão.
 function exigirCodigo() {

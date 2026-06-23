@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS corretores (
   equipe_id  INT NOT NULL,
   nome       VARCHAR(120) NOT NULL,
   ativo      TINYINT(1) NOT NULL DEFAULT 1,           -- 0 = saiu da empresa (some das telas, preserva histórico)
+  pin        VARCHAR(10) NOT NULL DEFAULT '',         -- PIN diário do corretor avulso (marca sozinho)
+  pin_dia    DATE NULL,                               -- validade do PIN do corretor
   criado_em  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (equipe_id) REFERENCES equipes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -167,6 +169,8 @@ CREATE INDEX idx_eventos_criado       ON eventos (criado_em);
 -- Quem já está na base começa ATIVO (1).
 -- ============================================================
 ALTER TABLE corretores ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1;
+ALTER TABLE corretores ADD COLUMN pin VARCHAR(10) NOT NULL DEFAULT '';
+ALTER TABLE corretores ADD COLUMN pin_dia DATE NULL;
 ALTER TABLE equipes    ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1;
 CREATE INDEX idx_corretores_ativo ON corretores (ativo);
 CREATE INDEX idx_equipes_ativo    ON equipes (ativo);

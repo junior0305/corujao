@@ -12,11 +12,20 @@ function valorDoTipo($tipo) {
 }
 
 if ($acao === 'marcar') {
-  exigirCodigo(); // exige o código do dia (anti-brincadeira); desligado se não houver código
-  // gerente marca visita/doc com foto -> entra como PENDENTE
   $d = body();
-  $eid = (int)($d['equipe_id'] ?? 0);
-  $cid = !empty($d['corretor_id']) ? (int)$d['corretor_id'] : null;
+  $pinCorr = trim((string)($d['corretor_pin'] ?? ''));
+  if ($pinCorr !== '') {
+    // AVULSO: autentica pelo PIN do corretor (válido só hoje) + trava de rede
+    $cq = db()->prepare("SELECT id, equipe_id FROM corretores WHERE pin=? AND pin_dia=CURDATE() AND ativo=1 LIMIT 1");
+    $cq->execute([$pinCorr]); $cc = $cq->fetch();
+    if (!$cc) { http_response_code(403); echo json_encode(['ok'=>false,'erro'=>'PIN de corretor inválido ou expirado.','codigo_invalido'=>true]); exit; }
+    if (!redeOk()) { http_response_code(403); echo json_encode(['ok'=>false,'erro'=>'Fora da rede liberada. Conecte-se ao wi-fi do salão.','rede_invalida'=>true]); exit; }
+    $eid = (int)$cc['equipe_id']; $cid = (int)$cc['id'];
+  } else {
+    exigirCodigo(); // exige o código do dia (anti-brincadeira); desligado se não houver código
+    $eid = (int)($d['equipe_id'] ?? 0);
+    $cid = !empty($d['corretor_id']) ? (int)$d['corretor_id'] : null;
+  }
   $tipo = $d['tipo'] ?? '';
   $foto = $d['foto'] ?? null; // base64
   if (!$eid || !in_array($tipo,['visita','documentacao'])) fail('Dados inválidos');

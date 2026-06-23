@@ -275,8 +275,25 @@ async function carregarEquipes(){
   const l=document.getElementById("teamsList");if(!l)return;
   l.innerHTML=`<div class="card"><table><tr><th>Gerência</th><th>Superintendência</th><th>Corretores</th><th></th></tr>
     ${equipes.map(e=>`<tr><td>${e.gerencia}</td><td>${e.superintendencia}</td><td>${(e.corretores||[]).length}</td>
-    <td style="text-align:right"><button class="btn btn-no" data-delteam="${e.id}" style="padding:7px 12px;font-size:12px">remover</button></td></tr>`).join("")}</table></div>`;
+    <td style="text-align:right"><button class="btn btn-cyan" data-pins="${e.id}" style="padding:7px 12px;font-size:12px;margin-right:6px">🔑 PINs</button><button class="btn btn-no" data-delteam="${e.id}" style="padding:7px 12px;font-size:12px">remover</button></td></tr>`).join("")}</table></div><div id="pinPanel"></div>`;
   l.querySelectorAll("[data-delteam]").forEach(b=>b.onclick=async()=>{if(!confirm("Remover equipe e seus dados?"))return;try{await ArenaAPI.removerEquipe(b.dataset.delteam);toast("Equipe removida");carregarEquipes();}catch(e){}});
+  l.querySelectorAll("[data-pins]").forEach(b=>b.onclick=()=>renderPinsAvulsos(b.dataset.pins));
+}
+async function renderPinsAvulsos(eid){
+  const e=equipes.find(x=>String(x.id)===String(eid)); const p=document.getElementById("pinPanel"); if(!e||!p)return;
+  const cs=e.corretores||[];
+  p.innerHTML=`<div class="card"><h2 style="margin:0 0 6px">🔑 PINs avulsos — ${e.gerencia}</h2>
+    <p class="lead" style="font-size:13px">Gere o PIN do dia para o corretor que vai sozinho. Ele entra no tablet em "Sou corretor — marco sozinho". O PIN expira no fim do dia.</p>
+    ${cs.length?cs.map(c=>`<div class="row" style="justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #16223d">
+      <span>${c.nome}</span>
+      <span><b id="pin_${c.id}" style="font-family:monospace;font-size:20px;letter-spacing:.15em;color:#36e6ff;margin-right:12px">—</b>
+      <button class="btn btn-ok" data-genpin="${c.id}" style="padding:6px 12px;font-size:12px">Gerar</button>
+      <button class="btn btn-no" data-revpin="${c.id}" style="padding:6px 12px;font-size:12px">Revogar</button></span>
+    </div>`).join(""):`<p class="empty">Sem corretores nesta equipe.</p>`}
+    </div>`;
+  for(const c of cs){ try{ const r=await ArenaAPI.verPinCorretor(c.id); if(r&&r.ok&&r.pin){ const el=document.getElementById("pin_"+c.id); if(el)el.textContent=r.pin; } }catch(err){} }
+  p.querySelectorAll("[data-genpin]").forEach(b=>b.onclick=async()=>{ try{ const r=await ArenaAPI.gerarPinCorretor(b.dataset.genpin); if(r&&r.ok){ const el=document.getElementById("pin_"+b.dataset.genpin); if(el)el.textContent=r.pin; toast("PIN gerado: "+r.pin); } }catch(err){ toast("Falha ao gerar",true); } });
+  p.querySelectorAll("[data-revpin]").forEach(b=>b.onclick=async()=>{ try{ await ArenaAPI.revogarPinCorretor(b.dataset.revpin); const el=document.getElementById("pin_"+b.dataset.revpin); if(el)el.textContent="—"; toast("PIN revogado"); }catch(err){} });
 }
 
 // ===== USUÁRIOS =====

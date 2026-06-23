@@ -169,6 +169,23 @@
   .abandon-wrap{margin-top:28px;padding-top:18px;border-top:1px solid #1a305055;text-align:center}
   .abandon{font-family:var(--body);font-weight:700;font-size:13px;color:var(--no);background:transparent;border:1px solid #ff5b6e55;border-radius:11px;padding:12px 20px;cursor:pointer;opacity:.8}
   .abandon:active{opacity:1;background:#ff5b6e15}
+
+.corrhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.corr-nome{font-size:26px;font-weight:800;color:#fff;line-height:1.1}
+.corr-ger{color:#00daff;font-size:14px;margin-top:2px}
+.corr-tally{background:#0e1a30;border:1px solid #1d2c4f;border-radius:12px;padding:12px 14px;font-size:15px;color:#cfe0ff;margin-bottom:10px}
+.corr-tally b{color:#fff}
+.corr-rank{background:#13233f;border-radius:12px;padding:10px 14px;color:#ffcf4d;font-weight:700;margin-bottom:10px}
+.corr-rank span{color:#9db4d6;font-weight:400;font-size:13px}
+.corr-combate{background:#3a1530;border:1px solid #7a1d4d;border-radius:12px;padding:10px 14px;color:#ff7ab0;font-weight:700;margin-bottom:14px}
+.corr-btns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.corr-mark{display:flex;flex-direction:column;align-items:center;gap:4px;border:none;border-radius:18px;padding:28px 10px;font-size:38px;cursor:pointer;color:#031018;font-weight:800}
+.corr-mark span{font-size:15px;letter-spacing:.04em}
+.corr-mark small{font-size:13px;opacity:.85}
+.corr-mark.vis{background:linear-gradient(180deg,#36e6ff,#00b6d8)}
+.corr-mark.doc{background:linear-gradient(180deg,#ffe07a,#f0b62e)}
+.corr-foot{text-align:center;color:#7d8db4;font-size:12.5px}
+
 </style>
 </head>
 <body>
@@ -196,6 +213,7 @@ let inBattle=false, faltas={};
 let PIN_REQUERIDO=false; // ligado pela recepção: ao abrir, pede o PIN e cai direto na equipe
 let batalhasAbertas=[]; // batalhas em andamento com janela de entrada aberta
 let pontosAdversarios=[], contestacoesRecebidas=[];
+let modoCorr=null, corrPin="", telaCorr=false, corrRank=null, corrTally={v:0,d:0}, corrCombate=false;
 function ph(t,c){return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='"+c+"'/><text x='100' y='100' font-family='sans-serif' font-size='16' fill='#fff' text-anchor='middle'>"+t+"</text></svg>")));}
 const uniq=a=>[...new Set(a)];
 const dirs=()=>uniq(BASE.map(b=>b.dir));
@@ -207,6 +225,8 @@ const agora=()=>new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-
 
 function render(){
   const v=document.getElementById("view");
+  if(modoCorr){ v.innerHTML=corretorHTML(); bindCorretor(); return; }
+  if(telaCorr){ v.innerHTML=corretorLoginHTML(); bindCorretorLogin(); return; }
   if(!active){
     if(PIN_REQUERIDO){v.innerHTML=pinHTML();bindPin();return;}
     v.innerHTML=logonHTML();bindLogon();return;
@@ -223,7 +243,7 @@ function logonHTML(){
   <div class="step"><div class="lbl">1 · DIRETORIA</div><div class="opts">${o(dirs(),sel.dir,"dir")}</div></div>
   <div class="step ${sel.dir?'':'off'}"><div class="lbl">2 · SUPERINTENDENTE</div><div class="opts">${sel.dir?o(sups(),sel.sup,"sup"):''}</div></div>
   <div class="step ${sel.sup?'':'off'}"><div class="lbl">3 · VOCÊ (GERENTE)</div><div class="opts">${sel.sup?o(gers(),sel.ger,"ger"):''}</div></div>
-  <button class="activate" id="actBtn" ${sel.ger?'':'disabled'}>⚡ Ativar equipe na arena</button>`;
+  <button class="activate" id="actBtn" ${sel.ger?'':'disabled'}>⚡ Ativar equipe na arena</button> <button class="btn-sm" onclick="telaCorr=true;render()" style="margin-top:16px;width:100%;opacity:.85">Sou corretor — marco sozinho</button>`;
 }
 // garante o "código do dia" antes de ativar (anti-brincadeira). Se não houver código
 // definido na recepção, libera direto. Guarda o código no navegador depois de validado.
@@ -245,7 +265,7 @@ function pinHTML(){
   return `<div class="eyebrow">ARENA CURY</div><h2>Digite seu PIN</h2>
   <p class="lead">Peça o PIN da sua equipe na recepção. Ele já abre a sua tela.</p>
   <input class="search" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="PIN da equipe" style="font-size:26px;text-align:center;letter-spacing:.35em;margin-bottom:14px"/>
-  <button class="activate" id="pinBtn">Entrar</button>`;
+  <button class="activate" id="pinBtn">Entrar</button> <button class="btn-sm" onclick="telaCorr=true;render()" style="margin-top:16px;width:100%;opacity:.85">Sou corretor — marco sozinho</button>`;
 }
 function bindPin(){
   const go=async()=>{
@@ -494,7 +514,7 @@ async function togglePresenca(nome){
 function fecharPresenca(){document.getElementById("cmodal").classList.remove("on");render();}
 
 let mTipo2_placeholder=null; // (mantém ordem)
-function openMarcar(n){
+function openMarcar(n,onSend){
   mNome=n;mTipo=null;mFoto=null;const m=document.getElementById("modal");
   m.innerHTML=`<div class="sheet"><div class="lab">MARCAR PONTO</div><div class="who">${n}</div>
     <div class="types"><div class="ty2 visita" id="tyV">🎯 Visita<small>+1</small></div><div class="ty2 doc" id="tyD">🏆 Documentação<small>+3</small></div></div>
@@ -508,7 +528,7 @@ function openMarcar(n){
   document.getElementById("photoBtn").onclick=()=>document.getElementById("file").click();
   document.getElementById("file").onchange=e=>{const f=e.target.files[0];if(!f)return;comprimirFoto(f,d=>{mFoto=d;updM();});};
   document.getElementById("mCancel").onclick=()=>m.classList.remove("on");
-  document.getElementById("mSend").onclick=registrarPonto;
+  document.getElementById("mSend").onclick=(onSend||registrarPonto);
 }
 // reduz a foto da câmera (máx ~1280px, JPEG q.0.6) antes de enviar — corta o tamanho ~20-30x,
 // o que evita o atraso de upload/gravação que travava a animação na TV. Fallback: usa a original.
@@ -554,6 +574,71 @@ async function registrarPonto(){
   }
   toast(`Ponto de ${mNome} registrado! Vale na hora ⚡`);render();
 }
+// ===== MODO CORRETOR (avulso) =====
+function corretorLoginHTML(){
+  return `<div class="eyebrow">ARENA CURY</div><h2>Sou corretor</h2>
+  <p class="lead">Digite o PIN que a recepção te passou. Ele vale só hoje.</p>
+  <input class="search" id="corrPinInput" inputmode="numeric" autocomplete="off" placeholder="seu PIN" style="font-size:26px;text-align:center;letter-spacing:.35em;margin-bottom:14px"/>
+  <button class="activate" id="corrBtn">Entrar</button>
+  <button class="btn-sm" onclick="telaCorr=false;render()" style="margin-top:14px;width:100%">voltar</button>`;
+}
+function bindCorretorLogin(){
+  const inp=document.getElementById("corrPinInput");
+  document.getElementById("corrBtn").onclick=async()=>{
+    const pin=(inp&&inp.value||"").trim(); if(!pin){toast("Digite o PIN",true);return;}
+    try{ const r=await ArenaAPI.resolverCorretor(pin);
+      if(r&&r.ok&&r.corretor){ modoCorr=r.corretor; corrPin=pin; telaCorr=false;
+        try{ localStorage.setItem("arena_corr_pin",pin); }catch(e){}
+        await carregarCorretor(); render(); toast("Bem-vindo, "+r.corretor.nome+"! 🚀"); }
+      else toast("PIN inválido ou expirado. Peça na recepção.",true);
+    }catch(e){ toast("Sem conexão",true); }
+  };
+  if(inp) inp.focus();
+}
+function corretorHTML(){
+  const t=corrTally||{v:0,d:0}; const pts=(t.v||0)+(t.d||0)*3;
+  const rank = corrRank ? `<div class="corr-rank">🏆 ${modoCorr.gerencia} em ${corrRank.pos}º lugar ${corrRank.atras!=null?`<span>(atrás do líder por ${corrRank.atras})</span>`:`<span>(liderando! 🔥)</span>`}</div>` : "";
+  const combate = corrCombate ? `<div class="corr-combate">⚔️ Sua gerência está em COMBATE — cada ponto conta!</div>` : "";
+  return `<div class="corrhead"><div><div class="eyebrow">CORRETOR</div><div class="corr-nome">${modoCorr.nome}</div><div class="corr-ger">Gerência ${modoCorr.gerencia}</div></div><button class="btn-sm" id="corrSair">sair</button></div>
+  <div class="corr-tally">Hoje: <b>${t.v||0}</b> visita(s) · <b>${t.d||0}</b> doc(s) — <b>${pts} pts</b> pra ${modoCorr.gerencia}</div>
+  ${rank}${combate}
+  <div class="corr-btns">
+    <button class="corr-mark vis" id="corrVis">🎯<span>VISITA</span><small>+1</small></button>
+    <button class="corr-mark doc" id="corrDoc">🏆<span>DOCUMENTAÇÃO</span><small>+3</small></button>
+  </div>
+  <p class="corr-foot">Foto do comprovante obrigatória · vale na hora ⚡</p>`;
+}
+function bindCorretor(){
+  document.getElementById("corrSair").onclick=sairCorretor;
+  document.getElementById("corrVis").onclick=()=>openMarcar(modoCorr.nome, registrarPontoCorretor);
+  document.getElementById("corrDoc").onclick=()=>openMarcar(modoCorr.nome, registrarPontoCorretor);
+}
+async function carregarCorretor(){
+  if(!modoCorr) return;
+  try{ const r=await ArenaAPI.listarEquipes(); const eqs=(r&&r.equipes)||[];
+    if(eqs.length){ const ord=[...eqs].sort((a,b)=>(b.pontos||0)-(a.pontos||0));
+      const i=ord.findIndex(e=>String(e.id)===String(modoCorr.equipe_id));
+      if(i>=0) corrRank={pos:i+1, atras: i===0?null:((ord[0].pontos||0)-(ord[i].pontos||0))}; }
+  }catch(e){}
+  try{ const r=await ArenaAPI.pontosEquipe(modoCorr.equipe_id);
+    if(r&&r.ok&&Array.isArray(r.pontos)){ const meu=r.pontos.find(p=>String(p.corretor_id)===String(modoCorr.id));
+      corrTally = meu ? {v:parseInt(meu.visitas)||0, d:parseInt(meu.docs)||0} : {v:0,d:0}; }
+  }catch(e){}
+  try{ const r=await ArenaAPI.meuDuelo(modoCorr.equipe_id); corrCombate=!!(r&&r.ok&&r.duelo&&r.duelo.status==='ativo'); }catch(e){ corrCombate=false; }
+  if(modoCorr) render();
+}
+async function registrarPontoCorretor(){
+  document.getElementById("modal").classList.remove("on");
+  const tipo=(mTipo==="doc"?"documentacao":"visita");
+  try{ const r=await ArenaAPI.marcarPonto({equipe_id:modoCorr.equipe_id, corretor_id:modoCorr.id, tipo, foto:mFoto, corretor_pin:corrPin});
+    if(r&&r.ok){ toast("Ponto registrado! Vale na hora ⚡"); }
+    else { toast((r&&r.erro)||"Não foi possível registrar",true); if(r&&r.codigo_invalido) sairCorretor(); }
+  }catch(e){ toast("Sem conexão com o banco",true); }
+  await carregarCorretor();
+}
+function sairCorretor(){ modoCorr=null; corrPin=""; corrRank=null; corrTally={v:0,d:0}; corrCombate=false;
+  try{ localStorage.removeItem("arena_corr_pin"); }catch(e){} render(); }
+
 function arenaHTML(){
   if(!inBattle) return `<div class="arena-empty">🛡<br><br>Você não está em nenhum duelo agora.<br>Esta aba abre quando um desafio começa.</div>`;
   let h="";
@@ -808,6 +893,15 @@ async function bootstrap(){
           }catch(e){}
         }
       }
+    }
+  }
+  if(!active && !modoCorr){
+    let pinC=""; try{ pinC=localStorage.getItem("arena_corr_pin")||""; }catch(e){}
+    if(pinC && API_ON){
+      try{ const r=await ArenaAPI.resolverCorretor(pinC);
+        if(r&&r.ok&&r.corretor){ modoCorr=r.corretor; corrPin=pinC; await carregarCorretor(); }
+        else { try{localStorage.removeItem("arena_corr_pin");}catch(e){} }
+      }catch(e){}
     }
   }
   render();
