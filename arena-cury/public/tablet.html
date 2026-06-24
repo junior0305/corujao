@@ -235,6 +235,7 @@ let modoCorr=null, corrPin="", telaCorr=false, corrRank=null, corrTally={v:0,d:0
 // combate do corretor avulso (1×1 e equipe)
 let corrDuelo=null, corrInBattle=false, corrDueloId=null, corrDesafioPend=null, corrPontosAdv=[];
 let corrSouLutador=false; // true só quando sou participante NOMEADO (1×1) — habilita abandonar
+let corrAguardando=false; // desafiei alguém e aguardo o aceite — bloqueia novo desafio
 function ph(t,c){return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='"+c+"'/><text x='100' y='100' font-family='sans-serif' font-size='16' fill='#fff' text-anchor='middle'>"+t+"</text></svg>")));}
 const uniq=a=>[...new Set(a)];
 const dirs=()=>uniq(BASE.map(b=>b.dir));
@@ -626,9 +627,10 @@ function corretorHTML(){
     desafio=`<div class="corr-desafio"><div class="corr-desafio-tit">⚔️ ${quem} te desafiou para um 1×1!</div>
       <div class="corr-desafio-acts"><button class="corr-recusar" id="corrRecusar">Recusar</button><button class="corr-aceitar" id="corrAceitar">Aceitar e lutar</button></div></div>`;
   }
-  // bloco de combate: arena (se em batalha) ou botão de desafiar
+  // bloco de combate: arena (se em batalha), espera de aceite, ou botão de desafiar
   let combate="";
   if(corrInBattle){ combate=corrArenaHTML(); }
+  else if(corrAguardando){ combate=`<div class="corr-arena"><div class="corr-arena-top" style="color:#ffd479">⏳ Desafio enviado — aguardando o oponente aceitar…</div></div>`; }
   else if(!desafio){ combate=`<button class="corr-desafiar" id="corrDesafiar">⚔ Desafiar / entrar em combate</button>`; }
   return `<div class="corrhead"><div><div class="eyebrow">CORRETOR</div><div class="corr-nome">${modoCorr.nome}</div><div class="corr-ger">Gerência ${modoCorr.gerencia}</div></div><button class="btn-sm" id="corrSair">sair</button></div>
   <div class="corr-tally">Hoje: <b>${t.v||0}</b> visita(s) · <b>${t.d||0}</b> doc(s) — <b>${pts} pts</b> pra ${modoCorr.gerencia}</div>
@@ -724,6 +726,7 @@ async function corrSyncCombate(){
     corrInBattle=!!(duelo&&duelo.status==='ativo');
     corrCombate=corrInBattle;
     corrSouLutador = !!(duelo && (duelo.participantes||[]).some(p=>p.corretor_id&&String(p.corretor_id)===String(modoCorr.id)));
+    corrAguardando = !!(duelo && duelo.status==='aguardando' && corrSouLutador);
     if(corrInBattle){
       corrDueloId=duelo.id;
       try{ const pr=await ArenaAPI.pontosDuelo(duelo.id, modoCorr.equipe_id);
@@ -747,6 +750,7 @@ async function registrarPontoCorretor(){
   await carregarCorretor();
 }
 function sairCorretor(){ modoCorr=null; corrPin=""; corrRank=null; corrTally={v:0,d:0}; corrCombate=false;
+  corrDuelo=null; corrInBattle=false; corrDueloId=null; corrDesafioPend=null; corrPontosAdv=[]; corrSouLutador=false; corrAguardando=false;
   try{ localStorage.removeItem("arena_corr_pin"); }catch(e){} render(); }
 
 function arenaHTML(){
@@ -813,8 +817,8 @@ async function carregarOnline(){
       const minhaId=meuEquipeId();
       ONLINE=res.equipes
         .filter(e=>e.online==1 && !(minhaId&&e.id===minhaId))
-        // corretores como objetos {id,nome} para permitir o 1×1 direcionado
-        .map(e=>({id:e.id,ger:e.gerencia,sup:e.superintendencia,corretores:(e.corretores||[]).map(c=>({id:c.id,nome:c.nome}))}));
+        // corretores como objetos {id,nome}; SÓ os online (PIN ativo hoje) podem ser desafiados no 1×1
+        .map(e=>({id:e.id,ger:e.gerencia,sup:e.superintendencia,corretores:(e.corretores||[]).filter(c=>c.online==1).map(c=>({id:c.id,nome:c.nome}))}));
     }
   }catch(e){}
 }
@@ -831,11 +835,16 @@ function cRender(){
   const m=document.getElementById("cmodal");let h="";
   if(cStep==="level")h=`<button class="cback" onclick="closeChallenge()">✕ fechar</button><h3>Tipo de desafio</h3><p class="cl">Entre equipes ou corretores?</p>
     <div class="levels"><div class="lvl" onclick="cPickLevel('ger')"><div class="ic">🛡️</div><div class="nm">GERÊNCIA</div><div class="ds">equipe x equipe</div></div>
-    <div class="lvl" onclick="cPickLevel('corr')"><div class="ic">🎯</div><div class="nm">CORRETOR</div><div class="ds">corretor x corretor</div></div></div>`;
+    <div class="lvl" onclick="cPickLevel('corr')"><div class="ic">🎯</div><div class="nm">CORRETOR</div><div class="ds">corretor x corretor</div></div>
+    ${souCorretorDuelo()?`<div class="lvl" onclick="corrOferecerEntrar()"><div class="ic">➡️</div><div class="nm">ENTRAR</div><div class="ds">num combate em andamento</div></div>`:''}</div>`;
+  else if(cStep==="corrRule"){const opp=corrNm(cOppCorr)+" ("+cOppGer.ger+")";
+    h=`<button class="cback" onclick="cBack('oppCorr')">← voltar</button><h3>Como vence o 1×1?</h3><p class="cl">Contra <b style="color:var(--cyan)">${opp}</b></p>
+    <div class="levels"><div class="lvl" onclick="cFireCorr('tempo')"><div class="ic">⏱</div><div class="nm">POR TEMPO</div><div class="ds">quem fizer mais pontos</div></div>
+    <div class="lvl" onclick="cFireCorr('meta')"><div class="ic">🏁</div><div class="nm">ATÉ 3 PONTOS</div><div class="ds">o primeiro a 3 vence</div></div></div>`;}
   else if(cStep==="oppGer")h=`<button class="cback" onclick="cBack('level')">← voltar</button><h3>${cLevel==='ger'?'Equipe rival':'Gerente do corretor'}</h3><p class="cl">Online agora:</p>
     <div class="clist">${ONLINE.map((o,i)=>`<div class="crow" onclick="cPickGer(${i})"><div class="av">${o.ger.split(" ").pop()[0]}</div><div class="info"><div class="nm">${o.ger}</div><div class="s">${o.sup}</div></div><div class="on"><span class="d"></span> online</div></div>`).join("")}</div>`;
-  else if(cStep==="oppCorr")h=`<button class="cback" onclick="cBack('oppGer')">← voltar</button><h3>Qual corretor?</h3><p class="cl">De ${cOppGer.ger}:</p>
-    <div class="clist">${cOppGer.corretores.map((c,i)=>{const nm=corrNm(c);return `<div class="crow" onclick="cPickCorr(${i})"><div class="av">${nm[0]||'?'}</div><div class="info"><div class="nm">${nm}</div></div></div>`;}).join("")}</div>`;
+  else if(cStep==="oppCorr")h=`<button class="cback" onclick="cBack('oppGer')">← voltar</button><h3>Qual corretor?</h3><p class="cl">De ${cOppGer.ger} (online agora):</p>
+    <div class="clist">${(cOppGer.corretores||[]).length?cOppGer.corretores.map((c,i)=>{const nm=corrNm(c);return `<div class="crow" onclick="cPickCorr(${i})"><div class="av">${nm[0]||'?'}</div><div class="info"><div class="nm">${nm}</div></div></div>`;}).join(""):`<p class="cl" style="opacity:.7">Nenhum corretor dessa gerência está online agora. Só dá pra desafiar quem entrou com o PIN.</p>`}</div>`;
   else if(cStep==="rule"){const opp=cLevel==='ger'?cOppGer.ger:(corrNm(cOppCorr)+" ("+cOppGer.ger+")");const opts=cRuleType==='meta'?[5,10,15,20]:[15,30,45,60];const u=cRuleType==='meta'?'visitas':'min';
     h=`<button class="cback" onclick="cBack('${cLevel==='ger'?'oppGer':'oppCorr'}')">← voltar</button><h3>Como vence?</h3><p class="cl">Desafiando: <b style="color:var(--cyan)">${opp}</b></p>
     <div class="ruletabs"><div class="rt ${cRuleType==='meta'?'sel':''}" onclick="cSetRule('meta')">🏁 META<small>primeiro a chegar</small></div><div class="rt ${cRuleType==='tempo'?'sel':''}" onclick="cSetRule('tempo')">⏱ TEMPO<small>quem fizer mais</small></div></div>
@@ -850,9 +859,10 @@ function cBack(s){cStep=s;cRender();}
 function cPickLevel(l){cLevel=l;cStep="oppGer";cRender();}
 function cPickGer(i){cOppGer=ONLINE[i];cStep=cLevel==='ger'?"rule":"oppCorr";cRender();}
 function cPickCorr(i){cOppCorr=cOppGer.corretores[i];
-  // 1×1 iniciado pelo corretor: regra é fixa por tempo (config) — vai direto pro disparo
-  if(souCorretorDuelo()){cRuleType='tempo';cRuleVal=null;cFire();return;}
+  // 1×1 iniciado pelo corretor: escolhe como vence (tempo OU 3 pontos)
+  if(souCorretorDuelo()){cStep="corrRule";cRender();return;}
   cStep="rule";cRender();}
+function cFireCorr(regra){cRuleType=regra;cRuleVal=(regra==='meta'?3:10);cFire();}
 function cSetRule(t){cRuleType=t;cRuleVal=null;cRender();}
 function cSetVal(v){cRuleVal=v;cRender();}
 let meuDueloId=null;
@@ -899,6 +909,8 @@ function cFire(){
       clearInterval(waitInt);closeChallenge();
       if(API_ON) toast("O oponente não respondeu a tempo (ou recusou).",true);
       else if(!ehCorr) entrarEmDuelo(cLevel==='ger'?cOppGer.ger:corrNm(cOppCorr)); // modo local: simula aceite
+      // corretor: cancela o desafio não aceito p/ não ficar preso em "aguardando" (libera o botão)
+      if(API_ON && ehCorr && corrDueloId){ ArenaAPI.responderDuelo(corrDueloId,false).catch(()=>{}); corrDueloId=null; corrAguardando=false; setTimeout(()=>{ if(modoCorr){ corrSyncCombate().then(()=>{ if(modoCorr) render(); }); } },300); }
     }
   },1000);
 }

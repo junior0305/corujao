@@ -21,15 +21,23 @@ function limitesCombateCorretor() {
 // progresso (0..1) de uma batalha já carregada (linha da tabela duelos)
 function progressoDuelo($duelo) {
   if (($duelo['status'] ?? '') !== 'ativo') return 1.0;
+  $ini = $duelo['iniciado_em'] ? strtotime($duelo['iniciado_em']) : time();
   if ($duelo['regra'] === 'tempo') {
     $dur = max(1, (int)$duelo['regra_valor']*60);
-    $ini = $duelo['iniciado_em'] ? strtotime($duelo['iniciado_em']) : time();
     return (time() - $ini) / $dur;
   }
   $mp = db()->prepare('SELECT COALESCE(MAX(pontos),0) m FROM duelo_participantes WHERE duelo_id=?');
   $mp->execute([$duelo['id']]);
   $top = (int)$mp->fetch()['m']; $meta = max(1,(int)$duelo['regra_valor']);
-  return $top / $meta;
+  $prog = $top / $meta;
+  // backstop: combate de corretor por META também encerra ao estourar o tempo da config
+  // (evita "duelo preso" se os dois lutadores somem sem bater a meta) — protege o rodízio da TV
+  if (($duelo['nivel'] ?? '') === 'corretor') {
+    $lim = limitesCombateCorretor();
+    $tp = (time() - $ini) / max(1, $lim['min']*60);
+    $prog = max($prog, $tp);
+  }
+  return $prog;
 }
 
 // Encerra AUTOMATICAMENTE um duelo 'ativo' que já terminou (meta atingida ou tempo esgotado).
@@ -95,12 +103,14 @@ if ($acao === 'meu_duelo') {
   $cid = !empty($_GET['corretor_id']) ? (int)$_GET['corretor_id'] : null;
   if (!$eid) fail('Informe a equipe');
   if ($cid) {
-    // corretor: prioriza o combate 1×1 DELE; se não houver, cai no duelo da equipe
+    // corretor: o 1×1 SÓ aparece se ele for participante nomeado; duelo de equipe aparece p/ a equipe toda.
+    // (impede que um colega da mesma equipe "veja"/interaja com o 1×1 de outro corretor)
     $st = db()->prepare("SELECT d.* FROM duelos d
                          JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=?
                          WHERE d.status IN ('aguardando','ativo')
+                           AND (d.nivel <> 'corretor' OR p.corretor_id = ?)
                          ORDER BY (p.corretor_id = ?) DESC, d.id DESC LIMIT 1");
-    $st->execute([$eid,$cid]);
+    $st->execute([$eid,$cid,$cid]);
   } else {
     $st = db()->prepare("SELECT d.* FROM duelos d
                          JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=?
@@ -172,7 +182,9 @@ if ($acao === 'criar') {
       // sem vaga p/ novo 1×1: o tablet deve oferecer ENTRAR num combate em andamento
       fail('Limite de '.$lim['max'].' combates individuais atingido. Entre em um combate em andamento.', 409);
     }
-    $regra = 'tempo'; $rv = $lim['min']; // combate de corretor é sempre por tempo (teto da config)
+    // 1×1: por META (primeiro a 3 pontos) ou por TEMPO (teto da config). Meta tem backstop de tempo (ver progressoDuelo).
+    if (($d['regra'] ?? '') === 'meta') { $regra = 'meta'; $rv = 3; }
+    else { $regra = 'tempo'; $rv = $lim['min']; }
   }
 
   $st = db()->prepare('INSERT INTO duelos (nivel,regra,regra_valor,status) VALUES (?,?,?,"aguardando")');
