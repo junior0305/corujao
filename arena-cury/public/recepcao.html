@@ -76,7 +76,7 @@
   <div class="tabs">
     <button class="tab on" data-tab="mapa">🗺 Mapa de Mesas</button>
     <button class="tab" data-tab="equipes">👥 Equipes</button>
-    <button class="tab" data-tab="pins">🎟 PIN dos Gerentes</button>
+    <button class="tab" data-tab="pins">🎟 PINs (Gerente & Corretores)</button>
     <button class="tab" data-tab="usuarios">🔑 Acessos</button>
     <button class="tab" data-tab="rodada">⚙ Regras & Rodada</button>
     <button class="tab" data-tab="reservas">📅 Reservas</button>
@@ -275,15 +275,16 @@ async function carregarEquipes(){
   const l=document.getElementById("teamsList");if(!l)return;
   l.innerHTML=`<div class="card"><table><tr><th>Gerência</th><th>Superintendência</th><th>Corretores</th><th></th></tr>
     ${equipes.map(e=>`<tr><td>${e.gerencia}</td><td>${e.superintendencia}</td><td>${(e.corretores||[]).length}</td>
-    <td style="text-align:right"><button class="btn btn-cyan" data-pins="${e.id}" style="padding:7px 12px;font-size:12px;margin-right:6px">🔑 PINs</button><button class="btn btn-no" data-delteam="${e.id}" style="padding:7px 12px;font-size:12px">remover</button></td></tr>`).join("")}</table></div><div id="pinPanel"></div>`;
+    <td style="text-align:right"><button class="btn btn-no" data-delteam="${e.id}" style="padding:7px 12px;font-size:12px">remover</button></td></tr>`).join("")}</table></div>
+    <p class="lead" style="margin-top:10px;font-size:13px">🔑 Os PINs (do gerente e de cada corretor) ficam na aba <b>🎟 PINs (Gerente &amp; Corretores)</b>.</p>`;
   l.querySelectorAll("[data-delteam]").forEach(b=>b.onclick=async()=>{if(!confirm("Remover equipe e seus dados?"))return;try{await ArenaAPI.removerEquipe(b.dataset.delteam);toast("Equipe removida");carregarEquipes();}catch(e){}});
-  l.querySelectorAll("[data-pins]").forEach(b=>b.onclick=()=>renderPinsAvulsos(b.dataset.pins));
 }
-async function renderPinsAvulsos(eid){
-  const e=equipes.find(x=>String(x.id)===String(eid)); const p=document.getElementById("pinPanel"); if(!e||!p)return;
-  const cs=e.corretores||[];
-  p.innerHTML=`<div class="card"><h2 style="margin:0 0 6px">🔑 PINs avulsos — ${e.gerencia}</h2>
-    <p class="lead" style="font-size:13px">Gere o PIN do dia para o corretor que vai sozinho. Ele entra no tablet em "Sou corretor — marco sozinho". O PIN expira no fim do dia.</p>
+// Lista os corretores da equipe com PIN individual (Gerar/Revogar), dentro do `box` informado.
+async function montarPinsCorretores(eq, box){
+  if(!eq||!box)return;
+  const cs=eq.corretores||[];
+  box.innerHTML=`<div class="card" style="margin-top:14px"><h2 style="margin:0 0 6px;font-size:16px">🔑 Corretores que vão sozinhos — ${eq.gerencia}</h2>
+    <p class="lead" style="font-size:13px">Gere o PIN do dia para o corretor que marca sem o gerente. Ele entra no tablet em "Sou corretor — marco sozinho", marca seus pontos e entra em combates. O PIN expira no fim do dia.</p>
     ${cs.length?cs.map(c=>`<div class="row" style="justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #16223d">
       <span>${c.nome}</span>
       <span><b id="pin_${c.id}" style="font-family:monospace;font-size:20px;letter-spacing:.15em;color:#36e6ff;margin-right:12px">—</b>
@@ -292,8 +293,8 @@ async function renderPinsAvulsos(eid){
     </div>`).join(""):`<p class="empty">Sem corretores nesta equipe.</p>`}
     </div>`;
   for(const c of cs){ try{ const r=await ArenaAPI.verPinCorretor(c.id); if(r&&r.ok&&r.pin){ const el=document.getElementById("pin_"+c.id); if(el)el.textContent=r.pin; } }catch(err){} }
-  p.querySelectorAll("[data-genpin]").forEach(b=>b.onclick=async()=>{ try{ const r=await ArenaAPI.gerarPinCorretor(b.dataset.genpin); if(r&&r.ok){ const el=document.getElementById("pin_"+b.dataset.genpin); if(el)el.textContent=r.pin; toast("PIN gerado: "+r.pin); } }catch(err){ toast("Falha ao gerar",true); } });
-  p.querySelectorAll("[data-revpin]").forEach(b=>b.onclick=async()=>{ try{ await ArenaAPI.revogarPinCorretor(b.dataset.revpin); const el=document.getElementById("pin_"+b.dataset.revpin); if(el)el.textContent="—"; toast("PIN revogado"); }catch(err){} });
+  box.querySelectorAll("[data-genpin]").forEach(b=>b.onclick=async()=>{ try{ const r=await ArenaAPI.gerarPinCorretor(b.dataset.genpin); if(r&&r.ok){ const el=document.getElementById("pin_"+b.dataset.genpin); if(el)el.textContent=r.pin; toast("PIN gerado: "+r.pin); } }catch(err){ toast("Falha ao gerar",true); } });
+  box.querySelectorAll("[data-revpin]").forEach(b=>b.onclick=async()=>{ try{ await ArenaAPI.revogarPinCorretor(b.dataset.revpin); const el=document.getElementById("pin_"+b.dataset.revpin); if(el)el.textContent="—"; toast("PIN revogado"); }catch(err){} });
 }
 
 // ===== USUÁRIOS =====
@@ -397,7 +398,7 @@ async function carregarUsuarios(){
 let pinSel={dir:null,sup:null};
 async function renderPins(){
   const p=document.getElementById("pane-pins");
-  if(!API_ON){ p.innerHTML=`<h2>PIN dos Gerentes</h2><p class="empty">Conecte ao banco.</p>`; return; }
+  if(!API_ON){ p.innerHTML=`<h2>PINs — Gerente &amp; Corretores</h2><p class="empty">Conecte ao banco.</p>`; return; }
   if(!equipes.length){ try{ const r=await ArenaAPI.listarEquipes(); equipes=(r&&r.equipes)?r.equipes:[]; }catch(e){} }
   let st=null; try{ st=await ArenaAPI.statusAcesso(); }catch(e){}
   const pinOn=!!(st&&st.exigir_pin);
@@ -407,8 +408,8 @@ async function renderPins(){
   const gers=(pinSel.dir&&pinSel.sup)?equipes.filter(e=>e.diretoria===pinSel.dir&&e.superintendencia===pinSel.sup):[];
   const pills=(arr,cur,k)=>arr.map(x=>`<span class="pill ${String(cur)===String(x)?'sel':''}" data-k="${k}" data-v="${x}">${x}</span>`).join("");
   const gerPills=gers.map(e=>`<span class="pill" data-k="ger" data-v="${e.id}">${e.gerencia}</span>`).join("");
-  p.innerHTML=`<h2>PIN dos Gerentes</h2>
-    <p class="lead">Confira o nome do gerente, gere o PIN do dia e mostre a ele. O PIN vale só hoje; o gerente usa no tablet para ativar a equipe dele. Esqueceu? É só selecionar de novo e ver.</p>
+  p.innerHTML=`<h2>PINs — Gerente &amp; Corretores</h2>
+    <p class="lead">Selecione a gerência: gere aqui o <b>PIN do gerente</b> (ativa a equipe no tablet) e, logo abaixo, o <b>PIN de cada corretor</b> que vai marcar sozinho. Todos valem só hoje; é só selecionar de novo para ver.</p>
     <div class="card" style="border-color:${pinOn?'#1fd18a55':'#ff5b6e55'}">
       <div class="row" style="justify-content:space-between;align-items:center;gap:12px">
         <div>Exigência de PIN no tablet: <span class="statusbadge ${pinOn?'st-ativa':'st-parada'}">${pinOn?'LIGADA':'DESLIGADA'}</span>
@@ -446,11 +447,13 @@ async function selecionarGerente(eid){
       <div id="pinBig" style="font-family:monospace;font-weight:900;font-size:48px;letter-spacing:.15em;color:#00daff;margin:8px 0">${pin?pin:'— — — —'}</div>
       <div class="lead" style="margin:0 0 12px">${pin?'PIN de hoje — mostre ao gerente':'Sem PIN para hoje ainda'}</div>
       <button class="btn btn-cyan" id="btnGerarPin">${pin?'Gerar novo PIN':'Gerar PIN'}</button>
-    </div>`;
+    </div>
+    <div id="pinCorretores"></div>`;
   document.getElementById("btnGerarPin").onclick=async()=>{
     if(!confirm("Gerar um PIN novo para "+eq.gerencia+"?"+(pin?" O PIN anterior deixará de valer.":"")))return;
     try{ const r=await ArenaAPI.gerarPin(eid); if(r&&r.ok&&r.pin){ toast("PIN de "+eq.gerencia+": "+r.pin); selecionarGerente(eid); } else toast("Falha ao gerar PIN",true); }catch(e){ toast("Falha ao gerar PIN",true); }
   };
+  montarPinsCorretores(eq, document.getElementById("pinCorretores"));
 }
 
 // ===== REGRAS & RODADA =====
@@ -480,7 +483,7 @@ async function renderRodada(){
       </div>
     </div>
     <div class="card"><h2 style="font-size:16px">🔒 Acesso do tablet (PIN)</h2>
-      <p class="lead" style="margin:8px 0 12px">Com o PIN ligado, o gerente só ativa a equipe digitando o <b>PIN dela</b> (gerado na aba "🎟 PIN dos Gerentes"). Status: <span id="pinStatus" class="statusbadge st-parada">—</span></p>
+      <p class="lead" style="margin:8px 0 12px">Com o PIN ligado, o gerente só ativa a equipe digitando o <b>PIN dela</b> (gerado na aba "🎟 PINs (Gerente &amp; Corretores)"). Status: <span id="pinStatus" class="statusbadge st-parada">—</span></p>
       <div class="row"><button class="btn btn-ok" id="ligarPin" type="button">Ligar exigência de PIN</button><button class="btn btn-ghost" id="desligarPin" type="button">Desligar</button></div>
       <div style="margin-top:16px;border-top:1px solid #1a3050;padding-top:14px">
         <h2 style="font-size:15px;margin-bottom:6px">🔚 Encerrar o dia</h2>
