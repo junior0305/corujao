@@ -79,6 +79,7 @@ if ($acao === 'para_mim') {
                          JOIN equipes des ON des.id=pd.equipe_id
                          LEFT JOIN corretores cd ON cd.id=pd.corretor_id
                          WHERE d.status='aguardando' AND d.nivel='corretor'
+                           AND d.criado_em > NOW() - INTERVAL 90 SECOND
                          ORDER BY d.id DESC LIMIT 1");
     $st->execute([$eid,$cid]);
   } else {
@@ -109,6 +110,7 @@ if ($acao === 'meu_duelo') {
                          JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=?
                          WHERE d.status IN ('aguardando','ativo')
                            AND (d.nivel <> 'corretor' OR p.corretor_id = ?)
+                           AND NOT (d.nivel='corretor' AND d.status='aguardando' AND d.criado_em < NOW() - INTERVAL 90 SECOND)
                          ORDER BY (p.corretor_id = ?) DESC, d.id DESC LIMIT 1");
     $st->execute([$eid,$cid,$cid]);
   } else {

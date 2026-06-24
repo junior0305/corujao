@@ -630,7 +630,7 @@ function corretorHTML(){
   // bloco de combate: arena (se em batalha), espera de aceite, ou botão de desafiar
   let combate="";
   if(corrInBattle){ combate=corrArenaHTML(); }
-  else if(corrAguardando){ combate=`<div class="corr-arena"><div class="corr-arena-top" style="color:#ffd479">⏳ Desafio enviado — aguardando o oponente aceitar…</div></div>`; }
+  else if(corrAguardando){ combate=`<div class="corr-arena"><div class="corr-arena-top" style="color:#ffd479">⏳ Desafio enviado — aguardando o oponente aceitar…</div><button class="corr-abandon" id="corrCancelDesafio">Cancelar desafio</button></div>`; }
   else if(!desafio){ combate=`<button class="corr-desafiar" id="corrDesafiar">⚔ Desafiar / entrar em combate</button>`; }
   return `<div class="corrhead"><div><div class="eyebrow">CORRETOR</div><div class="corr-nome">${modoCorr.nome}</div><div class="corr-ger">Gerência ${modoCorr.gerencia}</div></div><button class="btn-sm" id="corrSair">sair</button></div>
   <div class="corr-tally">Hoje: <b>${t.v||0}</b> visita(s) · <b>${t.d||0}</b> doc(s) — <b>${pts} pts</b> pra ${modoCorr.gerencia}</div>
@@ -665,6 +665,7 @@ function bindCorretor(){
   const bA=document.getElementById("corrAceitar"); if(bA) bA.onclick=()=>corrResponderDesafio(true);
   const bR=document.getElementById("corrRecusar"); if(bR) bR.onclick=()=>corrResponderDesafio(false);
   const bAb=document.getElementById("corrAbandon"); if(bAb) bAb.onclick=corrAbandonar;
+  const bCx=document.getElementById("corrCancelDesafio"); if(bCx) bCx.onclick=corrCancelarDesafio;
   document.querySelectorAll("#view [data-zoom]").forEach(i=>i.onclick=()=>{document.getElementById("zoomImg").src=i.dataset.zoom;document.getElementById("zoom").classList.add("on");});
   document.querySelectorAll("#view [data-contest]").forEach(b=>b.onclick=async()=>{
     const id=b.dataset.contest; const alvo=corrPontosAdv.find(x=>String(x.id)===String(id)); if(alvo)alvo.contestado=true; render();
@@ -676,6 +677,14 @@ async function corrResponderDesafio(aceita){
   try{ await ArenaAPI.responderDuelo(d.id, aceita); }catch(e){}
   if(aceita){ await corrSyncCombate(); render(); toast("Combate começou! ⚔ Marque seus pontos."); }
   else { render(); toast("Desafio recusado."); }
+}
+// cancela um desafio 1×1 ainda NÃO aceito (libera o corretor de "aguardando")
+async function corrCancelarDesafio(){
+  const did = corrDueloId || (corrDuelo&&corrDuelo.id);
+  corrAguardando=false; corrDueloId=null; corrDuelo=null;
+  if(API_ON && did){ try{ await ArenaAPI.responderDuelo(did,false); }catch(e){} } // 'recusado' encerra o aguardando
+  if(modoCorr){ await corrSyncCombate(); render(); }
+  toast("Desafio cancelado.");
 }
 async function corrAbandonar(){
   if(!corrDueloId) return;
@@ -727,6 +736,7 @@ async function corrSyncCombate(){
     corrCombate=corrInBattle;
     corrSouLutador = !!(duelo && (duelo.participantes||[]).some(p=>p.corretor_id&&String(p.corretor_id)===String(modoCorr.id)));
     corrAguardando = !!(duelo && duelo.status==='aguardando' && corrSouLutador);
+    if(duelo && corrSouLutador) corrDueloId=duelo.id; // guarda o id p/ cancelar/abandonar mesmo após reload
     if(corrInBattle){
       corrDueloId=duelo.id;
       try{ const pr=await ArenaAPI.pontosDuelo(duelo.id, modoCorr.equipe_id);
@@ -852,7 +862,7 @@ function cRender(){
     <button class="fire" ${cRuleType&&cRuleVal?'':'disabled'} onclick="cFire()">⚔ Lançar desafio</button>`;}
   else if(cStep==="waiting"){const opp=cLevel==='ger'?cOppGer.ger:(corrNm(cOppCorr)+" ("+cOppGer.ger+")");
     h=`<div class="waiting"><div class="eyebrow">DESAFIO LANÇADO</div><div class="vs"><span class="o1">${meuLabelDuelo()}</span> ⚔ <span class="o2">${opp}</span></div>
-    <div class="spinner"></div><div class="countdown" id="cwcd">10</div><div class="st">aguardando aceite…</div><button class="cback" style="margin-top:18px" onclick="closeChallenge()">cancelar</button></div>`;}
+    <div class="spinner"></div><div class="countdown" id="cwcd">10</div><div class="st">aguardando aceite…</div><button class="cback" style="margin-top:18px" onclick="${souCorretorDuelo()?'closeChallenge();corrCancelarDesafio()':'closeChallenge()'}">cancelar</button></div>`;}
   m.innerHTML=`<div class="csheet">${h}</div>`;
 }
 function cBack(s){cStep=s;cRender();}

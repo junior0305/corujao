@@ -285,13 +285,19 @@ async function montarPinsCorretores(eq, box){
   const cs=eq.corretores||[];
   box.innerHTML=`<div class="card" style="margin-top:14px"><h2 style="margin:0 0 6px;font-size:16px">🔑 Corretores que vão sozinhos — ${eq.gerencia}</h2>
     <p class="lead" style="font-size:13px">Gere o PIN do dia para o corretor que marca sem o gerente. Ele entra no tablet em "Sou corretor — marco sozinho", marca seus pontos e entra em combates. O PIN expira no fim do dia.</p>
-    ${cs.length?cs.map(c=>`<div class="row" style="justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #16223d">
+    ${cs.length>6?`<input type="text" id="pinBusca" placeholder="🔍 Buscar corretor pelo nome…" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 12px;border-radius:10px;border:1px solid #1d2c4f;background:#0a1424;color:#dce8ff;font-size:14px"/>`:''}
+    <div id="pinCorrLista">${cs.length?cs.map(c=>`<div class="row corr-pin-row" data-nome="${(c.nome||'').toLowerCase()}" style="justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #16223d">
       <span>${c.nome}</span>
       <span><b id="pin_${c.id}" style="font-family:monospace;font-size:20px;letter-spacing:.15em;color:#36e6ff;margin-right:12px">—</b>
       <button class="btn btn-ok" data-genpin="${c.id}" style="padding:6px 12px;font-size:12px">Gerar</button>
       <button class="btn btn-no" data-revpin="${c.id}" style="padding:6px 12px;font-size:12px">Revogar</button></span>
-    </div>`).join(""):`<p class="empty">Sem corretores nesta equipe.</p>`}
+    </div>`).join(""):`<p class="empty">Sem corretores nesta equipe.</p>`}</div>
+    <p class="lead" id="pinBuscaVazio" style="display:none;font-size:13px;opacity:.7">Nenhum corretor com esse nome.</p>
     </div>`;
+  const inpB=box.querySelector("#pinBusca");
+  if(inpB) inpB.oninput=()=>{ const q=inpB.value.trim().toLowerCase(); let vis=0;
+    box.querySelectorAll(".corr-pin-row").forEach(r=>{ const ok=!q||r.dataset.nome.includes(q); r.style.display=ok?'':'none'; if(ok)vis++; });
+    const vazio=box.querySelector("#pinBuscaVazio"); if(vazio) vazio.style.display=vis?'none':'block'; };
   for(const c of cs){ try{ const r=await ArenaAPI.verPinCorretor(c.id); if(r&&r.ok&&r.pin){ const el=document.getElementById("pin_"+c.id); if(el)el.textContent=r.pin; } }catch(err){} }
   box.querySelectorAll("[data-genpin]").forEach(b=>b.onclick=async()=>{ try{ const r=await ArenaAPI.gerarPinCorretor(b.dataset.genpin); if(r&&r.ok){ const el=document.getElementById("pin_"+b.dataset.genpin); if(el)el.textContent=r.pin; toast("PIN gerado: "+r.pin); } }catch(err){ toast("Falha ao gerar",true); } });
   box.querySelectorAll("[data-revpin]").forEach(b=>b.onclick=async()=>{ try{ await ArenaAPI.revogarPinCorretor(b.dataset.revpin); const el=document.getElementById("pin_"+b.dataset.revpin); if(el)el.textContent="—"; toast("PIN revogado"); }catch(err){} });
