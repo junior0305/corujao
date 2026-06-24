@@ -185,6 +185,24 @@
 .corr-mark.vis{background:linear-gradient(180deg,#36e6ff,#00b6d8)}
 .corr-mark.doc{background:linear-gradient(180deg,#ffe07a,#f0b62e)}
 .corr-foot{text-align:center;color:#7d8db4;font-size:12.5px}
+/* combate do corretor avulso */
+.corr-desafiar{width:100%;border:none;border-radius:14px;padding:15px;margin-bottom:14px;font-size:16px;font-weight:800;color:#031018;cursor:pointer;background:linear-gradient(180deg,#ff8a5b,#ff5b6e)}
+.corr-desafio{background:#2a1840;border:1px solid #7a4dd1;border-radius:14px;padding:14px;margin-bottom:14px}
+.corr-desafio-tit{font-weight:800;color:#d9b3ff;margin-bottom:10px}
+.corr-desafio-acts{display:flex;gap:10px}
+.corr-aceitar{flex:1;border:none;border-radius:12px;padding:13px;font-weight:800;color:#031018;background:linear-gradient(180deg,#36e6ff,#00b6d8);cursor:pointer}
+.corr-recusar{border:1px solid #44557d;background:transparent;color:#aebbd8;border-radius:12px;padding:13px 16px;cursor:pointer}
+.corr-arena{background:#0a1830;border:1px solid #1a5fc4;border-radius:14px;padding:14px;margin-bottom:14px}
+.corr-arena-top{font-weight:800;color:#36e6ff;font-size:13.5px;margin-bottom:10px;line-height:1.3}
+.corr-placar{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.corr-pl-row{display:flex;justify-content:space-between;align-items:center;background:#0e1a30;border:1px solid #1d2c4f;border-radius:10px;padding:9px 12px;color:#cfe0ff}
+.corr-pl-row b{color:#fff;font-size:18px}
+.corr-adv-tit{font-size:12.5px;color:#9fb0d6;margin:8px 0 6px;font-weight:700}
+.corr-adv{display:flex;align-items:center;gap:10px;background:#0e1a30;border:1px solid #1d2c4f;border-radius:10px;padding:7px 10px;margin-bottom:6px;color:#cfe0ff;font-size:13px}
+.corr-adv span{flex:1}
+.corr-adv em{color:#7d8db4;font-style:normal;font-size:12px}
+.corr-contest{border:1px solid #ff5b6e66;background:transparent;color:#ff8a9b;border-radius:9px;padding:7px 10px;font-size:12px;cursor:pointer}
+.corr-abandon{width:100%;border:1px solid #44557d;background:transparent;color:#aebbd8;border-radius:11px;padding:11px;cursor:pointer;font-size:13.5px}
 
 </style>
 </head>
@@ -214,6 +232,9 @@ let PIN_REQUERIDO=false; // ligado pela recepção: ao abrir, pede o PIN e cai d
 let batalhasAbertas=[]; // batalhas em andamento com janela de entrada aberta
 let pontosAdversarios=[], contestacoesRecebidas=[];
 let modoCorr=null, corrPin="", telaCorr=false, corrRank=null, corrTally={v:0,d:0}, corrCombate=false;
+// combate do corretor avulso (1×1 e equipe)
+let corrDuelo=null, corrInBattle=false, corrDueloId=null, corrDesafioPend=null, corrPontosAdv=[];
+let corrSouLutador=false; // true só quando sou participante NOMEADO (1×1) — habilita abandonar
 function ph(t,c){return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='"+c+"'/><text x='100' y='100' font-family='sans-serif' font-size='16' fill='#fff' text-anchor='middle'>"+t+"</text></svg>")));}
 const uniq=a=>[...new Set(a)];
 const dirs=()=>uniq(BASE.map(b=>b.dir));
@@ -598,20 +619,86 @@ function bindCorretorLogin(){
 function corretorHTML(){
   const t=corrTally||{v:0,d:0}; const pts=(t.v||0)+(t.d||0)*3;
   const rank = corrRank ? `<div class="corr-rank">🏆 ${modoCorr.gerencia} em ${corrRank.pos}º lugar ${corrRank.atras!=null?`<span>(atrás do líder por ${corrRank.atras})</span>`:`<span>(liderando! 🔥)</span>`}</div>` : "";
-  const combate = corrCombate ? `<div class="corr-combate">⚔️ Sua gerência está em COMBATE — cada ponto conta!</div>` : "";
+  // desafio 1×1 chegando para mim (fora de batalha)
+  let desafio="";
+  if(corrDesafioPend && !corrInBattle){
+    const d=corrDesafioPend; const quem=(d.desafiante_corretor||d.desafiante||"Alguém");
+    desafio=`<div class="corr-desafio"><div class="corr-desafio-tit">⚔️ ${quem} te desafiou para um 1×1!</div>
+      <div class="corr-desafio-acts"><button class="corr-recusar" id="corrRecusar">Recusar</button><button class="corr-aceitar" id="corrAceitar">Aceitar e lutar</button></div></div>`;
+  }
+  // bloco de combate: arena (se em batalha) ou botão de desafiar
+  let combate="";
+  if(corrInBattle){ combate=corrArenaHTML(); }
+  else if(!desafio){ combate=`<button class="corr-desafiar" id="corrDesafiar">⚔ Desafiar / entrar em combate</button>`; }
   return `<div class="corrhead"><div><div class="eyebrow">CORRETOR</div><div class="corr-nome">${modoCorr.nome}</div><div class="corr-ger">Gerência ${modoCorr.gerencia}</div></div><button class="btn-sm" id="corrSair">sair</button></div>
   <div class="corr-tally">Hoje: <b>${t.v||0}</b> visita(s) · <b>${t.d||0}</b> doc(s) — <b>${pts} pts</b> pra ${modoCorr.gerencia}</div>
-  ${rank}${combate}
+  ${rank}${desafio}${combate}
   <div class="corr-btns">
     <button class="corr-mark vis" id="corrVis">🎯<span>VISITA</span><small>+1</small></button>
     <button class="corr-mark doc" id="corrDoc">🏆<span>DOCUMENTAÇÃO</span><small>+3</small></button>
   </div>
   <p class="corr-foot">Foto do comprovante obrigatória · vale na hora ⚡</p>`;
 }
+// arena do corretor: placar do combate + pontos do adversário (contestar) + abandonar
+function corrArenaHTML(){
+  if(!corrInBattle||!corrDuelo) return "";
+  const parts=[...(corrDuelo.participantes||[])].sort((a,b)=>(b.pontos||0)-(a.pontos||0));
+  const regraTxt = corrDuelo.regra==='tempo'?`⏱ por tempo (${corrDuelo.regra_valor} min)`:`🏁 meta ${corrDuelo.regra_valor}`;
+  const topTxt = corrSouLutador ? `⚔️ SEU COMBATE 1×1 · ${regraTxt}` : `⚔️ Sua gerência está em COMBATE · ${regraTxt}`;
+  const linhas = parts.map(p=>{
+    const nome = p.corretor || p.gerencia || 'Equipe';
+    const eu = (p.corretor_id&&String(p.corretor_id)===String(modoCorr.id)) || (!p.corretor_id&&String(p.equipe_id)===String(modoCorr.equipe_id));
+    return `<div class="corr-pl-row" style="${eu?'background:#0c2350;border:1px solid #1a5fc4':''}"><span>${nome}${eu?' <b style="color:#36e6ff">(você)</b>':''}</span><b>${p.pontos||0}</b></div>`;
+  }).join("");
+  const adv = corrPontosAdv.length ? `<div class="corr-adv-tit">Pontos do adversário — confira o comprovante</div>`+corrPontosAdv.map(p=>`<div class="corr-adv"><img src="${p.foto}" data-zoom="${p.foto}" style="width:46px;height:46px;border-radius:8px;object-fit:cover"/><span>${p.tipo==='doc'?'🏆 Doc':'🎯 Visita'} · ${p.hora}</span>${p.contestado?'<em>contestado ✓</em>':`<button data-contest="${p.id}" class="corr-contest">⚑ Contestar</button>`}</div>`).join("") : "";
+  return `<div class="corr-arena"><div class="corr-arena-top">${topTxt} — cada ponto conta pra você E pra ${modoCorr.gerencia}</div>
+    <div class="corr-placar">${linhas}</div>${adv}
+    ${corrSouLutador?`<button class="corr-abandon" id="corrAbandon">🏳 Abandonar combate</button>`:''}</div>`;
+}
 function bindCorretor(){
   document.getElementById("corrSair").onclick=sairCorretor;
   document.getElementById("corrVis").onclick=()=>openMarcar(modoCorr.nome, registrarPontoCorretor);
   document.getElementById("corrDoc").onclick=()=>openMarcar(modoCorr.nome, registrarPontoCorretor);
+  const bD=document.getElementById("corrDesafiar"); if(bD) bD.onclick=()=>openChallenge();
+  const bA=document.getElementById("corrAceitar"); if(bA) bA.onclick=()=>corrResponderDesafio(true);
+  const bR=document.getElementById("corrRecusar"); if(bR) bR.onclick=()=>corrResponderDesafio(false);
+  const bAb=document.getElementById("corrAbandon"); if(bAb) bAb.onclick=corrAbandonar;
+  document.querySelectorAll("#view [data-zoom]").forEach(i=>i.onclick=()=>{document.getElementById("zoomImg").src=i.dataset.zoom;document.getElementById("zoom").classList.add("on");});
+  document.querySelectorAll("#view [data-contest]").forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.contest; const alvo=corrPontosAdv.find(x=>String(x.id)===String(id)); if(alvo)alvo.contestado=true; render();
+    try{ await ArenaAPI.contestar(id, modoCorr.equipe_id); toast("Ponto contestado — o adversário será avisado."); }catch(e){}
+  });
+}
+async function corrResponderDesafio(aceita){
+  const d=corrDesafioPend; if(!d) return; corrDesafioPend=null;
+  try{ await ArenaAPI.responderDuelo(d.id, aceita); }catch(e){}
+  if(aceita){ await corrSyncCombate(); render(); toast("Combate começou! ⚔ Marque seus pontos."); }
+  else { render(); toast("Desafio recusado."); }
+}
+async function corrAbandonar(){
+  if(!corrDueloId) return;
+  if(!confirm("Abandonar o combate? Você sai e o adversário leva a melhor.")) return;
+  try{ await ArenaAPI.desistirDuelo(corrDueloId, modoCorr.equipe_id); }catch(e){}
+  corrInBattle=false; corrDuelo=null; corrDueloId=null; corrPontosAdv=[];
+  await carregarCorretor(); toast("Você saiu do combate.");
+}
+// oferece entrar num combate de corretor em andamento (quando o limite de novos foi atingido)
+async function corrOferecerEntrar(){
+  let lista=[];
+  try{ const r=await ArenaAPI.duelosAtivos(); lista=((r&&r.duelos)||[]).filter(d=>d.nivel==='corretor'&&d.pode_entrar); }catch(e){}
+  if(!lista.length){ toast("Sem combates abertos para entrar agora. Tente em instantes.",true); return; }
+  const m=document.getElementById("cmodal");
+  m.innerHTML=`<div class="csheet"><button class="cback" onclick="document.getElementById('cmodal').classList.remove('on')">✕ fechar</button>
+    <h3>Entrar num combate</h3><p class="cl">O limite de novos combates foi atingido. Entre num que já está rolando:</p>
+    <div class="clist">${lista.map(d=>{const nomes=(d.participantes||[]).map(p=>p.corretor||p.gerencia).join(" ⚔ ");return `<div class="crow" onclick="corrEntrarEm(${d.id})"><div class="info"><div class="nm">${nomes}</div><div class="s">${d.vagas} vaga(s) · ${d.regra==='tempo'?d.regra_valor+' min':'meta '+d.regra_valor}</div></div><div class="on">entrar →</div></div>`;}).join("")}</div></div>`;
+  m.classList.add("on");
+}
+async function corrEntrarEm(did){
+  document.getElementById("cmodal").classList.remove("on");
+  try{ const r=await ArenaAPI.entrarDuelo(did, modoCorr.equipe_id, modoCorr.id);
+    if(r&&r.ok){ await corrSyncCombate(); render(); toast("Você entrou no combate! ⚔"); }
+    else toast((r&&r.erro)||"Não foi possível entrar",true);
+  }catch(e){ toast("Sem conexão",true); }
 }
 async function carregarCorretor(){
   if(!modoCorr) return;
@@ -624,8 +711,31 @@ async function carregarCorretor(){
     if(r&&r.ok&&Array.isArray(r.pontos)){ const meu=r.pontos.find(p=>String(p.corretor_id)===String(modoCorr.id));
       corrTally = meu ? {v:parseInt(meu.visitas)||0, d:parseInt(meu.docs)||0} : {v:0,d:0}; }
   }catch(e){}
-  try{ const r=await ArenaAPI.meuDuelo(modoCorr.equipe_id); corrCombate=!!(r&&r.ok&&r.duelo&&r.duelo.status==='ativo'); }catch(e){ corrCombate=false; }
+  await corrSyncCombate();
   if(modoCorr) render();
+}
+// sincroniza o estado de combate do corretor (duelo dele + pontos do adversário + desafio recebido)
+async function corrSyncCombate(){
+  if(!modoCorr) return;
+  try{
+    const md=await ArenaAPI.meuDuelo(modoCorr.equipe_id, modoCorr.id);
+    const duelo=(md&&md.ok)?md.duelo:null;
+    corrDuelo=duelo;
+    corrInBattle=!!(duelo&&duelo.status==='ativo');
+    corrCombate=corrInBattle;
+    corrSouLutador = !!(duelo && (duelo.participantes||[]).some(p=>p.corretor_id&&String(p.corretor_id)===String(modoCorr.id)));
+    if(corrInBattle){
+      corrDueloId=duelo.id;
+      try{ const pr=await ArenaAPI.pontosDuelo(duelo.id, modoCorr.equipe_id);
+        if(pr&&pr.ok) corrPontosAdv=(pr.pontos||[]).map(p=>({id:p.id,equipe:p.equipe,tipo:p.tipo==='documentacao'?'doc':'visita',foto:p.foto,hora:(p.criado_em||'').slice(11,16),contestado:p.contestado==1}));
+      }catch(e){ corrPontosAdv=[]; }
+      corrDesafioPend=null;
+    } else {
+      corrPontosAdv=[];
+      // só procuro desafio recebido quando NÃO estou em batalha nem esperando um aceite
+      try{ const r=await ArenaAPI.desafioParaMim(modoCorr.equipe_id, modoCorr.id); corrDesafioPend=(r&&r.ok)?r.desafio:null; }catch(e){ corrDesafioPend=null; }
+    }
+  }catch(e){}
 }
 async function registrarPontoCorretor(){
   document.getElementById("modal").classList.remove("on");
@@ -700,13 +810,20 @@ async function carregarOnline(){
   try{
     const res=await ArenaAPI.listarEquipes();
     if(res&&res.ok&&Array.isArray(res.equipes)){
-      const minha=team();
+      const minhaId=meuEquipeId();
       ONLINE=res.equipes
-        .filter(e=>e.online==1 && !(minha&&e.id===minha.id))
-        .map(e=>({id:e.id,ger:e.gerencia,sup:e.superintendencia,corretores:(e.corretores||[]).map(c=>c.nome)}));
+        .filter(e=>e.online==1 && !(minhaId&&e.id===minhaId))
+        // corretores como objetos {id,nome} para permitir o 1×1 direcionado
+        .map(e=>({id:e.id,ger:e.gerencia,sup:e.superintendencia,corretores:(e.corretores||[]).map(c=>({id:c.id,nome:c.nome}))}));
     }
   }catch(e){}
 }
+// contexto do desafiante: o gerente logado OU o corretor avulso (modoCorr)
+function meuEquipeId(){ return modoCorr ? modoCorr.equipe_id : (team()&&team().id); }
+function meuLabelDuelo(){ return modoCorr ? modoCorr.nome : (team()&&team().ger); }
+function souCorretorDuelo(){ return !!modoCorr; }
+const corrNm=c=>(typeof c==='string'?c:(c&&c.nome)||'');
+const corrIdOf=c=>(typeof c==='string'?null:(c&&c.id)||null);
 let cStep="level",cLevel=null,cOppGer=null,cOppCorr=null,cRuleType=null,cRuleVal=null,waitInt=null;
 function openChallenge(){cStep="level";cLevel=cOppGer=cOppCorr=cRuleType=cRuleVal=null;document.getElementById("cmodal").classList.add("on");cRender();carregarOnline().then(()=>{if(cStep==="oppGer")cRender();});}
 function closeChallenge(){document.getElementById("cmodal").classList.remove("on");clearInterval(waitInt);}
@@ -718,47 +835,62 @@ function cRender(){
   else if(cStep==="oppGer")h=`<button class="cback" onclick="cBack('level')">← voltar</button><h3>${cLevel==='ger'?'Equipe rival':'Gerente do corretor'}</h3><p class="cl">Online agora:</p>
     <div class="clist">${ONLINE.map((o,i)=>`<div class="crow" onclick="cPickGer(${i})"><div class="av">${o.ger.split(" ").pop()[0]}</div><div class="info"><div class="nm">${o.ger}</div><div class="s">${o.sup}</div></div><div class="on"><span class="d"></span> online</div></div>`).join("")}</div>`;
   else if(cStep==="oppCorr")h=`<button class="cback" onclick="cBack('oppGer')">← voltar</button><h3>Qual corretor?</h3><p class="cl">De ${cOppGer.ger}:</p>
-    <div class="clist">${cOppGer.corretores.map((c,i)=>`<div class="crow" onclick="cPickCorr(${i})"><div class="av">${c[0]}</div><div class="info"><div class="nm">${c}</div></div></div>`).join("")}</div>`;
-  else if(cStep==="rule"){const opp=cLevel==='ger'?cOppGer.ger:(cOppCorr+" ("+cOppGer.ger+")");const opts=cRuleType==='meta'?[5,10,15,20]:[15,30,45,60];const u=cRuleType==='meta'?'visitas':'min';
+    <div class="clist">${cOppGer.corretores.map((c,i)=>{const nm=corrNm(c);return `<div class="crow" onclick="cPickCorr(${i})"><div class="av">${nm[0]||'?'}</div><div class="info"><div class="nm">${nm}</div></div></div>`;}).join("")}</div>`;
+  else if(cStep==="rule"){const opp=cLevel==='ger'?cOppGer.ger:(corrNm(cOppCorr)+" ("+cOppGer.ger+")");const opts=cRuleType==='meta'?[5,10,15,20]:[15,30,45,60];const u=cRuleType==='meta'?'visitas':'min';
     h=`<button class="cback" onclick="cBack('${cLevel==='ger'?'oppGer':'oppCorr'}')">← voltar</button><h3>Como vence?</h3><p class="cl">Desafiando: <b style="color:var(--cyan)">${opp}</b></p>
     <div class="ruletabs"><div class="rt ${cRuleType==='meta'?'sel':''}" onclick="cSetRule('meta')">🏁 META<small>primeiro a chegar</small></div><div class="rt ${cRuleType==='tempo'?'sel':''}" onclick="cSetRule('tempo')">⏱ TEMPO<small>quem fizer mais</small></div></div>
     ${cRuleType?`<div class="vals">${opts.map(o=>`<div class="val ${cRuleVal===o?'sel':''}" onclick="cSetVal(${o})">${o}<small>${u}</small></div>`).join("")}</div>`:''}
     <button class="fire" ${cRuleType&&cRuleVal?'':'disabled'} onclick="cFire()">⚔ Lançar desafio</button>`;}
-  else if(cStep==="waiting"){const opp=cLevel==='ger'?cOppGer.ger:(cOppCorr+" ("+cOppGer.ger+")");
-    h=`<div class="waiting"><div class="eyebrow">DESAFIO LANÇADO</div><div class="vs"><span class="o1">${team().ger}</span> ⚔ <span class="o2">${opp}</span></div>
+  else if(cStep==="waiting"){const opp=cLevel==='ger'?cOppGer.ger:(corrNm(cOppCorr)+" ("+cOppGer.ger+")");
+    h=`<div class="waiting"><div class="eyebrow">DESAFIO LANÇADO</div><div class="vs"><span class="o1">${meuLabelDuelo()}</span> ⚔ <span class="o2">${opp}</span></div>
     <div class="spinner"></div><div class="countdown" id="cwcd">10</div><div class="st">aguardando aceite…</div><button class="cback" style="margin-top:18px" onclick="closeChallenge()">cancelar</button></div>`;}
   m.innerHTML=`<div class="csheet">${h}</div>`;
 }
 function cBack(s){cStep=s;cRender();}
 function cPickLevel(l){cLevel=l;cStep="oppGer";cRender();}
 function cPickGer(i){cOppGer=ONLINE[i];cStep=cLevel==='ger'?"rule":"oppCorr";cRender();}
-function cPickCorr(i){cOppCorr=cOppGer.corretores[i];cStep="rule";cRender();}
+function cPickCorr(i){cOppCorr=cOppGer.corretores[i];
+  // 1×1 iniciado pelo corretor: regra é fixa por tempo (config) — vai direto pro disparo
+  if(souCorretorDuelo()){cRuleType='tempo';cRuleVal=null;cFire();return;}
+  cStep="rule";cRender();}
 function cSetRule(t){cRuleType=t;cRuleVal=null;cRender();}
 function cSetVal(v){cRuleVal=v;cRender();}
 let meuDueloId=null;
 function cFire(){
   cStep="waiting";cRender();
-  const meta = cRuleType==='meta'? cRuleVal : cRuleVal; // valor (visitas ou minutos)
+  const ehCorr=souCorretorDuelo();
+  const meuEq=meuEquipeId();
   let t=10; clearInterval(waitInt);
   // cria o desafio no banco (se conectado)
-  if(API_ON && team().id && cOppGer && cOppGer.id){
+  if(API_ON && meuEq && cOppGer && cOppGer.id){
     ArenaAPI.criarDuelo({
       nivel: cLevel==='ger'?'gerencia':'corretor',
       regra: cRuleType, regra_valor: cRuleVal,
-      desafiante_equipe_id: team().id,
-      desafiado_equipe_id: cOppGer.id
-    }).then(r=>{ if(r&&r.ok) meuDueloId=r.duelo_id; }).catch(()=>{});
+      desafiante_equipe_id: meuEq,
+      desafiado_equipe_id: cOppGer.id,
+      // 1×1: corretor desafiante (se eu sou corretor) e corretor desafiado
+      desafiante_corretor_id: (ehCorr && cLevel==='corr') ? modoCorr.id : undefined,
+      desafiado_corretor_id: (cLevel==='corr') ? corrIdOf(cOppCorr) : undefined
+    }).then(r=>{
+      if(r&&r.ok){ if(ehCorr) corrDueloId=r.duelo_id; else meuDueloId=r.duelo_id; }
+      else { // limite de combates atingido (409) ou outra falha → não fica preso na espera
+        clearInterval(waitInt);closeChallenge();
+        if(r&&/limite de/i.test(r.erro||'')){ toast(r.erro,true); if(ehCorr) corrOferecerEntrar(); }
+        else toast((r&&r.erro)||"Não foi possível lançar o desafio",true);
+      }
+    }).catch(()=>{ clearInterval(waitInt);closeChallenge();toast("Sem conexão",true); });
   }
   // conta 10s; a cada segundo verifica se o oponente aceitou
   waitInt=setInterval(async()=>{
     t--; const e=document.getElementById("cwcd"); if(e)e.textContent=t;
     // verifica aceite real
-    if(API_ON && team().id){
+    if(API_ON && meuEq){
       try{
-        const r=await ArenaAPI.meuDuelo(team().id);
+        const r=await ArenaAPI.meuDuelo(meuEq, ehCorr?modoCorr.id:undefined);
         if(r&&r.ok&&r.duelo&&r.duelo.status==='ativo'){
           clearInterval(waitInt);closeChallenge();
-          entrarEmDueloReal(r.duelo);
+          if(ehCorr){ await corrSyncCombate(); render(); toast("Oponente aceitou! ⚔ Combate na TV — marque seus pontos!"); }
+          else entrarEmDueloReal(r.duelo);
           return;
         }
       }catch(err){}
@@ -766,7 +898,7 @@ function cFire(){
     if(t<=0){
       clearInterval(waitInt);closeChallenge();
       if(API_ON) toast("O oponente não respondeu a tempo (ou recusou).",true);
-      else entrarEmDuelo(cLevel==='ger'?cOppGer.ger:cOppCorr); // modo local: simula aceite
+      else if(!ehCorr) entrarEmDuelo(cLevel==='ger'?cOppGer.ger:corrNm(cOppCorr)); // modo local: simula aceite
     }
   },1000);
 }
@@ -907,6 +1039,7 @@ async function bootstrap(){
   render();
   // polling: verifica desafios recebidos e atualiza a arena durante o duelo
   setInterval(()=>{
+    if(modoCorr){ corrSyncCombate().then(()=>{ if(modoCorr) render(); }); return; }
     verificarDesafioRecebido();
     if(inBattle) carregarArenaDoBanco();
     else carregarBatalhasAbertas();

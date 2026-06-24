@@ -31,20 +31,33 @@ if ($acao === 'marcar') {
   if (!$eid || !in_array($tipo,['visita','documentacao'])) fail('Dados inválidos');
   if (!$foto) fail('A foto do comprovante é obrigatória');
   $valor = valorDoTipo($tipo);
-  // duelo ativo da equipe (se houver) — o ponto contará nele também quando aprovado
-  $st = db()->prepare("SELECT d.id FROM duelos d JOIN duelo_participantes p ON p.duelo_id=d.id
-                       WHERE p.equipe_id=? AND d.status='ativo' LIMIT 1");
-  $st->execute([$eid]);
-  $duelo = $st->fetch(); $duelo_id = $duelo ? $duelo['id'] : null;
+  // Qual combate este ponto alimenta? Prioriza o 1×1 DESTE corretor; senão, o duelo da equipe.
+  // (O ponto SEMPRE conta no total geral da equipe — a linha em `pontos` tem equipe_id; isto é só o placar DENTRO do combate.)
+  $duelo_id = null; $por_corretor = false;
+  if ($cid) {
+    $q = db()->prepare("SELECT d.id FROM duelos d JOIN duelo_participantes p ON p.duelo_id=d.id
+                        WHERE d.status='ativo' AND p.equipe_id=? AND p.corretor_id=? LIMIT 1");
+    $q->execute([$eid,$cid]); $r = $q->fetch();
+    if ($r) { $duelo_id = (int)$r['id']; $por_corretor = true; }
+  }
+  if (!$duelo_id) {
+    $q = db()->prepare("SELECT d.id FROM duelos d JOIN duelo_participantes p ON p.duelo_id=d.id
+                        WHERE d.status='ativo' AND p.equipe_id=? AND p.corretor_id IS NULL LIMIT 1");
+    $q->execute([$eid]); $r = $q->fetch();
+    if ($r) $duelo_id = (int)$r['id'];
+  }
   // Mecânica de contestação: o ponto VALE NA HORA (entra como aprovado).
   // A fiscalização é feita depois pelos adversários (contestação), não por aprovação prévia.
   $ins = db()->prepare("INSERT INTO pontos (equipe_id,corretor_id,tipo,valor,foto,duelo_id,status,decidido_em)
                         VALUES (?,?,?,?,?,?, 'aprovado', NOW())");
   $ins->execute([$eid,$cid,$tipo,$valor,$foto,$duelo_id]);
   $pid = db()->lastInsertId();
-  // se há duelo ativo, soma no placar do duelo na hora
-  if ($duelo_id) {
-    db()->prepare('UPDATE duelo_participantes SET pontos=pontos+? WHERE duelo_id=? AND equipe_id=?')
+  // soma no placar do combate na hora: por corretor (1×1) ou por equipe (duelo de gerência)
+  if ($duelo_id && $por_corretor) {
+    db()->prepare('UPDATE duelo_participantes SET pontos=pontos+? WHERE duelo_id=? AND corretor_id=?')
+        ->execute([$valor,$duelo_id,$cid]);
+  } elseif ($duelo_id) {
+    db()->prepare('UPDATE duelo_participantes SET pontos=pontos+? WHERE duelo_id=? AND equipe_id=? AND corretor_id IS NULL')
         ->execute([$valor,$duelo_id,$eid]);
   }
   // evento para a TV animar (soco/explosão)
@@ -74,10 +87,20 @@ if ($acao === 'aprovar') {
   if (!$ponto) fail('Pendência não encontrada');
   db()->prepare("UPDATE pontos SET status='aprovado', decidido_em=NOW() WHERE id=?")->execute([$pid]);
 
-  // se há duelo ativo, soma no placar do duelo
+  // se há duelo ativo, soma no placar do duelo (por corretor no 1×1; senão por equipe)
   if ($ponto['duelo_id']) {
-    db()->prepare('UPDATE duelo_participantes SET pontos=pontos+? WHERE duelo_id=? AND equipe_id=?')
-        ->execute([$ponto['valor'],$ponto['duelo_id'],$ponto['equipe_id']]);
+    $ehCorr = false;
+    if (!empty($ponto['corretor_id'])) {
+      $chk = db()->prepare('SELECT 1 FROM duelo_participantes WHERE duelo_id=? AND corretor_id=? LIMIT 1');
+      $chk->execute([$ponto['duelo_id'],$ponto['corretor_id']]); $ehCorr = (bool)$chk->fetch();
+    }
+    if ($ehCorr) {
+      db()->prepare('UPDATE duelo_participantes SET pontos=pontos+? WHERE duelo_id=? AND corretor_id=?')
+          ->execute([$ponto['valor'],$ponto['duelo_id'],$ponto['corretor_id']]);
+    } else {
+      db()->prepare('UPDATE duelo_participantes SET pontos=pontos+? WHERE duelo_id=? AND equipe_id=? AND corretor_id IS NULL')
+          ->execute([$ponto['valor'],$ponto['duelo_id'],$ponto['equipe_id']]);
+    }
   }
   // dados para a TV animar (nome da equipe + se é duelo)
   $e = db()->prepare('SELECT gerencia FROM equipes WHERE id=?'); $e->execute([$ponto['equipe_id']]);

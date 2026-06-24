@@ -467,6 +467,11 @@ async function renderRodada(){
         <div class="field" style="flex:1;min-width:140px"><label>Visita (pts)</label><input type="number" id="cV" value="${cfg.pts_visita}" min="1"/></div>
         <div class="field" style="flex:1;min-width:140px"><label>Documentação (pts)</label><input type="number" id="cD" value="${cfg.pts_documentacao}" min="1"/></div>
       </div>
+      <div class="row" style="margin-top:4px">
+        <div class="field" style="flex:1;min-width:140px"><label>Combates 1×1 simultâneos (máx)</label><input type="number" id="cMax" value="${cfg.max_combates_corretor!=null?cfg.max_combates_corretor:3}" min="1"/></div>
+        <div class="field" style="flex:1;min-width:140px"><label>Duração do combate 1×1 (min)</label><input type="number" id="cDur" value="${cfg.combate_corretor_min!=null?cfg.combate_corretor_min:10}" min="1"/></div>
+      </div>
+      <p class="lead" style="font-size:12.5px;margin:2px 0 10px">Limita os combates 1×1 de corretor para o <b>painel geral</b> continuar aparecendo na TV (que faz rodízio entre combates e ranking). Atingido o máximo, quem quiser combater entra num combate em andamento.</p>
       <button class="btn btn-cyan" id="salvarPts">Salvar pontuação</button>
     </div>
     <div class="card"><h2 style="font-size:16px">Start da sala</h2>
@@ -515,7 +520,8 @@ async function renderRodada(){
     document.querySelectorAll("[data-modo]").forEach(x=>x.classList.toggle("sel",x.dataset.modo===modo));renderAtalhos();});
   document.getElementById("salvarPts").onclick=async()=>{
     const v=+document.getElementById("cV").value,d=+document.getElementById("cD").value;
-    try{await ArenaAPI.salvarConfig({pts_visita:v,pts_documentacao:d,rodada_min:cfg.rodada_min||120});toast("Pontuação salva ✓");}catch(e){}};
+    const mx=Math.max(1,+document.getElementById("cMax").value||3),du=Math.max(1,+document.getElementById("cDur").value||10);
+    try{await ArenaAPI.salvarConfig({pts_visita:v,pts_documentacao:d,rodada_min:cfg.rodada_min||120,max_combates_corretor:mx,combate_corretor_min:du});toast("Configuração salva ✓");}catch(e){}};
   document.getElementById("btnStart").onclick=async()=>{
     const val=+document.getElementById("cVal").value;
     try{await ArenaAPI.startSala(modo,val);toast("Sala iniciada! 🚀");renderRodada();}catch(e){toast("Falha",true);}};

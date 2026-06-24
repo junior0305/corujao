@@ -5,6 +5,18 @@ require __DIR__.'/db.php';
 $acao = $_GET['acao'] ?? '';
 $CORES = ['azul','branco','azulclaro','ciano','cinza'];
 define('JANELA_ENTRADA', 0.20); // 3º ao 5º só entram até 20% da batalha
+define('JANELA_ENTRADA_CORRETOR', 0.80); // combate de corretor: overflow entra até 80% (o limite empurra gente pra cá)
+
+// garante a coluna corretor_id no participante (combate 1×1) — idempotente
+try { db()->exec("ALTER TABLE duelo_participantes ADD COLUMN corretor_id INT NULL"); } catch (Exception $e) {}
+
+// limites do combate de corretor (config; default seguro se a coluna não existir ainda)
+function limitesCombateCorretor() {
+  try {
+    $c = db()->query("SELECT max_combates_corretor, combate_corretor_min FROM config WHERE id=1")->fetch();
+    return ['max'=>max(1,(int)($c['max_combates_corretor'] ?? 3)), 'min'=>max(1,(int)($c['combate_corretor_min'] ?? 10))];
+  } catch (Exception $e) { return ['max'=>3,'min'=>10]; }
+}
 
 // progresso (0..1) de uma batalha já carregada (linha da tabela duelos)
 function progressoDuelo($duelo) {
@@ -47,16 +59,32 @@ function autoEncerrarSeTerminou($duelo) {
 if ($acao === 'para_mim') {
   // desafios AGUARDANDO resposta, onde esta equipe é o desafiado (ordem=2)
   $eid = (int)($_GET['equipe_id'] ?? 0);
+  $cid = !empty($_GET['corretor_id']) ? (int)$_GET['corretor_id'] : null;
   if (!$eid) fail('Informe a equipe');
-  $st = db()->prepare("SELECT d.id, d.nivel, d.regra, d.regra_valor,
-                              des.gerencia AS desafiante
-                       FROM duelos d
-                       JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=? AND p.ordem=2
-                       JOIN duelo_participantes pd ON pd.duelo_id=d.id AND pd.ordem=1
-                       JOIN equipes des ON des.id=pd.equipe_id
-                       WHERE d.status='aguardando'
-                       ORDER BY d.id DESC LIMIT 1");
-  $st->execute([$eid]);
+  if ($cid) {
+    // COMBATE DE CORRETOR (1×1): só os desafios direcionados a ESTE corretor
+    $st = db()->prepare("SELECT d.id, d.nivel, d.regra, d.regra_valor,
+                                des.gerencia AS desafiante, cd.nome AS desafiante_corretor
+                         FROM duelos d
+                         JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=? AND p.corretor_id=? AND p.ordem=2
+                         JOIN duelo_participantes pd ON pd.duelo_id=d.id AND pd.ordem=1
+                         JOIN equipes des ON des.id=pd.equipe_id
+                         LEFT JOIN corretores cd ON cd.id=pd.corretor_id
+                         WHERE d.status='aguardando' AND d.nivel='corretor'
+                         ORDER BY d.id DESC LIMIT 1");
+    $st->execute([$eid,$cid]);
+  } else {
+    // desafios de EQUIPE à gerência (não vaza 1×1 de corretor para o gerente)
+    $st = db()->prepare("SELECT d.id, d.nivel, d.regra, d.regra_valor,
+                                des.gerencia AS desafiante
+                         FROM duelos d
+                         JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=? AND p.ordem=2 AND p.corretor_id IS NULL
+                         JOIN duelo_participantes pd ON pd.duelo_id=d.id AND pd.ordem=1
+                         JOIN equipes des ON des.id=pd.equipe_id
+                         WHERE d.status='aguardando' AND d.nivel<>'corretor'
+                         ORDER BY d.id DESC LIMIT 1");
+    $st->execute([$eid]);
+  }
   $row = $st->fetch();
   ok(['desafio' => $row ?: null]);
 }
@@ -64,18 +92,29 @@ if ($acao === 'para_mim') {
 if ($acao === 'meu_duelo') {
   // situação do duelo ativo/aguardando em que a equipe participa (para o desafiante saber se foi aceito)
   $eid = (int)($_GET['equipe_id'] ?? 0);
+  $cid = !empty($_GET['corretor_id']) ? (int)$_GET['corretor_id'] : null;
   if (!$eid) fail('Informe a equipe');
-  $st = db()->prepare("SELECT d.* FROM duelos d
-                       JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=?
-                       WHERE d.status IN ('aguardando','ativo')
-                       ORDER BY d.id DESC LIMIT 1");
-  $st->execute([$eid]);
+  if ($cid) {
+    // corretor: prioriza o combate 1×1 DELE; se não houver, cai no duelo da equipe
+    $st = db()->prepare("SELECT d.* FROM duelos d
+                         JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=?
+                         WHERE d.status IN ('aguardando','ativo')
+                         ORDER BY (p.corretor_id = ?) DESC, d.id DESC LIMIT 1");
+    $st->execute([$eid,$cid]);
+  } else {
+    $st = db()->prepare("SELECT d.* FROM duelos d
+                         JOIN duelo_participantes p ON p.duelo_id=d.id AND p.equipe_id=?
+                         WHERE d.status IN ('aguardando','ativo')
+                         ORDER BY d.id DESC LIMIT 1");
+    $st->execute([$eid]);
+  }
   $d = $st->fetch();
   if ($d) {
     // se a batalha já terminou (meta/tempo), encerra agora e avisa o tablet para sair do duelo
     if (autoEncerrarSeTerminou($d)) $d['status'] = 'encerrado';
-    $pp = db()->prepare("SELECT p.equipe_id,p.cor,p.pontos,p.ordem,e.gerencia
+    $pp = db()->prepare("SELECT p.equipe_id,p.corretor_id,p.cor,p.pontos,p.ordem,e.gerencia,c.nome AS corretor
                          FROM duelo_participantes p JOIN equipes e ON e.id=p.equipe_id
+                         LEFT JOIN corretores c ON c.id=p.corretor_id
                          WHERE p.duelo_id=? ORDER BY p.ordem");
     $pp->execute([$d['id']]); $d['participantes'] = $pp->fetchAll();
   }
@@ -109,22 +148,54 @@ if ($acao === 'criar') {
   exigirCodigo();
   // desafiante cria; fica 'aguardando' o aceite do desafiado
   $d = body();
-  $nivel = $d['nivel'] ?? 'gerencia'; $regra = $d['regra'] ?? 'meta'; $rv = (int)($d['regra_valor'] ?? 10);
+  $nivel = ($d['nivel'] ?? 'gerencia') === 'corretor' ? 'corretor' : 'gerencia';
+  $regra = $d['regra'] ?? 'meta'; $rv = (int)($d['regra_valor'] ?? 10);
   $desafiante = (int)($d['desafiante_equipe_id'] ?? 0);
   $desafiado  = (int)($d['desafiado_equipe_id'] ?? 0);
+  $corrDesafiante = !empty($d['desafiante_corretor_id']) ? (int)$d['desafiante_corretor_id'] : null;
+  $corrDesafiado  = !empty($d['desafiado_corretor_id'])  ? (int)$d['desafiado_corretor_id']  : null;
   if (!$desafiante || !$desafiado) fail('Informe as equipes');
+
+  // Só é COMBATE 1×1 de verdade quando OS DOIS lutadores são nomeados (corretor avulso).
+  // "corretor x corretor" lançado pelo gerente (sem nomear o próprio) segue como duelo de EQUIPE (legado).
+  $eh1x1 = ($nivel === 'corretor' && $corrDesafiante && $corrDesafiado);
+  if (!$eh1x1) { $nivel = 'gerencia'; $corrDesafiante = null; $corrDesafiado = null; }
+
+  if ($eh1x1) {
+    // limita nº simultâneo (rodízio da TV) e força tempo curto p/ o slot girar
+    $lim = limitesCombateCorretor();
+    // conta os ativos + os 'aguardando' recentes (desafio não aceito morre em 60s e não entope o limite)
+    $n = (int)db()->query("SELECT COUNT(*) n FROM duelos
+                           WHERE nivel='corretor' AND (status='ativo'
+                             OR (status='aguardando' AND criado_em > NOW() - INTERVAL 60 SECOND))")->fetch()['n'];
+    if ($n >= $lim['max']) {
+      // sem vaga p/ novo 1×1: o tablet deve oferecer ENTRAR num combate em andamento
+      fail('Limite de '.$lim['max'].' combates individuais atingido. Entre em um combate em andamento.', 409);
+    }
+    $regra = 'tempo'; $rv = $lim['min']; // combate de corretor é sempre por tempo (teto da config)
+  }
+
   $st = db()->prepare('INSERT INTO duelos (nivel,regra,regra_valor,status) VALUES (?,?,?,"aguardando")');
   $st->execute([$nivel,$regra,$rv]);
   $did = db()->lastInsertId();
   $cores = $CORES; shuffle($cores);
-  db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,cor,ordem) VALUES (?,?,?,1)')->execute([$did,$desafiante,$cores[0]]);
-  db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,cor,ordem) VALUES (?,?,?,2)')->execute([$did,$desafiado,$cores[1]]);
+  db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,corretor_id,cor,ordem) VALUES (?,?,?,?,1)')->execute([$did,$desafiante,$corrDesafiante,$cores[0]]);
+  db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,corretor_id,cor,ordem) VALUES (?,?,?,?,2)')->execute([$did,$desafiado,$corrDesafiado,$cores[1]]);
   $g = db()->prepare('SELECT id,gerencia,superintendencia FROM equipes WHERE id IN (?,?)'); $g->execute([$desafiante,$desafiado]);
   $nomes=[]; $sups=[]; foreach($g->fetchAll() as $r){$nomes[$r['id']]=$r['gerencia'];$sups[$r['id']]=$r['superintendencia'];}
-  emitir('desafio', ['duelo_id'=>$did,
+  // nomes dos corretores (1×1) p/ a TV/animação exibirem pessoa, não só gerência
+  $cn = [];
+  if ($corrDesafiante || $corrDesafiado) {
+    $cs = db()->prepare('SELECT id,nome FROM corretores WHERE id IN (?,?)');
+    $cs->execute([$corrDesafiante ?: 0, $corrDesafiado ?: 0]);
+    foreach($cs->fetchAll() as $r){ $cn[$r['id']]=$r['nome']; }
+  }
+  emitir('desafio', ['duelo_id'=>$did, 'nivel'=>$nivel,
     'desafiante'=>$nomes[$desafiante]??'','desafiado'=>$nomes[$desafiado]??'',
     'desafiante_id'=>$desafiante,'desafiado_id'=>$desafiado,
     'desafiante_sup'=>$sups[$desafiante]??'','desafiado_sup'=>$sups[$desafiado]??'',
+    'desafiante_corretor'=>$corrDesafiante?($cn[$corrDesafiante]??''):'',
+    'desafiado_corretor'=>$corrDesafiado?($cn[$corrDesafiado]??''):'',
     'regra'=>$regra,'regra_valor'=>$rv]);
   ok(['duelo_id'=>$did]);
 }
@@ -147,25 +218,34 @@ if ($acao === 'responder') {
 
 if ($acao === 'entrar') {
   exigirCodigo();
-  // 3º ao 5º entra direto (sem aceite), DESDE QUE dentro da janela de 20% da batalha
+  // 3º ao 5º entra direto (sem aceite), DESDE QUE dentro da janela da batalha
   $d = body(); $did=(int)($d['duelo_id']??0); $eid=(int)($d['equipe_id']??0);
+  $cid = !empty($d['corretor_id']) ? (int)$d['corretor_id'] : null;
   if (!$did||!$eid) fail('Dados inválidos');
   // carrega o duelo para checar a janela de entrada
   $dl=db()->prepare('SELECT * FROM duelos WHERE id=?'); $dl->execute([$did]); $duelo=$dl->fetch();
   if (!$duelo) fail('Duelo não encontrado', 404);
   if ($duelo['status']!=='ativo') fail('A batalha não está ativa para entrada');
-  if (progressoDuelo($duelo) > JANELA_ENTRADA) fail('Janela de entrada encerrada: a batalha já passou de 20%');
+  // combate de corretor tem janela ampla (o limite de nº empurra gente pra entrar nos existentes)
+  $janela = ($duelo['nivel']==='corretor') ? JANELA_ENTRADA_CORRETOR : JANELA_ENTRADA;
+  if (progressoDuelo($duelo) > $janela) fail('Janela de entrada encerrada: a batalha já está perto do fim');
   $st=db()->prepare('SELECT COUNT(*) n FROM duelo_participantes WHERE duelo_id=?'); $st->execute([$did]);
   $n=(int)$st->fetch()['n']; if ($n>=5) fail('Duelo cheio (máx 5)');
-  // não pode entrar duas vezes
-  $ja=db()->prepare('SELECT 1 FROM duelo_participantes WHERE duelo_id=? AND equipe_id=?'); $ja->execute([$did,$eid]);
-  if ($ja->fetch()) fail('Equipe já está na batalha');
+  // não pode entrar duas vezes (por corretor no 1×1; por equipe nos demais)
+  if ($cid) {
+    $ja=db()->prepare('SELECT 1 FROM duelo_participantes WHERE duelo_id=? AND corretor_id=?'); $ja->execute([$did,$cid]);
+    if ($ja->fetch()) fail('Você já está na batalha');
+  } else {
+    $ja=db()->prepare('SELECT 1 FROM duelo_participantes WHERE duelo_id=? AND equipe_id=? AND corretor_id IS NULL'); $ja->execute([$did,$eid]);
+    if ($ja->fetch()) fail('Equipe já está na batalha');
+  }
   $usadas=db()->prepare('SELECT cor FROM duelo_participantes WHERE duelo_id=?'); $usadas->execute([$did]);
   $u=array_column($usadas->fetchAll(),'cor'); $livres=array_values(array_diff($CORES,$u));
   $cor=$livres? $livres[0] : $CORES[array_rand($CORES)];
-  db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,cor,ordem,pontos) VALUES (?,?,?,?,0)')->execute([$did,$eid,$cor,$n+1]);
+  db()->prepare('INSERT INTO duelo_participantes (duelo_id,equipe_id,corretor_id,cor,ordem,pontos) VALUES (?,?,?,?,?,0)')->execute([$did,$eid,$cid,$cor,$n+1]);
   $g=db()->prepare('SELECT gerencia,superintendencia FROM equipes WHERE id=?'); $g->execute([$eid]); $eq=$g->fetch();
-  emitir('entra_duelo', ['duelo_id'=>$did,'equipe_id'=>$eid,'gerencia'=>$eq['gerencia']??'','superintendencia'=>$eq['superintendencia']??'','cor'=>$cor]);
+  $cnome=''; if($cid){ $cq=db()->prepare('SELECT nome FROM corretores WHERE id=?'); $cq->execute([$cid]); $cnome=$cq->fetch()['nome']??''; }
+  emitir('entra_duelo', ['duelo_id'=>$did,'equipe_id'=>$eid,'gerencia'=>$eq['gerencia']??'','superintendencia'=>$eq['superintendencia']??'','corretor'=>$cnome,'cor'=>$cor]);
   ok();
 }
 
@@ -177,15 +257,18 @@ if ($acao === 'ativos') {
     // batalha que já terminou (meta/tempo) é encerrada aqui e NÃO entra na lista de ativos
     // — é isso que impede a TV de "reviver" o duelo no próximo sincronizarEstado.
     if (autoEncerrarSeTerminou($d)) continue;
-    $st = db()->prepare("SELECT p.equipe_id,p.cor,p.pontos,p.ordem,e.gerencia,e.superintendencia
+    $st = db()->prepare("SELECT p.equipe_id,p.corretor_id,p.cor,p.pontos,p.ordem,e.gerencia,e.superintendencia,c.nome AS corretor
                          FROM duelo_participantes p JOIN equipes e ON e.id=p.equipe_id
+                         LEFT JOIN corretores c ON c.id=p.corretor_id
                          WHERE p.duelo_id=? ORDER BY p.ordem");
     $st->execute([$d['id']]); $d['participantes'] = $st->fetchAll();
     $prog = progressoDuelo($d);
     $d['progresso'] = round($prog, 3);
     $d['vagas'] = max(0, 5 - count($d['participantes']));
-    // 3º ao 5º só entram em batalha ATIVA, dentro da janela e com vaga
-    $d['pode_entrar'] = ($d['status']==='ativo' && $prog <= JANELA_ENTRADA && $d['vagas'] > 0);
+    // 3º ao 5º só entram em batalha ATIVA, dentro da janela e com vaga.
+    // Combate de corretor tem janela ampla (o limite de nº empurra gente pra entrar nos existentes).
+    $janela = ($d['nivel']==='corretor') ? JANELA_ENTRADA_CORRETOR : JANELA_ENTRADA;
+    $d['pode_entrar'] = ($d['status']==='ativo' && $prog <= $janela && $d['vagas'] > 0);
     $saida[] = $d;
   }
   ok(['duelos' => $saida]);

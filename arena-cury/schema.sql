@@ -103,6 +103,8 @@ CREATE TABLE IF NOT EXISTS config (
   exigir_pin    TINYINT NOT NULL DEFAULT 0,           -- 1 = exige PIN por equipe no tablet
   exigir_login  TINYINT NOT NULL DEFAULT 0,           -- 1 = exige login na recepção/aprovação
   sessao_inicio TIMESTAMP NULL,                       -- início da sessão do dia (placar conta a partir daqui)
+  max_combates_corretor INT NOT NULL DEFAULT 3,       -- nº máx de combates 1×1 de corretor simultâneos (protege o rodízio da TV)
+  combate_corretor_min  INT NOT NULL DEFAULT 10,      -- duração (min) do combate 1×1 de corretor; gira o slot sozinho
   CHECK (id = 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

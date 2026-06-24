@@ -122,9 +122,16 @@ function exigirCodigo() {
   // (1) PIN por equipe
   if (exigirPinLigado()) {
     $d = body();
+    // bypass do CORRETOR avulso: PIN do corretor (válido hoje) dispensa o PIN da equipe
+    $pinCorr = isset($d['corretor_pin']) ? trim((string)$d['corretor_pin']) : '';
+    $corrOk = false;
+    if ($pinCorr !== '') {
+      $cq = db()->prepare("SELECT 1 FROM corretores WHERE pin=? AND pin_dia=CURDATE() AND ativo=1 LIMIT 1");
+      $cq->execute([$pinCorr]); $corrOk = (bool)$cq->fetch();
+    }
     $pin = isset($d['codigo']) ? trim((string)$d['codigo']) : '';
     $eid = isset($d['equipe_id']) ? (int)$d['equipe_id'] : null;
-    if (!pinValido($pin, $eid)) {
+    if (!$corrOk && !pinValido($pin, $eid)) {
       http_response_code(403);
       echo json_encode(['ok'=>false, 'erro'=>'PIN inválido ou expirado. Peça seu PIN na recepção.', 'codigo_invalido'=>true]);
       exit;
