@@ -236,6 +236,7 @@ let modoCorr=null, corrPin="", telaCorr=false, corrRank=null, corrTally={v:0,d:0
 let corrDuelo=null, corrInBattle=false, corrDueloId=null, corrDesafioPend=null, corrPontosAdv=[];
 let corrSouLutador=false; // true só quando sou participante NOMEADO (1×1) — habilita abandonar
 let corrAguardando=false; // desafiei alguém e aguardo o aceite — bloqueia novo desafio
+let corrTick=0; // contador do polling p/ baixar as fotos do adversário com menos frequência
 function ph(t,c){return "data:image/svg+xml;base64,"+btoa(unescape(encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='"+c+"'/><text x='100' y='100' font-family='sans-serif' font-size='16' fill='#fff' text-anchor='middle'>"+t+"</text></svg>")));}
 const uniq=a=>[...new Set(a)];
 const dirs=()=>uniq(BASE.map(b=>b.dir));
@@ -726,7 +727,8 @@ async function carregarCorretor(){
   if(modoCorr) render();
 }
 // sincroniza o estado de combate do corretor (duelo dele + pontos do adversário + desafio recebido)
-async function corrSyncCombate(){
+// comFotos=false pula o download (pesado) das fotos do adversário — usado na maioria dos ticks
+async function corrSyncCombate(comFotos=true){
   if(!modoCorr) return;
   try{
     const md=await ArenaAPI.meuDuelo(modoCorr.equipe_id, modoCorr.id);
@@ -739,9 +741,10 @@ async function corrSyncCombate(){
     if(duelo && corrSouLutador) corrDueloId=duelo.id; // guarda o id p/ cancelar/abandonar mesmo após reload
     if(corrInBattle){
       corrDueloId=duelo.id;
-      try{ const pr=await ArenaAPI.pontosDuelo(duelo.id, modoCorr.equipe_id);
+      // placar vem do meu_duelo (leve, todo tick); as FOTOS do adversário só de tempos em tempos
+      if(comFotos){ try{ const pr=await ArenaAPI.pontosDuelo(duelo.id, modoCorr.equipe_id);
         if(pr&&pr.ok) corrPontosAdv=(pr.pontos||[]).map(p=>({id:p.id,equipe:p.equipe,tipo:p.tipo==='documentacao'?'doc':'visita',foto:p.foto,hora:(p.criado_em||'').slice(11,16),contestado:p.contestado==1}));
-      }catch(e){ corrPontosAdv=[]; }
+      }catch(e){} }
       corrDesafioPend=null;
     } else {
       corrPontosAdv=[];
@@ -1061,7 +1064,7 @@ async function bootstrap(){
   render();
   // polling: verifica desafios recebidos e atualiza a arena durante o duelo
   setInterval(()=>{
-    if(modoCorr){ corrSyncCombate().then(()=>{ if(modoCorr) render(); }); return; }
+    if(modoCorr){ corrTick++; corrSyncCombate(corrTick%3===0).then(()=>{ if(modoCorr) render(); }); return; }
     verificarDesafioRecebido();
     if(inBattle) carregarArenaDoBanco();
     else carregarBatalhasAbertas();

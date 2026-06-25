@@ -164,6 +164,9 @@ CREATE INDEX idx_pontos_duelo         ON pontos (duelo_id);
 CREATE INDEX idx_presencas_dia        ON presencas (dia);
 CREATE INDEX idx_duelos_status        ON duelos (status);
 CREATE INDEX idx_eventos_criado       ON eventos (criado_em);
+-- participantes de duelo: joins frequentes por duelo, equipe e corretor (combate 1×1)
+CREATE INDEX idx_dp_duelo       ON duelo_participantes (duelo_id);
+CREATE INDEX idx_dp_equipe_corr ON duelo_participantes (equipe_id, corretor_id);
 
 -- ============================================================
 -- Migração: coluna "ativo" (soft delete) para bancos antigos.
@@ -176,3 +179,5 @@ ALTER TABLE corretores ADD COLUMN pin_dia DATE NULL;
 ALTER TABLE equipes    ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1;
 CREATE INDEX idx_corretores_ativo ON corretores (ativo);
 CREATE INDEX idx_equipes_ativo    ON equipes (ativo);
+-- corretores por equipe: usado no loop da listagem (equipes.php) — evita full scan por equipe
+CREATE INDEX idx_corretores_equipe ON corretores (equipe_id);
